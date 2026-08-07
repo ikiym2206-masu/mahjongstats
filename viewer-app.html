@@ -614,6 +614,7 @@ function renderSidebar(stats){
       ${navBtn("radar","②","レーダーチャート")}
       ${navBtn("graph","③","スコア推移")}
       ${navBtn("compatradar","④","相性レーダーチャート")}
+      ${navBtn("sessiontrend","⑤","半荘目別推移")}
     </nav>
     <button class="reload-btn" data-reload>📂 別のファイルを読み込む</button>
   `;
@@ -636,10 +637,12 @@ function renderSectionWrap(stats){
     body = stats.length>=2 ? renderRadarSection(stats) : renderNeedMorePlayers("②レーダーチャート");
   }else if(state.section==="graph"){
     body = renderGraphSection();
+  }else if(state.section==="sessiontrend"){
+    body = renderSessionTrendSection();
   }else{
     body = renderCompatRadarGridSection(stats);
   }
-  const showChipBar = state.section==="radar" || state.section==="graph";
+  const showChipBar = state.section==="radar" || state.section==="graph" || state.section==="sessiontrend";
   return (showChipBar ? renderChipBar() : "") + body;
 }
 function renderNeedMorePlayers(label){
@@ -868,6 +871,117 @@ function renderGraphSection(){
       </svg>
       <div class="chip-row legend-row">${legend}</div>
       <div class="n-sub" style="display:block; margin-top:8px;">対象：確定済み半荘 ${n}件／選手名クリックでハイライトON/OFF（①②と連動）</div>
+    </div>`;
+}
+
+// ---------- render: ⑤半荘目別推移（同日内で半荘を重ねるほどの成績変化） ----------
+// 確定済み半荘のみを対象に、半荘No（＝その日の第何半荘目か。入力アプリ側で日付が変わるたびに1から振り直される）を
+// セッション内の回数として扱い、同じ回数目のスコアpt（`finalPoints`。オカ・ウマ・チョンボ罰則を反映した値）を全期間で平均した1本のトレンド線を描く。
+function computeSessionScoreTrend(){
+  const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`]);
+  const allNames = []; const seen = new Set();
+  const byName = new Map(); // name -> Map(半荘No -> {sum,count})
+  const indexTotalCount = new Map(); // 半荘No -> その回数目が発生した半荘の件数
+  let maxIndex = 0;
+  groups.forEach(g=>{
+    const idx = g.hanchanNo;
+    if(!idx || idx<1) return;
+    if(idx>maxIndex) maxIndex = idx;
+    indexTotalCount.set(idx, (indexTotalCount.get(idx)||0)+1);
+    const key = `${g.date}_${g.hanchanNo}`;
+    const pts = state.raw.finalPoints[key];
+    if(!pts) return;
+    const names = namesForHanchan(g.date, g.hanchanNo);
+    names.forEach((nm,i)=>{
+      const v = pts[i];
+      if(v===null || v===undefined || isNaN(v)) return;
+      const n = nm || "?";
+      if(!seen.has(n)){ seen.add(n); allNames.push(n); }
+      if(!byName.has(n)) byName.set(n, new Map());
+      const m = byName.get(n);
+      const cur = m.get(idx) || {sum:0, count:0};
+      cur.sum += v;
+      cur.count += 1;
+      m.set(idx, cur);
+    });
+  });
+  return {allNames, byName, maxIndex, indexTotalCount};
+}
+
+function renderSessionTrendSection(){
+  const {allNames, byName, maxIndex, indexTotalCount} = computeSessionScoreTrend();
+  if(!allNames.length || maxIndex===0){
+    return `<div class="card"><div class="section-head"><h2>⑤ 半荘目別推移</h2></div><div class="empty">対象となる確定済み半荘がありません。</div></div>`;
+  }
+
+  const series = {}; // name -> [{idx, avg, count}]
+  allNames.forEach(n=>{
+    const m = byName.get(n) || new Map();
+    const pts = [];
+    for(let idx=1; idx<=maxIndex; idx++){
+      const c = m.get(idx);
+      if(c && c.count>0) pts.push({idx, avg: c.sum/c.count, count:c.count});
+    }
+    series[n] = pts;
+  });
+
+  const w=900, h=440, padL=54, padR=20, padT=20, padB=48;
+  const xAt = idx => maxIndex<=1 ? padL : padL + (idx-1)*(w-padL-padR)/(maxIndex-1);
+  const allVals = allNames.flatMap(n=>series[n].map(p=>p.avg)).concat([0]);
+  const maxV = Math.max(...allVals), minV = Math.min(...allVals);
+  const yAt = v => (h-padB) - ((v-minV)/((maxV-minV)||1))*(h-padT-padB);
+
+  const selectedSet = new Set(state.chips.filter(nm=>allNames.includes(nm)));
+  const order = allNames.slice().sort((a,b)=> (selectedSet.has(a)?1:0) - (selectedSet.has(b)?1:0));
+
+  const gridLevels = [minV, (minV+maxV)/2, maxV];
+  const gridLines = gridLevels.map(v=>{
+    const y = yAt(v).toFixed(1);
+    return `<line x1="${padL}" y1="${y}" x2="${w-padR}" y2="${y}" stroke="#E4DFD3" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="${padL-8}" y="${(+y+4).toFixed(1)}" font-size="11" fill="#767b83" text-anchor="end">${fmtPt(v)}</text>`;
+  }).join("");
+  const zeroY = yAt(0).toFixed(1);
+  const zeroLine = (minV<0 && maxV>0) ? `<line x1="${padL}" y1="${zeroY}" x2="${w-padR}" y2="${zeroY}" stroke="#767b83" stroke-width="1.2"/>` : "";
+
+  const xTicks = [];
+  for(let idx=1; idx<=maxIndex; idx++){
+    const x = xAt(idx).toFixed(1);
+    const cnt = indexTotalCount.get(idx)||0;
+    xTicks.push(`<line x1="${x}" y1="${padT}" x2="${x}" y2="${h-padB}" stroke="#F0ECE1" stroke-width="1"/>`);
+    xTicks.push(`<text x="${x}" y="${h-padB+20}" font-size="11" fill="#767b83" text-anchor="middle">第${idx}半荘目</text>`);
+    xTicks.push(`<text x="${x}" y="${h-padB+34}" font-size="10" fill="#9aa0a8" text-anchor="middle">(n=${cnt})</text>`);
+  }
+
+  const linesAndDots = order.map(nm=>{
+    const isSel = selectedSet.has(nm);
+    const color = isSel ? colorForChip(nm) : NEUTRAL_COLOR;
+    const pts = series[nm];
+    if(!pts.length) return "";
+    const points = pts.map(p=>`${xAt(p.idx).toFixed(1)},${yAt(p.avg).toFixed(1)}`).join(" ");
+    const strokeW = isSel ? 3 : 1.4;
+    const strokeOp = isSel ? 1 : 0.4;
+    const dots = pts.map(p=>`<circle cx="${xAt(p.idx).toFixed(1)}" cy="${yAt(p.avg).toFixed(1)}" r="${isSel?4:2.5}" fill="${color}" fill-opacity="${strokeOp}"><title>${escapeHtml(nm)}：第${p.idx}半荘目 平均${fmtPt(p.avg)}（n=${p.count}）</title></circle>`).join("");
+    return `<polyline data-graph-name="${escapeAttr(nm)}" points="${points}" fill="none" stroke="${color}" stroke-opacity="${strokeOp}" stroke-width="${strokeW}"/>${dots}`;
+  }).join("");
+
+  const legend = allNames.map(nm=>{
+    const isSel = selectedSet.has(nm);
+    const color = isSel ? colorForChip(nm) : NEUTRAL_COLOR;
+    const style = isSel ? `background:${color}22; border-color:${color}; color:${color};` : "";
+    return `<button class="chip legend-chip" data-chip-toggle="${escapeAttr(nm)}" style="${style}"><span class="legend-dot" style="background:${color};"></span>${escapeHtml(nm)}</button>`;
+  }).join("");
+
+  return `
+    <div class="card">
+      <div class="section-head">
+        <h2>⑤ 半荘目別推移<span class="n-sub">確定済み半荘・同日内の「第何半荘目か」ごとにスコアpt（オカ・ウマ・チョンボ罰則を反映）の平均を全期間で集計</span></h2>
+      </div>
+      <svg viewBox="0 0 ${w} ${h}" id="session-trend-svg" style="width:100%; height:auto; margin-top:14px;">
+        <rect x="0" y="0" width="${w}" height="${h}" fill="#FFFFFF"/>
+        ${gridLines}${zeroLine}${xTicks.join("")}${linesAndDots}
+      </svg>
+      <div class="chip-row legend-row">${legend}</div>
+      <div class="n-sub" style="display:block; margin-top:8px;">対象：確定済み半荘／半荘Noを「その日の第何半荘目か」として集計／選手名クリックでハイライトON/OFF（①②③と連動）</div>
     </div>`;
 }
 

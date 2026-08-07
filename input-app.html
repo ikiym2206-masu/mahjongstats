@@ -1696,8 +1696,16 @@ async function importCsvFromServer(){
   }
 }
 
+// 局データの「重複」判定キー。日付・半荘No・局・本場・結果種別・各プレイヤーのスタッツが
+// すべて一致する場合のみ同一の局とみなす（チョンボ後のやり直しなど、同じ局・本場でも
+// 結果種別やスタッツが異なる正当なレコードは別物として扱う）。
+function kyokuRecordSignature(r){
+  return [r.date, r.hanchanNo, r.kyoku, r.honba, r.resultType, JSON.stringify(r.stats)].join("|");
+}
+
 // 標準形式（日付,半荘No,局,本場,結果, [名前,リーチ,副露,ツモ,ロン,放銃,チョンボ,素点]×4人）を読み込む。
 // 素点列が無い古い書き出し（名前あり／名前なし）も引き続き読み込める。
+// 既存データと内容が完全一致する局（同じ日付・半荘No・局・本場・結果・スタッツ）は重複として取り込まない。
 function importWideKyokuCsv(lines){
   const colsPerPlayerScore = 8; // 名前 + 6スタッツ + 素点（現行形式）
   const colsPerPlayerNew = 7;   // 名前 + 6スタッツ（素点列を追加する前の形式）
@@ -1708,6 +1716,8 @@ function importWideKyokuCsv(lines){
   const newRecords = [];
   const snapshotsToApply = {}; // key -> [name0..3]（既存スナップショットが無い半荘にのみ後で適用）
   const scoresByHanchan = {};  // key -> [素点0..3]（4人分そろった半荘のみ、後でまとめて確定判定する）
+  const seenSignatures = new Set(state.records.map(kyokuRecordSignature)); // 既存レコード＋今回取り込み済み分
+  let skippedDuplicate = 0;
   for(let li=1; li<lines.length; li++){
     const cols = lines[li].split(",");
     const hasScore = cols.length >= requiredColsScore;
@@ -1734,7 +1744,11 @@ function importWideKyokuCsv(lines){
       }
       return [0,1,2,3,4,5].map(k => Number(cols[base+k]) || 0);
     });
-    newRecords.push({ id: uid(), date, hanchanNo, kyoku, honba, resultType, stats });
+    const rec = { id: uid(), date, hanchanNo, kyoku, honba, resultType, stats };
+    const sig = kyokuRecordSignature(rec);
+    if(seenSignatures.has(sig)){ skippedDuplicate++; continue; }
+    seenSignatures.add(sig);
+    newRecords.push(rec);
     if(hasNames){
       const key = `${date}_${hanchanNo}`;
       if(!snapshotsToApply[key]) snapshotsToApply[key] = names;
@@ -1743,8 +1757,13 @@ function importWideKyokuCsv(lines){
       }
     }
   }
-  if(!newRecords.length){ toast("有効な局データが見つかりませんでした（書き出し形式と一致するか確認してください）"); return; }
-  if(!confirm(`${newRecords.length}件の局データを、既存のデータに追加します。よろしいですか？`)) return;
+  if(!newRecords.length){
+    toast(skippedDuplicate
+      ? `追加できる局データがありませんでした（すべて既存データと重複：${skippedDuplicate}件）`
+      : "有効な局データが見つかりませんでした（書き出し形式と一致するか確認してください）");
+    return;
+  }
+  if(!confirm(`${newRecords.length}件の局データを、既存のデータに追加します${skippedDuplicate?`（重複スキップ:${skippedDuplicate}件）`:""}。よろしいですか？`)) return;
   state.records = state.records.concat(newRecords);
   Object.entries(snapshotsToApply).forEach(([key,names])=>{
     if(!state.recordPlayers[key]) state.recordPlayers[key] = names;
@@ -1764,7 +1783,10 @@ function importWideKyokuCsv(lines){
   saveRecordPlayers();
   saveFinalScores(); saveRanks(); saveFinalPoints(); saveHanchanConfirmed();
   render();
-  toast(`${newRecords.length}件を追加しました${confirmedCount?`（うち${confirmedCount}半荘の順位を確定）`:""}`);
+  const notes = [];
+  if(confirmedCount) notes.push(`うち${confirmedCount}半荘の順位を確定`);
+  if(skippedDuplicate) notes.push(`重複${skippedDuplicate}件をスキップ`);
+  toast(`${newRecords.length}件を追加しました${notes.length?`（${notes.join("、")}）`:""}`);
 }
 
 // ================= 半荘結果（順位・スコア）のみのロング形式CSV読み込み =================
