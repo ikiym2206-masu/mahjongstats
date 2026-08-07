@@ -161,6 +161,7 @@
 
   <div class="card">
     <h2><span class="n">2</span>🧮 半荘集計</h2>
+    <p class="note">タブ最上部に<b>年月フィルタ</b>と<b>曜日フィルタ（すべて／平日／週末）</b>があり、組み合わせて絞り込める（例：「2026年8月」×「週末のみ」）。</p>
     <p class="sec">a. 未確定の半荘（編集中）</p>
     <div class="flow">
       <div class="step"><div class="ic">📃</div><div class="lb">局ごとの<br>内訳を確認</div></div>
@@ -185,6 +186,8 @@
     <h2><span class="n">3</span>🏆 ランキング</h2>
     <div class="flow">
       <div class="step"><div class="ic">📆</div><div class="lb">期間を<br>指定（任意）</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🗓️</div><div class="lb">平日/週末を<br>絞る（任意）</div></div>
       <span class="arrow">→</span>
       <div class="step"><div class="ic">🏅</div><div class="lb">累計pt順に<br>並ぶ</div></div>
     </div>
@@ -224,6 +227,7 @@
     </div>
     <p class="note">閲覧専用（保存機能なし）。閉じる・再読込でデータは消える。入力アプリ本体には影響しない。</p>
     <p class="note">JSONの選択/ドロップに加えて「🌐 サイト上のbackup.jsonを読み込む」ボタンもある。このアプリが置かれているサイト上に公開されているbackup.jsonをその場で取得して読み込むもので、事前にファイルをダウンロードしておく必要がない（読み込み専用。サーバー側への書き込みは行わない）。</p>
+    <p class="note">サイドバー上部に<b>曜日フィルタ（すべて／平日／週末）</b>が1つあり、統計・①〜⑤の全セクションに共通で効く（読込サマリの半荘件数だけは対象外）。</p>
   </div>
 
   <div class="card">
@@ -266,7 +270,7 @@
 
   <div class="card">
     <h2><span class="n">3</span>③ スコア推移</h2>
-    <p class="note" style="margin-top:0;">期間（from〜to）を指定 → 対象期間の<b>累計pt推移</b>を折れ線で表示（期間の先頭から0スタート）。「指定なし」で期間クリア。</p>
+    <p class="note" style="margin-top:0;">期間（from〜to）を指定 → 対象期間の<b>累計pt推移</b>を折れ線で表示（期間の先頭から0スタート）。「指定なし」で期間クリア。サイドバーの曜日フィルタとも組み合わせ可能。</p>
   </div>
 
   <div class="card">

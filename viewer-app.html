@@ -108,6 +108,9 @@
   .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
   .chip{padding:6px 12px; border-radius:999px; background:var(--bg); border:1px solid var(--line);
     font-size:12.5px; color:var(--muted); font-weight:700; cursor:pointer; font-family:inherit;}
+  .chip.active{background:var(--primary); border-color:var(--primary); color:#fff;}
+  .weekday-filter{display:flex; gap:6px; margin-top:12px;}
+  .weekday-filter .chip{padding:5px 10px; font-size:12px;}
   .roster-chip input{margin-right:5px; vertical-align:middle;}
   .legend-chip{display:inline-flex; align-items:center; gap:6px; border:1.5px solid var(--line); background:var(--surface);}
   .legend-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
@@ -201,7 +204,22 @@ const state = {
   graphRange: {from:"", to:""}, // ③スコア推移グラフの期間フィルタ
   compatRadarTargets: null, // ④相性レーダーチャートの対象プレイヤー名（nullなら未初期化）
   statsCollapsed: {}, // 統計タブ：プレイヤー名（または"__avg__"）→ false で明示的に展開。未設定（デフォルト）は折りたたみ表示
+  weekdayFilter: "all", // 曜日フィルタ（"all"|"weekday"|"weekend"）。サイドバー共通設置・全セクションに適用
 };
+
+// 日付文字列("YYYY-MM-DD")が土日かどうかを判定する（曜日フィルタの共通ロジック。入力アプリと同一仕様）。
+function isWeekendDate(dateStr){
+  if(!dateStr) return false;
+  const d = new Date(dateStr + "T00:00:00");
+  const day = d.getDay(); // 0=日, 6=土
+  return day === 0 || day === 6;
+}
+// 曜日フィルタ（"all"|"weekday"|"weekend"）に日付が合致するかどうかを判定する共通ロジック。
+function matchesWeekdayFilter(dateStr, weekdayFilter){
+  if(!weekdayFilter || weekdayFilter === "all") return true;
+  const weekend = isWeekendDate(dateStr);
+  return weekdayFilter === "weekend" ? weekend : !weekend;
+}
 
 // ---------- format helpers ----------
 function fmtPct(n){ return isFinite(n) ? (n*100).toFixed(1)+"%" : "0.0%"; }
@@ -281,7 +299,7 @@ function computeHanchanKyokuStats(date, hanchanNo){
 }
 
 function computeOverallStats(range){
-  const inRange = d => !range || ((!range.from || d>=range.from) && (!range.to || d<=range.to));
+  const inRange = d => (!range || ((!range.from || d>=range.from) && (!range.to || d<=range.to))) && matchesWeekdayFilter(d, state.weekdayFilter);
   const byName = new Map();
   function ensure(name){
     const key = name || "";
@@ -468,7 +486,7 @@ function renderStatsSection(){
 
 function computeHeadToHead(nameA, nameB){
   if(!nameA || !nameB || nameA===nameB) return {count:0};
-  const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`]);
+  const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`] && matchesWeekdayFilter(g.date, state.weekdayFilter));
   let count=0, totalKyoku=0, sumRankA=0, sumRankB=0, sumPtA=0, sumPtB=0;
   const rankCountA = {1:0,2:0,3:0,4:0}, rankCountB = {1:0,2:0,3:0,4:0};
   groups.forEach(g=>{
@@ -553,6 +571,7 @@ function processBackupText(rawText, errEl){
   state.graphRange = {from:"", to:""};
   state.compatRadarTargets = null;
   state.statsCollapsed = {};
+  state.weekdayFilter = "all";
   render();
 }
 // サイト上のデータ（backup.json）を読み込む前にパスワードを確認する共通処理。
@@ -607,6 +626,11 @@ function renderSidebar(stats){
       <div class="summary-line">書き出し日時：${escapeHtml(fmtDateTime(raw.exportedAt))}</div>
       <div class="summary-line">半荘：${confirmedCount}／${totalHanchan}件（確定済み／全体）</div>
       <div class="summary-line">分析対象プレイヤー：${stats.length}名<span style="font-weight:400;">（対局・半荘のいずれかの実績あり）</span></div>
+      <div class="weekday-filter" id="weekdayFilterBar">
+        <button type="button" class="chip ${state.weekdayFilter==="all"?"active":""}" data-weekday="all">すべて</button>
+        <button type="button" class="chip ${state.weekdayFilter==="weekday"?"active":""}" data-weekday="weekday">平日</button>
+        <button type="button" class="chip ${state.weekdayFilter==="weekend"?"active":""}" data-weekday="weekend">週末</button>
+      </div>
     </div>
     <nav class="side-nav">
       ${navBtn("stats","📊","統計")}
@@ -787,7 +811,7 @@ function renderRadarSection(stats){
 function renderGraphSection(){
   const range = state.graphRange;
   const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`]);
-  const filtered = groups.filter(g=> (!range.from || g.date>=range.from) && (!range.to || g.date<=range.to));
+  const filtered = groups.filter(g=> (!range.from || g.date>=range.from) && (!range.to || g.date<=range.to) && matchesWeekdayFilter(g.date, state.weekdayFilter));
 
   const rangeControls = `
     <div class="graph-range">
@@ -878,7 +902,7 @@ function renderGraphSection(){
 // 確定済み半荘のみを対象に、半荘No（＝その日の第何半荘目か。入力アプリ側で日付が変わるたびに1から振り直される）を
 // セッション内の回数として扱い、同じ回数目のスコアpt（`finalPoints`。オカ・ウマ・チョンボ罰則を反映した値）を全期間で平均した1本のトレンド線を描く。
 function computeSessionScoreTrend(){
-  const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`]);
+  const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`] && matchesWeekdayFilter(g.date, state.weekdayFilter));
   const allNames = []; const seen = new Set();
   const byName = new Map(); // name -> Map(半荘No -> {sum,count})
   const indexTotalCount = new Map(); // 半荘No -> その回数目が発生した半荘の件数
@@ -1132,6 +1156,10 @@ function bindEvents(stats){
 
   app.querySelectorAll("[data-section]").forEach(btn=>{
     btn.addEventListener("click", ()=>{ state.section = btn.dataset.section; render(); });
+  });
+
+  app.querySelectorAll("[data-weekday]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ state.weekdayFilter = btn.dataset.weekday; render(); });
   });
 
   app.querySelectorAll("[data-toggle-stats-collapse]").forEach(el=>{
