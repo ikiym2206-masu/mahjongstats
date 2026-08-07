@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masu 麻雀スタッツ</title>
+<link rel="icon" href="./icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="theme-color" content="#3d6fd1">
+<style>
+  :root {
+    --bg: #faf6ee;
+    --card: #ffffff;
+    --accent: #3d6fd1;
+    --text: #33302a;
+    --sub: #8b8378;
+    --border: #e7ddc9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 60px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 8px 0 4px;
+  }
+  .subtitle {
+    color: var(--sub);
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+  .section-title {
+    font-size: 13px;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 28px 0 10px;
+    padding-left: 2px;
+  }
+  .card {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(51, 48, 42, 0.05);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card:active {
+    border-color: var(--accent);
+    box-shadow: 0 1px 4px rgba(58, 111, 216, 0.12);
+  }
+  .card-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .card-row .card {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 0;
+  }
+  .card-dl {
+    flex: 0 0 auto;
+    width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--sub);
+    font-size: 18px;
+    box-shadow: 0 1px 3px rgba(51, 48, 42, 0.05);
+    transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card-dl:active {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 1px 4px rgba(58, 111, 216, 0.12);
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: var(--sub);
+    line-height: 1.5;
+  }
+  .badge {
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-weight: 500;
+  }
+  .updated {
+    margin-top: 40px;
+    font-size: 12px;
+    color: var(--sub);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Masu 麻雀スタッツ</h1>
+  <div class="subtitle">アプリ・データ・ドキュメント一覧</div>
+
+  <div class="section-title">アプリ</div>
+
+  <div class="card-row">
+    <a class="card" href="./input-app.html">
+      <div class="card-title">📱 入力アプリ <span class="badge">スマホ</span></div>
+      <div class="card-desc">半荘ごとの局入力・素点集計。ホーム画面に追加して使用。</div>
+    </a>
+    <a class="card-dl" href="./input-app.html" download title="ファイルをダウンロード">⬇</a>
+  </div>
+
+  <div class="card-row">
+    <a class="card" href="./viewer-app.html">
+      <div class="card-title">📊 分析ビューア <span class="badge">PC</span></div>
+      <div class="card-desc">統計・ランキング・レーダーチャートなどの分析表示。</div>
+    </a>
+    <a class="card-dl" href="./viewer-app.html" download title="ファイルをダウンロード">⬇</a>
+  </div>
+
+  <div class="section-title">データ</div>
+
+  <a class="card" href="./hanchan.csv" download onclick="return guardDownload(event)">
+    <div class="card-title">📄 半荘結果CSV <span class="badge">DL</span></div>
+    <div class="card-desc">半荘ごとの素点・得点pt・順位データ。インポート用フォーマット。</div>
+  </a>
+
+  <a class="card" href="./backup.json" download onclick="return guardDownload(event)">
+    <div class="card-title">🗂 バックアップJSON <span class="badge">DL</span></div>
+    <div class="card-desc">全データのフルバックアップ。復元用。</div>
+  </a>
+
+  <div class="section-title">説明書／仕様書</div>
+
+  <a class="card" href="./manual.html">
+    <div class="card-title">📘 取扱説明書</div>
+    <div class="card-desc">アプリの使い方ガイド。</div>
+  </a>
+
+  <a class="card" href="./spec-input.md" download>
+    <div class="card-title">📝 入力アプリ 仕様書 <span class="badge">DL</span></div>
+    <div class="card-desc">入力アプリの機能・画面構成・データ仕様。</div>
+  </a>
+
+  <a class="card" href="./spec-viewer.md" download>
+    <div class="card-title">📝 分析ビューア 仕様書 <span class="badge">DL</span></div>
+    <div class="card-desc">分析ビューアの機能・画面構成・データ仕様。</div>
+  </a>
+
+  <div class="updated">最終更新: 2026-08-06</div>
+
+<script>
+// CSV／JSONデータのダウンロード前にパスワードを確認する。
+// 不一致・キャンセル時はダウンロードをキャンセルする（クリックイベントを打ち消す）。
+function guardDownload(e){
+  const pw = window.prompt("パスワードを入力してください");
+  if(pw === null){ e.preventDefault(); return false; }
+  if(pw !== "masu"){
+    alert("パスワードが違います");
+    e.preventDefault();
+    return false;
+  }
+  return true;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="麻雀入力">
+<title>麻雀スタッツ（スマホ入力）</title>
+<link rel="icon" href="./icons-input/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons-input/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons-input/favicon-16.png">
+<link rel="apple-touch-icon" href="./icons-input/apple-touch-icon.png">
+<link rel="manifest" href="./manifest-input.json">
+<meta name="theme-color" content="#1F6F54">
+<style>
+  :root{
+    --bg:#F6F3EC;
+    --surface:#FFFFFF;
+    --ink:#242629;
+    --muted:#767b83;
+    --line:#E4DFD3;
+    --primary:#1F6F54;
+    --primary-dark:#154A38;
+    --primary-tint:#E4EFE9;
+    --riichi:#C98A2B;
+    --riichi-tint:#F7ECD8;
+    --agari:#1F6F54;
+    --agari-tint:#E4EFE9;
+    --ron:#2E6DA4;
+    --ron-tint:#E2EBF5;
+    --houjuu:#B23A2E;
+    --houjuu-tint:#F7E3E1;
+    --chombo:#6B4FA0;
+    --chombo-tint:#EBE6F5;
+    --fuuro:#3B8C6E;
+    --fuuro-tint:#E1F0EA;
+    --gold:#C98A2B;
+    --silver:#8B94A0;
+    --bronze:#A9673A;
+    --slate:#5B6470;
+    --radius:14px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Segoe UI",sans-serif;
+    height:100%; overscroll-behavior-y: none;}
+  #app{max-width:520px; margin:0 auto; min-height:100%; display:flex; flex-direction:column;}
+
+  header.topbar{
+    position:sticky; top:0; z-index:20;
+    background:var(--bg); padding:14px 16px 8px; display:flex; align-items:center; gap:8px;
+    border-bottom:1px solid var(--line);
+  }
+  header.topbar .tile{font-size:22px; line-height:1;}
+  header.topbar h1{font-size:16px; font-weight:800; letter-spacing:.02em; margin:0; flex:1;}
+  header.topbar .sub{font-size:11px; color:var(--muted);}
+
+  main{flex:1; padding:14px 14px calc(88px + var(--safe-bottom)); }
+
+  nav.tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:30;
+    background:var(--surface); border-top:1px solid var(--line);
+    display:flex; padding-bottom:var(--safe-bottom);
+    max-width:520px; margin:0 auto;
+  }
+  nav.tabbar button{
+    flex:1; border:none; background:transparent; padding:10px 4px 8px;
+    font-size:11px; color:var(--muted); font-weight:600; display:flex; flex-direction:column;
+    align-items:center; gap:3px; cursor:pointer;
+  }
+  nav.tabbar button .ic{font-size:19px;}
+  nav.tabbar button.active{color:var(--primary);}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; margin-bottom:12px;}
+  .card h2{font-size:13px; font-weight:800; margin:0 0 10px; color:var(--ink); letter-spacing:.02em;}
+  .card h2 .n{color:var(--muted); font-weight:600; margin-left:4px;}
+
+  /* 半荘集計・分析タブは情報量が多いため、他タブより余白と見出し文字を大きめにする */
+  .tab-hanchan .card, .tab-ranking .card{padding:18px 16px; margin-bottom:16px;}
+  .tab-hanchan .card h2, .tab-ranking .card h2{font-size:15px; margin-bottom:12px;}
+
+  .row-between{display:flex; align-items:center; justify-content:space-between;}
+
+  /* date selector */
+  .date-stepper{display:flex; align-items:center; gap:8px;}
+  .date-stepper button{
+    width:34px; height:34px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface); font-size:16px; font-weight:700; color:var(--primary);
+  }
+  .date-stepper input[type=date]{
+    border:1.5px solid var(--line); border-radius:10px; padding:7px 8px; font-size:13px;
+    font-weight:800; color:var(--ink); background:var(--surface); font-family:inherit;
+  }
+
+  /* hanchan/kyoku selector */
+  .hanchan-stepper{display:flex; align-items:center; gap:10px;}
+  .hanchan-stepper button{
+    width:38px; height:38px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface); font-size:18px; font-weight:700; color:var(--primary);
+  }
+  .hanchan-stepper .num{font-size:22px; font-weight:800; min-width:34px; text-align:center;}
+  .kyoku-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:10px;}
+  .kyoku-grid button{
+    padding:10px 0; border-radius:10px; border:1.5px solid var(--line); background:var(--surface);
+    font-size:13px; font-weight:700; color:var(--ink);
+  }
+  .kyoku-grid button.active{background:var(--primary); border-color:var(--primary); color:#fff;}
+
+  .seat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px;}
+  .seat-field{background:var(--bg); border:1.5px solid var(--line); border-radius:10px; padding:7px 10px;}
+  .seat-field label{display:block; font-size:10px; color:var(--muted); font-weight:800; margin-bottom:2px; letter-spacing:.02em;}
+  .seat-field select{
+    width:100%; border:none; background:transparent; padding:0; margin:0;
+    font-size:14px; font-weight:800; color:var(--ink); font-family:inherit;
+  }
+  .shuffle-btn{
+    border:1px solid var(--line); background:var(--surface); color:var(--primary);
+    font-size:11px; font-weight:800; border-radius:999px; padding:5px 10px;
+  }
+
+  .hanchan-stepper .num.-honba{min-width:60px; font-size:15px;}
+
+  /* player toggle rows */
+  .player-row{border-top:1px solid var(--line); padding:12px 0;}
+  .player-row:first-of-type{border-top:none; padding-top:4px;}
+  .player-name{font-size:14px; font-weight:800; margin-bottom:8px;}
+  .dealer-badge{
+    display:inline-block; font-size:10px; font-weight:800; color:#fff; background:var(--riichi);
+    border-radius:6px; padding:2px 6px; vertical-align:middle; margin-left:6px;
+  }
+  .toggle-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
+  .toggle-grid.toggle-grid-2{grid-template-columns:repeat(2,1fr);}
+  .toggle-grid.toggle-grid-3{grid-template-columns:repeat(3,1fr);}
+  .toggle-btn{
+    padding:16px 0; border-radius:12px; border:1.5px solid var(--line); background:var(--surface);
+    font-size:15px; font-weight:700; color:var(--muted); transition:transform .08s;
+  }
+  .toggle-btn:active{transform:scale(.96);}
+  .toggle-btn.riichi.on{background:var(--riichi); border-color:var(--riichi); color:#fff;}
+  .toggle-btn.fuuro.on{background:var(--fuuro); border-color:var(--fuuro); color:#fff;}
+  .toggle-btn.tsumo.on{background:var(--agari); border-color:var(--agari); color:#fff;}
+  .toggle-btn.ron.on{background:var(--ron); border-color:var(--ron); color:#fff;}
+  .toggle-btn.houjuu.on{background:var(--houjuu); border-color:var(--houjuu); color:#fff;}
+
+  /* チョンボ（イレギュラー扱いのため小さなチェックボックスのみ） */
+  .chombo-check{
+    display:flex; align-items:center; gap:6px; margin-top:8px; font-size:11px; color:var(--muted); font-weight:700;
+  }
+  .chombo-check input{width:14px; height:14px; accent-color:var(--chombo);}
+
+  .save-bar{position:sticky; bottom:0; padding-top:6px;}
+  .save-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
+  .btn-save{
+    padding:10px 0 11px; border:none; border-radius:12px; color:#fff;
+    font-size:12.5px; font-weight:800; letter-spacing:.01em;
+  }
+  .btn-save small{display:block; font-size:9px; font-weight:600; opacity:.85; margin-top:3px;}
+  .btn-save:active{filter:brightness(.9);}
+  .btn-save:disabled{opacity:.35; filter:grayscale(.3);}
+  .btn-save-next{background:var(--primary);}
+  .btn-save-renchan{background:var(--riichi);}
+  .btn-save-chombo-small{
+    display:block; width:100%; margin-top:8px; padding:7px 0; border:1px solid var(--chombo); border-radius:10px;
+    background:var(--chombo-tint); color:var(--chombo); font-size:11px; font-weight:800;
+  }
+  .btn-save-chombo-small:active{filter:brightness(.95);}
+
+  .btn-ghost{
+    width:100%; padding:11px 0; border:1px solid var(--line); border-radius:12px; background:var(--surface);
+    color:var(--muted); font-size:13px; font-weight:700; margin-top:8px;
+  }
+
+  .history-item{display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--line); font-size:12px;}
+  .history-item:first-child{border-top:none;}
+  .history-item .tag{background:var(--bg); border-radius:6px; padding:3px 7px; font-weight:700; color:var(--ink); font-size:11px; white-space:nowrap;}
+  .history-item .desc{flex:1; color:var(--muted);}
+  .history-item .del{border:none; background:none; color:var(--houjuu); font-size:16px; padding:2px 6px;}
+  .history-item .edit{border:none; background:none; color:var(--primary); font-size:14px; padding:2px 6px;}
+  .edit-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:var(--riichi-tint); border:1px solid var(--riichi); border-radius:12px;
+    padding:10px 12px; margin-bottom:12px; font-size:12px; font-weight:800; color:var(--riichi);
+  }
+  .edit-banner button{border:none; background:var(--riichi); color:#fff; font-size:11px; font-weight:800; border-radius:999px; padding:6px 12px;}
+
+  /* settings */
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:11px; color:var(--muted); font-weight:700; margin-bottom:4px;}
+  .field input[type=text]{
+    width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px;
+    font-size:15px; background:var(--surface); color:var(--ink); font-weight:700;
+  }
+  .field input[type=text]:focus{outline:none; border-color:var(--primary);}
+  .chip-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
+  .chip{padding:5px 10px; border-radius:999px; background:var(--bg); border:1px solid var(--line);
+    font-size:11px; color:var(--muted); font-weight:600;}
+  .tab-ranking .chip{font-size:13px; padding:7px 12px;}
+
+  /* hanchan sheet */
+  .stat-mini-table{width:100%; border-collapse:collapse; font-size:14px; margin-top:6px;}
+  .stat-mini-table th{color:var(--muted); font-weight:700; padding:7px 5px; text-align:center;}
+  .stat-mini-table td{padding:9px 5px; text-align:center; font-weight:700; border-top:1px solid var(--line);}
+  /* ゼブラストライプ：1行おきに薄く色付けして視認性を上げる（1行目=見出し行なので実質データ行の1・3・5…行目が着色される） */
+  .stat-mini-table tr:nth-child(even){background:rgba(118,123,131,.08);}
+  .rank-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0;}
+  .rank-row .nm{font-size:16px; font-weight:700; flex:1;}
+  .rank-chips{display:flex; gap:6px;}
+  .rank-chip{width:36px; height:36px; border-radius:9px; border:1.5px solid var(--line); background:var(--surface);
+    font-size:15px; font-weight:800; color:var(--muted);}
+  .rank-chip.on-1{background:var(--gold); border-color:var(--gold); color:#fff;}
+  .rank-chip.on-2{background:var(--silver); border-color:var(--silver); color:#fff;}
+  .rank-chip.on-3{background:var(--bronze); border-color:var(--bronze); color:#fff;}
+  .rank-chip.on-4{background:var(--slate); border-color:var(--slate); color:#fff;}
+  .btn-confirm-rank{
+    width:100%; padding:14px 0; border:none; border-radius:12px; background:var(--primary); color:#fff;
+    font-size:16px; font-weight:800; margin-top:14px;
+  }
+  .btn-confirm-rank:active{filter:brightness(.92);}
+  .rank-cell{width:30px;}
+  .rank-cell .rank-chip{width:26px; height:26px; border-radius:7px; font-size:11px;}
+  .card h2 .n-sub{color:var(--muted); font-weight:600; margin-left:6px; font-size:11px;}
+  .score-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px solid var(--line);}
+  .score-row:first-of-type{border-top:none;}
+  .score-row .nm{font-size:16px; font-weight:700; flex:1;}
+  .score-input-wrap{display:flex; align-items:center; gap:8px;}
+  .score-input-wrap .rank-chip{width:28px; height:28px; border-radius:8px; font-size:12px; pointer-events:none;}
+  .score-input{
+    width:96px; text-align:right; padding:9px 10px; border:1.5px solid var(--line); border-radius:10px;
+    font-size:17px; font-weight:800; color:var(--ink); background:var(--bg); font-family:inherit;
+  }
+  .score-input:focus{outline:none; border-color:var(--primary);}
+  .score-cell{font-weight:800;}
+  .score-cell.neg{color:var(--houjuu);}
+
+  /* stats */
+  .stat-player-card .stat-name{font-size:17px; font-weight:800; margin-bottom:8px;}
+  .stat-section-label{font-size:11px; font-weight:800; color:var(--muted); letter-spacing:.05em;
+    margin:10px 0 4px; text-transform:uppercase;}
+  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .stat-tile{background:var(--bg); border-radius:10px; padding:8px 6px; text-align:center;}
+  .stat-tile .v{font-size:17px; font-weight:800;}
+  .stat-tile .l{font-size:12px; color:var(--muted); font-weight:700; margin-top:2px;}
+
+  .glossary{font-size:12px; color:var(--muted); line-height:1.7; padding-top:2px;}
+  .chombo-mark{font-size:10px; font-weight:800; color:var(--chombo);}
+  .graph-range{display:flex; align-items:center; gap:6px; margin-bottom:10px;}
+  .graph-range input[type=date], .graph-range input[type=month]{
+    flex:1; border:1.5px solid var(--line); border-radius:10px; padding:7px 8px; font-size:12px;
+    font-weight:700; color:var(--ink); background:var(--surface); font-family:inherit;
+  }
+  .chip.roster-chip{cursor:pointer;}
+  .chip-del{border:none; background:none; color:var(--houjuu); font-weight:800; margin-left:4px; cursor:pointer;}
+
+  /* 通算ランキング：見やすさ優先でフォントを大きめにする */
+  .ranking-table-lg{font-size:17px;}
+  .ranking-table-lg th{font-size:12px;}
+  .ranking-table-lg td{padding:13px 6px;}
+  .ranking-table-lg .rank-cell .rank-chip{width:30px; height:30px; font-size:14px; border-radius:8px;}
+
+  /* 分析タブ：セクション切替ナビ（麻雀スタッツ分析ビューアのサイドナビをモバイル向けに横並びで踏襲） */
+  .analysis-nav{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
+  .analysis-nav button{
+    flex:1; min-width:88px; display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:11px 6px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface);
+    font-size:12px; font-weight:800; color:var(--muted); font-family:inherit;
+  }
+  .analysis-nav button.active{background:var(--primary); border-color:var(--primary); color:#fff;}
+  .analysis-nav .nav-num{
+    display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:6px;
+    background:var(--bg); color:var(--muted); font-size:10px; font-weight:800; flex:0 0 auto;
+  }
+  .analysis-nav button.active .nav-num{background:rgba(255,255,255,.25); color:#fff;}
+
+  /* 分析タブ・レーダーチャート系：プレイヤーごとにグリッド状に並べて表示 */
+  .radar-grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:10px;}
+  .radar-grid-card{border:1px solid var(--line); border-radius:12px; padding:14px;}
+  .radar-grid-card-head{margin-bottom:4px;}
+  .radar-grid-card-head h3{font-size:14px; font-weight:800; margin:0;}
+  .compat-legend-row{display:flex; justify-content:space-between; padding:3px 0; font-size:12px; color:var(--muted); font-weight:700;}
+  .radar-target-select{margin-bottom:12px;}
+  .radar-target-select .chip-bar-label{display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:6px;}
+  .radar-target-chip.on{background:var(--primary-tint); border-color:var(--primary); color:var(--primary);}
+
+  .empty{color:var(--muted); font-size:12px; text-align:center; padding:20px 0;}
+  .toast{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(96px + var(--safe-bottom));
+    background:var(--primary-dark); color:#fff; padding:9px 16px; border-radius:999px; font-size:12px;
+    font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:40;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KYOKU_LIST = ["東1","東2","東3","東4","南1","南2","南3","南4"];
+const SEAT_LABELS = ["東家","南家","西家","北家"];
+const CHART_PALETTE = ["#1F6F54","#2E6DA4","#C98A2B","#B23A2E","#6B4FA0","#3B8C6E","#8B94A0","#A9673A"];
+const DEFAULT_PLAYERS = ["プレイヤー1","プレイヤー2","プレイヤー3","プレイヤー4"];
+
+const RESULT_LABEL = {next:"次の局へ", renchan:"連荘", ryuukyoku:"流局", chombo:"チョンボ", resultonly:"結果のみ入力"};
+const RESULT_SHORT = {next:"次", renchan:"連", ryuukyoku:"流", chombo:"チョ", resultonly:"結果"};
+
+function todayStr(){
+  const d = new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), day = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function fmtDate(dstr){
+  if(!dstr) return "";
+  const [y,m,d] = dstr.split("-");
+  return `${y}/${m}/${d}`;
+}
+function fmtShortDate(dstr){
+  if(!dstr) return "";
+  const [,m,d] = dstr.split("-");
+  return `${Number(m)}/${Number(d)}`;
+}
+function emptyToggles(){ return [[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]; }
+
+// stats配列のインデックス定義：[リーチ, 副露, ツモ, ロン, 放銃, チョンボ]
+const K_RIICHI=0, K_FUURO=1, K_TSUMO=2, K_RON=3, K_HOUJUU=4, K_CHOMBO=5;
+
+// 対局者トグル [リーチ,副露,ツモ,ロン,放銃,チョンボ] を、Mリーグ公式ルール（集計特化版）に沿った以下の制約を保ちながら切り替える。
+// ①同一プレイヤーのツモ／ロン／放銃は同時に発生しない
+// ②ツモ／ロンは同じ局で一人だけが行える（アガリ人数は一局につき1人のみ：第9項）
+// ③ツモが発生した時、放銃は発生しない（自摸和には放銃者がいないため）
+// ④ロンが発生した時、ロンをしたプレイヤー以外のいずれか1名のみが放銃となる（放銃は常に1名のみ）
+// ⑤同一プレイヤー内で リーチ／副露 は同時に成立しない（副露した局はリーチできない、リーチ後は副露できないため）
+// チョンボ(k=5)のみ、上記のいずれとも無関係な独立トグル。
+// ※「ロンが成立した局には必ず1名の放銃が発生する」制約（ロンと放銃は必ずセット）は、
+// 　このトグル操作の中では強制せず、局を保存するタイミングでvalidateAgariHoujuuConsistency()によりチェックする。
+function toggleStat(playerIdx, kind){
+  const toggles = state.current.toggles;
+  const turningOn = !toggles[playerIdx][kind];
+
+  if(kind === K_CHOMBO){ // チョンボは他と無関係な独立トグル
+    toggles[playerIdx][kind] = turningOn ? 1 : 0;
+    return;
+  }
+  if(kind === K_RIICHI || kind === K_FUURO){ // リーチ・副露は同一プレイヤー内で排他（同時に成立しない）
+    if(!turningOn){
+      toggles[playerIdx][kind] = 0;
+      return;
+    }
+    toggles[playerIdx][K_RIICHI] = 0;
+    toggles[playerIdx][K_FUURO] = 0;
+    toggles[playerIdx][kind] = 1;
+    return;
+  }
+  if(!turningOn){ // OFFにする操作には連動する副作用を起こさない
+    toggles[playerIdx][kind] = 0;
+    return;
+  }
+
+  if(kind === K_TSUMO || kind === K_RON){ // ツモ／ロン（勝者の確定）
+    toggles[playerIdx][K_TSUMO] = 0; toggles[playerIdx][K_RON] = 0; toggles[playerIdx][K_HOUJUU] = 0; // ①同一プレイヤー内の排他
+    for(let i=0;i<4;i++){
+      if(i===playerIdx) continue;
+      toggles[i][K_TSUMO] = 0; toggles[i][K_RON] = 0; // ②勝者は一局に一人
+    }
+    if(kind === K_TSUMO){
+      for(let i=0;i<4;i++) toggles[i][K_HOUJUU] = 0; // ③ツモ成立時は全員の放銃をOFF
+    }
+    toggles[playerIdx][kind] = 1;
+  }else if(kind === K_HOUJUU){ // 放銃
+    if(toggles.some(t=>t[K_TSUMO]===1)){ // ③ツモが既にある局には放銃を設定できない
+      toast("ツモが成立している局には放銃を設定できません");
+      return;
+    }
+    toggles[playerIdx][K_TSUMO] = 0; toggles[playerIdx][K_RON] = 0; // ①同一プレイヤー内の排他
+    for(let i=0;i<4;i++){
+      if(i===playerIdx) continue;
+      toggles[i][K_HOUJUU] = 0; // ④放銃は常にいずれか1名のみ
+    }
+    toggles[playerIdx][K_HOUJUU] = 1;
+  }
+}
+
+// ロンが成立している局には、必ず放銃者が1名いなければならない（ロンと放銃は必ずセットで発生する）。
+// トグル操作の時点では強制せず、局を保存する直前（連荘／次の局へ）にチェックする。
+function validateAgariHoujuuConsistency(){
+  const toggles = state.current.toggles;
+  const anyRon = toggles.some(t=>t[K_RON]===1);
+  const anyHoujuu = toggles.some(t=>t[K_HOUJUU]===1);
+  if(anyRon && !anyHoujuu){
+    toast("ロンが成立している場合は、放銃を1人選択してください");
+    return false;
+  }
+  return true;
+}
+
+let state = {
+  tab: "input",
+  players: DEFAULT_PLAYERS.slice(),
+  playerRoster: [],  // 事前登録されたプレイヤー名リスト（対局者4人はこの中から選択する）
+  records: [],      // {id, date, hanchanNo, kyoku, honba, resultType, stats:[[riichi,fuuro,tsumo,ron,houjuu,chombo]x4]}
+  ranks: {},        // `${date}_${hanchanNo}` -> [r1,r2,r3,r4]（同点は同着＝同じ順位番号。null = unset）
+  finalScores: {},  // `${date}_${hanchanNo}` -> [s1,s2,s3,s4] (最終持ち点＝素点。整数・マイナス可、null=未入力)
+  finalPoints: {},  // `${date}_${hanchanNo}` -> [pt1,pt2,pt3,pt4]（配給原点・オカ・ウマを反映した最終スコア pt。順位確定時に自動算出）
+  hanchanConfirmed: {}, // `${date}_${hanchanNo}` -> true になったら「確定」済み（順位入力を締めて集計表示に切り替える）
+  dealers: {},       // `${date}_${hanchanNo}` -> 起家のプレイヤー index (0-3)。座席は半荘ごとに変わる想定。
+  recordPlayers: {}, // `${date}_${hanchanNo}` -> [名前0,名前1,名前2,名前3]（その半荘の最初の入力時点のプレイヤー名を固定保存。
+                      //   設定タブで後からプレイヤー名リスト・対局メンバーを変更しても、過去に記録済みの半荘の表示名は変わらない）
+  rankingRange: { from: "", to: "" }, // ランキングタブの期間フィルタ
+  current: { date: todayStr(), hanchanNo: 1, kyoku: 0, honba: 0, toggles: emptyToggles() },
+  editingId: null,
+  editBackup: null,
+  scrollToHanchanKey: null,
+  loaded: false,
+  storageOk: true,
+  hanchanCollapsed: {}, // `${date}_${hanchanNo}` -> false で明示的に展開。未設定（デフォルト）は最小化表示（画面上のUI状態のみ、保存はしない）
+  hanchanMonthFilter: "", // 半荘集計タブの年月絞り込み（"YYYY-MM"。空文字なら全期間を表示。画面表示用の一時状態のみ、保存はしない）
+};
+
+// ---------- persistence ----------
+// このアプリはブラウザの localStorage に端末内保存する（クラウド保存は利用しない）。
+const LOCAL_KEY_PREFIX = "mj-stats:";
+
+function localGet(key){
+  try{
+    const raw = localStorage.getItem(LOCAL_KEY_PREFIX + key);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function localSet(key, value){
+  try{
+    localStorage.setItem(LOCAL_KEY_PREFIX + key, JSON.stringify(value));
+    return true;
+  }catch(e){ return false; }
+}
+async function storageGet(key){ return localGet(key); }
+async function storageSet(key, value){ if(!localSet(key, value)) state.storageOk = false; }
+
+async function loadAll(){
+  const [settings, records, ranks, dealers, hanchanConfirmed, finalScores, finalPoints, recordPlayers] = await Promise.all([
+    storageGet("mj-settings"), storageGet("mj-records"), storageGet("mj-ranks"), storageGet("mj-dealers"),
+    storageGet("mj-hanchan-confirmed"), storageGet("mj-final-scores"), storageGet("mj-final-points"),
+    storageGet("mj-record-players")
+  ]);
+  if(settings){
+    state.players = settings.players && settings.players.length===4 ? settings.players : DEFAULT_PLAYERS.slice();
+    state.playerRoster = settings.playerRoster || settings.usedNames || [];
+  }
+  if(!state.playerRoster.length) state.playerRoster = DEFAULT_PLAYERS.slice(); // 初回起動時は既定名をリストの初期値にする
+  if(records) state.records = records;
+  if(ranks) state.ranks = ranks;
+  if(dealers) state.dealers = dealers;
+  if(hanchanConfirmed) state.hanchanConfirmed = hanchanConfirmed;
+  if(finalScores) state.finalScores = finalScores;
+  if(finalPoints) state.finalPoints = finalPoints;
+  if(recordPlayers) state.recordPlayers = recordPlayers;
+  // resume where the user left off
+  if(state.records.length){
+    const last = state.records[state.records.length-1];
+    state.current.date = last.date || todayStr();
+    const pos = nextPositionFromRecord(last);
+    state.current.hanchanNo = pos.hanchanNo;
+    state.current.kyoku = pos.kyoku;
+    state.current.honba = pos.honba;
+  }else{
+    state.current.date = todayStr();
+    state.current.honba = 0;
+  }
+  state.loaded = true;
+  render();
+}
+
+function saveSettings(){ storageSet("mj-settings", {players: state.players, playerRoster: state.playerRoster}); }
+function saveRecords(){ storageSet("mj-records", state.records); }
+function saveRanks(){ storageSet("mj-ranks", state.ranks); }
+function saveDealers(){ storageSet("mj-dealers", state.dealers); }
+function saveHanchanConfirmed(){ storageSet("mj-hanchan-confirmed", state.hanchanConfirmed); }
+function saveFinalScores(){ storageSet("mj-final-scores", state.finalScores); }
+function saveFinalPoints(){ storageSet("mj-final-points", state.finalPoints); }
+function saveRecordPlayers(){ storageSet("mj-record-players", state.recordPlayers); }
+
+// その半荘（date_hanchanNo）の対局者名を返す。記録時点のスナップショットがあればそれを優先し
+// （設定タブでの後からの名前変更の影響を受けない）、まだ無い場合（新規入力中など）は現在の対局メンバーを使う。
+function namesForHanchan(date, hanchanNo){
+  const key = `${date}_${hanchanNo}`;
+  return state.recordPlayers[key] || state.players;
+}
+// レコードを保存する半荘にまだ名前スナップショットが無ければ、現在の対局メンバーで固定する。
+function ensureRecordPlayersSnapshot(date, hanchanNo){
+  const key = `${date}_${hanchanNo}`;
+  if(!state.recordPlayers[key]){
+    state.recordPlayers[key] = state.players.slice();
+    saveRecordPlayers();
+  }
+}
+
+// ---------- バックアップ（JSONファイルとして端末に保存／復元） ----------
+// バックアップ用データの組み立てを共通関数として切り出す。
+// ローカルへのJSONファイル書き出し（exportBackup）から使う。
+function buildBackupPayload(){
+  return {
+    app: "mahjong-stats-backup", version: 3, exportedAt: new Date().toISOString(),
+    players: state.players, playerRoster: state.playerRoster,
+    records: state.records, ranks: state.ranks, dealers: state.dealers,
+    hanchanConfirmed: state.hanchanConfirmed, finalScores: state.finalScores, finalPoints: state.finalPoints,
+    recordPlayers: state.recordPlayers,
+  };
+}
+function exportBackup(){
+  const backup = buildBackupPayload();
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "backup.json"; a.click();
+  URL.revokeObjectURL(url);
+  toast("バックアップを保存しました");
+}
+function importBackupFile(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{ processBackupText(reader.result); };
+  reader.readAsText(file, "utf-8");
+}
+// バックアップJSONのテキストそのものを受け取って復元する共通処理（ファイル選択・サーバー読み込みの両方から呼ばれる）。
+function processBackupText(rawText){
+  let data;
+  try{ data = JSON.parse(rawText); }catch(e){ toast("ファイルを読み込めませんでした"); return; }
+  if(!data || !Array.isArray(data.records)){ toast("バックアップ形式が正しくありません"); return; }
+  if(!confirm("現在の端末のデータを、このバックアップの内容で上書きします。よろしいですか？")) return;
+  state.players = (data.players && data.players.length===4) ? data.players : state.players;
+  state.playerRoster = data.playerRoster || data.usedNames || state.playerRoster;
+  state.records = data.records || [];
+  state.ranks = data.ranks || {};
+  state.dealers = data.dealers || {};
+  state.hanchanConfirmed = data.hanchanConfirmed || {};
+  state.finalScores = data.finalScores || {};
+  state.finalPoints = data.finalPoints || {};
+  state.recordPlayers = data.recordPlayers || {};
+  saveSettings(); saveRecords(); saveRanks(); saveDealers(); saveHanchanConfirmed();
+  saveFinalScores(); saveFinalPoints(); saveRecordPlayers();
+  render();
+  toast("バックアップを復元しました");
+}
+// サイト上のデータ（hanchan.csv／backup.json）を読み込む前にパスワードを確認する共通処理。
+// キャンセル時は何も表示せず、不一致時のみエラーを通知する。
+function checkSitePassword(){
+  const pw = window.prompt("サイト上のデータを読み込みます。パスワードを入力してください");
+  if(pw === null) return false;
+  if(pw !== "masu"){ toast("パスワードが違います"); return false; }
+  return true;
+}
+// サイト上（同じNetlifyサイトのルート）に置かれているbackup.jsonをfetchで取得して復元する。
+async function importBackupFromServer(){
+  if(!checkSitePassword()) return;
+  try{
+    const res = await fetch("./backup.json", { cache: "no-store" });
+    if(!res.ok){ toast(`サーバーのバックアップを取得できませんでした（${res.status}）`); return; }
+    const text = await res.text();
+    processBackupText(text);
+  }catch(e){
+    toast("サーバーのバックアップを取得できませんでした（通信エラー）");
+  }
+}
+
+// この端末（ブラウザ）に保存されている、このアプリのデータ（mj-stats:接頭辞のキー）をすべて削除する。
+// 他サイトのlocalStorageには一切触れない。削除後はページをリロードし、まっさらな状態（このHTMLに
+// サンプルデータが埋め込まれている共有版であれば、そのサンプルが自動で入り直した状態）で再起動する。
+function resetAllData(){
+  if(!confirm("この端末に保存されている記録・設定をすべて削除します。元に戻せません。\n（先に「バックアップをダウンロード」で保存することをおすすめします）\n\n本当に削除しますか？")) return;
+  Object.keys(localStorage)
+    .filter(k => k.startsWith(LOCAL_KEY_PREFIX))
+    .forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+
+// 座席（東家→南家→西家→北家の順で、誰が座っているかのプレイヤーindex配列）は
+// 半荘ごとに全員入れ替わりうるため、半荘単位(date_hanchanNo)で個別に保持する。
+// dealers[key] は本来 [東家idx, 南家idx, 西家idx, 北家idx] の配列。
+// （旧バージョンでは起家indexの数値のみを保持していたため、その場合は単純ローテーションへフォールバックする）
+function getSeatOrder(date, hanchanNo){
+  const v = state.dealers[`${date}_${hanchanNo}`];
+  if(Array.isArray(v) && v.length===4) return v;
+  const start = (typeof v === "number") ? v : 0;
+  return [0,1,2,3].map(i=>(start+i)%4);
+}
+function setSeatOrder(date, hanchanNo, order){
+  state.dealers[`${date}_${hanchanNo}`] = order;
+  saveDealers();
+}
+
+// ---------- helpers ----------
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>t.classList.remove("show"), 1400);
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function fmtPct(n){ return isFinite(n) ? (n*100).toFixed(1)+"%" : "0.0%"; }
+function fmtAvg(n){ return isFinite(n) ? n.toFixed(2) : "0.00"; }
+
+// Mリーグ公式戦ルール（集計特化版）に基づく次局の位置（半荘No・局・本場）を求める。
+// ・チョンボ　　　　　　　　　　　　　　→ その局はやり直し。同一局・同一積み場のまま（積み場は増えない）
+// ・親のアガリ／親テンパイでの流局　　　→ 同一局が連荘、積み場+1（南4ならそのまま南4-n本場が続く＝延長）
+// ・南4で子のアガリ、または親ノーテン流局 → 南4局は半荘の最終局のため、半荘終了。次の半荘No.の東1(積み場0)へ
+// ・南4以外で子のアガリ　　　　　　　　　→ 次局へ進行、積み場は消滅（0にリセット）
+// ・南4以外で親ノーテンでの流局　　　　　→ 次局へ進行するが、積み場は+1のまま維持
+function nextPositionFromRecord(rec){
+  const idx = KYOKU_LIST.indexOf(rec.kyoku);
+  const honba = rec.honba || 0;
+  if(rec.resultType === "resultonly"){
+    // 局の詳細を入力せず最終結果のみを記録した半荘は、そのまま次の半荘（東1・積み場0）へ進む
+    return {hanchanNo: rec.hanchanNo + 1, kyoku: 0, honba: 0};
+  }
+  if(rec.resultType === "chombo"){
+    return {hanchanNo: rec.hanchanNo, kyoku: idx, honba: honba};
+  }
+  if(rec.resultType === "renchan"){
+    return {hanchanNo: rec.hanchanNo, kyoku: idx, honba: honba + 1};
+  }
+  if(idx === 7){
+    return {hanchanNo: rec.hanchanNo + 1, kyoku: 0, honba: 0};
+  }
+  if(rec.resultType === "ryuukyoku"){
+    return {hanchanNo: rec.hanchanNo, kyoku: idx + 1, honba: honba + 1};
+  }
+  return {hanchanNo: rec.hanchanNo, kyoku: idx + 1, honba: 0};
+}
+
+// find where to resume input for a given date (after the last record on that date, across any hanchanNo)
+function resumePositionForDate(date){
+  const recs = state.records.filter(r=>r.date===date);
+  if(!recs.length) return {hanchanNo:1, kyoku:0, honba:0};
+  const last = recs[recs.length-1];
+  return nextPositionFromRecord(last);
+}
+
+// find where to resume input for a specific date+半荘No.（「日付＋半荘No.」でユニークな組として扱う）
+function resumePositionForDateHanchan(date, hanchanNo){
+  const recs = state.records.filter(r=>r.date===date && r.hanchanNo===hanchanNo);
+  if(!recs.length) return {hanchanNo, kyoku:0, honba:0};
+  const last = recs[recs.length-1];
+  const pos = nextPositionFromRecord(last);
+  if(pos.hanchanNo === hanchanNo) return pos;
+  // 最終局(南4)まで入力済みでこの半荘はすでに終了している → 南4の状態をそのまま表示（参照用）
+  return {hanchanNo, kyoku: 7, honba: last.honba || 0};
+}
+
+// distinct date+hanchanNo groups, sorted chronologically
+function hanchanGroups(){
+  const map = new Map();
+  state.records.forEach(r=>{
+    const key = `${r.date}_${r.hanchanNo}`;
+    if(!map.has(key)) map.set(key, {date:r.date, hanchanNo:r.hanchanNo});
+  });
+  Object.keys(state.ranks).forEach(k=>{
+    if(!map.has(k) && state.ranks[k]){
+      const idx = k.lastIndexOf("_");
+      const date = k.slice(0,idx), hanchanNo = Number(k.slice(idx+1));
+      if(date) map.set(k, {date, hanchanNo});
+    }
+  });
+  return Array.from(map.values()).sort((a,b)=>{
+    if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.hanchanNo - b.hanchanNo;
+  });
+}
+
+function computeHanchanTotals(date, hanchanNo){
+  const totals = [0,1,2,3].map(()=>({riichi:0, fuuro:0, tsumo:0, ron:0, houjuu:0, chombo:0}));
+  state.records.filter(r=>r.date===date && r.hanchanNo===hanchanNo).forEach(r=>{
+    r.stats.forEach((s,i)=>{
+      totals[i].riichi += s[K_RIICHI]; totals[i].fuuro += s[K_FUURO]||0; totals[i].tsumo += s[K_TSUMO];
+      totals[i].ron += s[K_RON]; totals[i].houjuu += s[K_HOUJUU]; totals[i].chombo += s[K_CHOMBO]||0;
+    });
+  });
+  return totals;
+}
+
+// 総局数（その半荘で記録された局の数）と流局数（誰もアガらなかった＝ツモ・ロンが誰にも付いていない局の数）を数える。
+// 「連荘」ボタンは親の和了と親テンパイ流局の両方で使われるため、resultTypeではなく実際のツモ/ロンの有無で流局を判定する。
+// チョンボは「その局のやり直し」であり完了した1局ではないため、総局数・流局数のどちらにも含めない。
+// 「結果のみ入力」は局の詳細を伴わない記録のため、こちらも総局数・流局数のどちらにも含めない。
+function computeHanchanKyokuStats(date, hanchanNo){
+  const recs = state.records.filter(r=>r.date===date && r.hanchanNo===hanchanNo && r.resultType!=="chombo" && r.resultType!=="resultonly");
+  const total = recs.length;
+  const ryuukyoku = recs.filter(r=>!r.stats.some(s=>s[K_TSUMO]===1 || s[K_RON]===1)).length;
+  return {total, ryuukyoku};
+}
+
+// 4人分の最終持ち点（素点）から順位を算出する（持ち点が高い順に1〜4位）。
+// 4人全員分が入力されていない場合は null を返す。
+// 同点の場合は同着（同じ順位番号）とする（例：2位が2人いる場合は 1,2,2,4）。
+function computeRanksFromScores(scores){
+  if(!scores || scores.length!==4 || scores.some(s=>s===null || s===undefined || s==="" || isNaN(s))) return null;
+  return scores.map((s,i)=> 1 + scores.filter(s2=>s2>s).length);
+}
+
+// 4人分の最終持ち点（素点）の合計が配給原点の合計(100,000点)と一致しているか確認する。
+// 一致していれば null、していなければ差分（100,000-合計）を返す。
+function scoreSumDiff(scores){
+  if(!scores || scores.length!==4 || scores.some(s=>s===null || s===undefined || s==="" || isNaN(s))) return null;
+  const sum = scores.reduce((a,b)=>a+Number(b),0);
+  return sum === 100000 ? null : (100000 - sum);
+}
+
+// 配給原点25,000点・精算基準点(オカ)30,000点・ウマ(+50,000/+10,000/▲10,000/▲30,000)を用いて、
+// 4人分の素点から最終スコア(pt)を自動算出する（Mリーグ公式戦ルール・集計特化版 第2項準拠）。
+// 同着（同点）の場合は該当するウマを均等に分配し、割り切れない端数は起家（東家）に近い座席の対局者から優先的に多く取得する。
+const UMA_TABLE = [50000, 10000, -10000, -30000];
+function computeFinalPoints(scores, seatOrder){
+  if(!scores || scores.some(s=>s===null || s===undefined || s==="" || isNaN(s))) return null;
+  const idxs = [0,1,2,3];
+  const sorted = idxs.slice().sort((a,b)=> scores[b]-scores[a]);
+  const umaYen = [0,0,0,0];
+  let pos = 0;
+  while(pos < 4){
+    let end = pos;
+    while(end+1 < 4 && scores[sorted[end+1]] === scores[sorted[pos]]) end++;
+    const group = sorted.slice(pos, end+1);
+    const size = group.length;
+    const sum = UMA_TABLE.slice(pos, end+1).reduce((a,b)=>a+b, 0);
+    const base = Math.floor(sum / size);
+    const remainder = sum - base * size; // 0 <= remainder < size
+    // 起家（座席0＝東家）に近い順に端数を多く配分する
+    const bySeatProximity = group.slice().sort((a,b)=>{
+      const da = seatOrder.indexOf(a), db = seatOrder.indexOf(b);
+      return da - db;
+    });
+    bySeatProximity.forEach((playerIdx, k)=>{ umaYen[playerIdx] = base + (k < remainder ? 1 : 0); });
+    pos = end + 1;
+  }
+  return scores.map((s,i)=> ((s - 30000) + umaYen[i]) / 1000);
+}
+function fmtPt(n){
+  if(n===null || n===undefined || isNaN(n)) return "-";
+  const v = Math.round(n*10)/10;
+  return (v>0?"+":"") + v.toFixed(1);
+}
+
+// 4人分の最終持ち点(素点)から、順位・得点pt・確定フラグをまとめて確定させる。
+// 半荘集計タブの「順位を確定する」ボタンと、CSVインポート（過去大会データの一括取り込み）の両方から共通で使う。
+// 呼び出し前に state.finalScores[key] を設定しておくこと。ok:false の場合は状態を一切変更しない。
+function tryConfirmHanchan(date, hanchanNo){
+  const key = `${date}_${hanchanNo}`;
+  const scores = state.finalScores[key] || [null,null,null,null];
+  const computedRanks = computeRanksFromScores(scores);
+  if(!computedRanks) return {ok:false, reason:"4人全員の最終持ち点を入力してください"};
+  const diff = scoreSumDiff(scores);
+  if(diff !== null){
+    const sum = scores.reduce((a,b)=>a+Number(b),0);
+    return {ok:false, reason:`合計が100,000点になっていません（現在の合計:${sum}点／差分:${diff>0?'+':''}${diff}点）`};
+  }
+  const seatOrder = getSeatOrder(date, hanchanNo);
+  const basePoints = computeFinalPoints(scores, seatOrder);
+  const chomboPt = computeHanchanChomboPt(date, hanchanNo);
+  state.ranks[key] = computedRanks;
+  state.finalPoints[key] = basePoints.map((p,i)=> p + chomboPt[i]);
+  state.hanchanConfirmed[key] = true;
+  return {ok:true};
+}
+
+// チョンボの罰則（本人-15pt、他3名+5ptずつ・ゼロサム）を、指定した半荘の全記録から集計する。
+// 半荘集計タブでの最終スコア(得点pt)算出、および統計タブでの反則収支ptの両方から共通して使う。
+function computeHanchanChomboPt(date, hanchanNo){
+  const pt = [0,0,0,0];
+  state.records.filter(r=>r.date===date && r.hanchanNo===hanchanNo).forEach(r=>{
+    r.stats.forEach((s,i)=>{
+      if(s[K_CHOMBO]){
+        pt[i] -= 15;
+        for(let j=0;j<4;j++){ if(j!==i) pt[j] += 5; }
+      }
+    });
+  });
+  return pt;
+}
+
+// 統計は「現在のプレイヤーindex(0-3)」単位ではなく「プレイヤー名」単位で集計する。
+// これにより、設定タブで対局メンバーの割り当てを変えても、過去の記録は記録当時の名前（recordPlayersのスナップショット）に
+// 正しく紐づいたまま集計され、同じ人物が異なるセッション・異なる座席indexで対局していても正しく合算される。
+function computeOverallStats(range){
+  const inRange = (date)=> !range || ((!range.from || date>=range.from) && (!range.to || date<=range.to));
+  const byName = new Map();
+  function ensure(name){
+    const key = name || "";
+    if(!byName.has(key)){
+      byName.set(key, {
+        name: key,
+        riichi:0, fuuro:0, tsumo:0, ron:0, houjuu:0, riichiAgari:0, riichiHoujuu:0, fuuroAgari:0, fuuroHoujuu:0,
+        chombo:0, chomboPt:0, kyokuCount:0, ranks:[], scores:[], pts:[]
+      });
+    }
+    return byName.get(key);
+  }
+  // 登録済みのプレイヤー名リストは、まだ対局実績が無くても一覧に表示できるよう先に登録しておく
+  state.playerRoster.forEach(n=>{ if(n) ensure(n); });
+
+  state.records.forEach(r=>{
+    if(!inRange(r.date)) return;
+    const names = namesForHanchan(r.date, r.hanchanNo);
+    const isChomboResult = r.resultType === "chombo";
+    const isResultOnly = r.resultType === "resultonly"; // 結果のみ入力（局の詳細なし）は打点系スタッツの対象外
+    r.stats.forEach((s,i)=>{
+      const name = names[i] || `P${i+1}`;
+      const p = ensure(name);
+      const ri=s[K_RIICHI], fu=s[K_FUURO]||0, tsu=s[K_TSUMO], ron=s[K_RON], ho=s[K_HOUJUU];
+      p.riichi += ri; p.fuuro += fu; p.tsumo += tsu; p.ron += ron; p.houjuu += ho;
+      if(ri && (tsu || ron)) p.riichiAgari += 1;
+      if(ri && ho) p.riichiHoujuu += 1;
+      if(fu && (tsu || ron)) p.fuuroAgari += 1;
+      if(fu && ho) p.fuuroHoujuu += 1;
+      if(!isChomboResult && !isResultOnly) p.kyokuCount += 1; // チョンボ・結果のみ入力は率の分母から除く
+      if(s[K_CHOMBO]){
+        // チョンボは個人トータルポイントから15pt減算、他3名に5ptずつ加算（ゼロサム）
+        p.chombo += 1;
+        p.chomboPt -= 15;
+        for(let j=0;j<4;j++){ if(j!==i) ensure(names[j] || `P${j+1}`).chomboPt += 5; }
+      }
+    });
+  });
+
+  Object.entries(state.ranks).forEach(([key,arr])=>{
+    if(!arr || !state.hanchanConfirmed[key]) return; // 「確定」済みの半荘のみ着順・スコア集計に含める
+    const idx = key.lastIndexOf("_");
+    const date = key.slice(0,idx), hanchanNo = Number(key.slice(idx+1));
+    if(!inRange(date)) return;
+    const names = namesForHanchan(date, hanchanNo);
+    const scores = state.finalScores[key] || [null,null,null,null];
+    const pts = state.finalPoints[key] || [null,null,null,null];
+    arr.forEach((rk,i)=>{
+      if(!rk) return;
+      const p = ensure(names[i] || `P${i+1}`);
+      p.ranks.push(rk);
+      if(scores[i]!==null && scores[i]!==undefined && !isNaN(scores[i])) p.scores.push(scores[i]);
+      if(pts[i]!==null && pts[i]!==undefined && !isNaN(pts[i])) p.pts.push(pts[i]);
+    });
+  });
+
+  return Array.from(byName.values()).map(p=>{
+    const n = p.ranks.length;
+    const avg = n ? p.ranks.reduce((a,b)=>a+b,0)/n : 0;
+    const rate = (k)=> n ? p.ranks.filter(x=>x===k).length/n : 0;
+    const agari = p.tsumo + p.ron;
+    const scoreN = p.scores.length;
+    return {
+      ...p,
+      agari,
+      hanchanRankedCount: n,
+      avgRank: avg,
+      top: rate(1), second: rate(2), third: rate(3), last: rate(4),
+      lastAvoidRate: n ? 1 - rate(4) : 0,
+      cumulativePt: p.pts.reduce((a,b)=>a+b,0),
+      avgScore: scoreN ? p.scores.reduce((a,b)=>a+b,0)/scoreN : 0,
+      maxScore: scoreN ? Math.max(...p.scores) : 0,
+      hakoRate: scoreN ? p.scores.filter(s=>s<0).length/scoreN : 0,
+      riichiRate: p.kyokuCount ? p.riichi/p.kyokuCount : 0,
+      fuuroRate: p.kyokuCount ? p.fuuro/p.kyokuCount : 0,
+      agariRate: p.kyokuCount ? agari/p.kyokuCount : 0,
+      houjuuRate: p.kyokuCount ? p.houjuu/p.kyokuCount : 0,
+      riichiAgariRate: p.riichi ? p.riichiAgari/p.riichi : 0,
+      riichiHoujuuRate: p.riichi ? p.riichiHoujuu/p.riichi : 0,
+      fuuroAgariRate: p.fuuro ? p.fuuroAgari/p.fuuro : 0,
+      fuuroHoujuuRate: p.fuuro ? p.fuuroHoujuu/p.fuuro : 0,
+    };
+  });
+}
+
+// ---- 通算ランキング（累計得点pt順・期間指定つき） ----
+// CSV取り込みによる「結果のみ」半荘も含め、確定済み半荘の順位・スコアがある全員を対象にする
+// （局入力の記録が無いプレイヤーでも、半荘結果CSVの取り込みだけでここに表示される）。
+// 期間指定（state.rankingRange）で絞り込んだ範囲の成績のみを集計する。
+function renderRankingTab(){
+  const range = state.rankingRange;
+  const rangedStats = computeOverallStats(range);
+  const ranked = rangedStats.filter(s=>s.hanchanRankedCount>0).slice().sort((a,b)=>b.cumulativePt-a.cumulativePt);
+  const rows = ranked.map((s,i)=>{
+    const rankNo = i+1;
+    return `
+    <tr>
+      <td class="rank-cell"><span class="rank-chip on-${Math.min(rankNo,4)}" style="pointer-events:none">${rankNo}</span></td>
+      <td style="text-align:left; font-weight:800; white-space:nowrap;">${escapeHtml(s.name)}</td>
+      <td class="score-cell ${s.cumulativePt<0?'neg':''}">${fmtPt(s.cumulativePt)}</td>
+      <td>${s.hanchanRankedCount}</td>
+    </tr>`;
+  }).join("");
+  const body = ranked.length ? `
+      <div style="overflow-x:auto;">
+        <table class="stat-mini-table ranking-table-lg">
+          <tr><th></th><th style="text-align:left">選手</th><th>累計pt</th><th>半荘数</th></tr>
+          ${rows}
+        </table>
+      </div>` : `<div class="empty">対象期間に確定済みの半荘がありません</div>`;
+  return `
+    <div class="card">
+      <h2>通算ランキング <span class="n-sub">累計得点pt順</span></h2>
+      <div class="graph-range">
+        <input type="date" id="rankingFrom" value="${range.from}">
+        <span class="n-sub">〜</span>
+        <input type="date" id="rankingTo" value="${range.to}">
+      </div>
+      ${body}
+    </div>`;
+}
+
+// ---------- render ----------
+function render(){
+  const app = document.getElementById("app");
+  if(!state.loaded){ app.innerHTML = `<div class="empty">読み込み中...</div>`; return; }
+  app.innerHTML = `
+    <header class="topbar">
+      <span class="tile">🀄</span>
+      <div><h1>麻雀スタッツ（スマホ入力）</h1><div class="sub">${tabTitle()}</div></div>
+    </header>
+    <main class="tab-${state.tab}">${renderTab()}</main>
+    <nav class="tabbar">
+      ${tabBtn("input","✏️","局入力")}
+      ${tabBtn("hanchan","📋","半荘集計")}
+      ${tabBtn("ranking","🏆","ランキング")}
+      ${tabBtn("settings","⚙️","設定")}
+    </nav>
+  `;
+  bindEvents();
+  if(state.tab==="hanchan" && state.scrollToHanchanKey){
+    const key = state.scrollToHanchanKey;
+    state.scrollToHanchanKey = null;
+    const el = document.getElementById(`hanchan-${key}`);
+    if(el) requestAnimationFrame(()=>el.scrollIntoView({behavior:"smooth", block:"start"}));
+  }
+}
+function tabTitle(){
+  return {input:"", hanchan:"半荘ごとの順位と集計", ranking:"累計得点pt順の通算成績", settings:"プレイヤー名を登録"}[state.tab];
+}
+function tabBtn(id, ic, label){
+  return `<button data-tab="${id}" class="${state.tab===id?'active':''}"><span class="ic">${ic}</span>${label}</button>`;
+}
+
+function renderTab(){
+  if(state.tab==="input") return renderInput();
+  if(state.tab==="hanchan") return renderHanchanTab();
+  if(state.tab==="ranking") return renderRankingTab();
+  if(state.tab==="settings") return renderSettings();
+}
+
+function renderInput(){
+  const cur = state.current;
+  const seatOrder = getSeatOrder(cur.date, cur.hanchanNo); // [東家idx, 南家idx, 西家idx, 北家idx]
+  const dealerIndex = seatOrder[cur.kyoku % 4]; // その局の親のプレイヤーindex
+  const seatFields = SEAT_LABELS.map((label,seatI)=>{
+    const opts = state.players.map((name,pi)=>
+      `<option value="${pi}" ${seatOrder[seatI]===pi?'selected':''}>${escapeHtml(name||"P"+(pi+1))}</option>`).join("");
+    return `<div class="seat-field"><label>${label}</label><select data-seat="${seatI}">${opts}</select></div>`;
+  }).join("");
+  const kyokuBtns = KYOKU_LIST.map((k,i)=>
+    `<button data-kyoku="${i}" class="${i===cur.kyoku?'active':''}">${k}</button>`).join("");
+  const playerRows = state.players.map((name,i)=>{
+    const t = cur.toggles[i]; // [riichi, fuuro, tsumo, ron, houjuu, chombo]
+    const badge = i===dealerIndex ? '<span class="dealer-badge">親</span>' : '';
+    return `
+      <div class="player-row">
+        <div class="player-name">${escapeHtml(name || "プレイヤー"+(i+1))}${badge}</div>
+        <div class="toggle-grid toggle-grid-2">
+          <button class="toggle-btn riichi ${t[K_RIICHI]?'on':''}" data-p="${i}" data-k="${K_RIICHI}">リーチ</button>
+          <button class="toggle-btn fuuro ${t[K_FUURO]?'on':''}" data-p="${i}" data-k="${K_FUURO}">副露</button>
+        </div>
+        <div class="toggle-grid toggle-grid-3" style="margin-top:6px;">
+          <button class="toggle-btn tsumo ${t[K_TSUMO]?'on':''}" data-p="${i}" data-k="${K_TSUMO}">ツモ</button>
+          <button class="toggle-btn ron ${t[K_RON]?'on':''}" data-p="${i}" data-k="${K_RON}">ロン</button>
+          <button class="toggle-btn houjuu ${t[K_HOUJUU]?'on':''}" data-p="${i}" data-k="${K_HOUJUU}">放銃</button>
+        </div>
+        <label class="chombo-check">
+          <input type="checkbox" data-p-chombo="${i}" ${t[K_CHOMBO]?'checked':''}> チョンボ
+        </label>
+      </div>`;
+  }).join("");
+
+  const recent = state.records.slice(-5).reverse().map(r=>{
+    if(r.resultType === "resultonly"){
+      const honbaTag = r.honba ? `${r.honba}本場` : "";
+      const tag = `${fmtShortDate(r.date)} 半荘${r.hanchanNo}${honbaTag?"・"+honbaTag:""}・結果のみ`;
+      return `<div class="history-item">
+        <span class="tag">${tag}</span>
+        <span class="desc">局の詳細を入力せず、最終持ち点のみで記録</span>
+        <button class="del" data-del="${r.id}">×</button>
+      </div>`;
+    }
+    const names = namesForHanchan(r.date, r.hanchanNo);
+    const desc = r.stats.map((s,i)=>{
+      const tags=[]; if(s[K_RIICHI])tags.push("リ"); if(s[K_FUURO])tags.push("副"); if(s[K_TSUMO])tags.push("ツ"); if(s[K_RON])tags.push("ロ"); if(s[K_HOUJUU])tags.push("放"); if(s[K_CHOMBO])tags.push("チョ");
+      return tags.length? `${names[i]}:${tags.join("")}` : null;
+    }).filter(Boolean).join(" / ") || "変化なし";
+    const short = RESULT_SHORT[r.resultType];
+    const honbaTag = r.honba ? `${r.honba}本場` : "";
+    const tag = `${fmtShortDate(r.date)} ${r.hanchanNo}-${r.kyoku}${honbaTag?"・"+honbaTag:""}${short?"・"+short:""}`;
+    return `<div class="history-item">
+      <span class="tag">${tag}</span>
+      <span class="desc">${escapeHtml(desc)}</span>
+      <button class="edit" data-edit="${r.id}">✎</button>
+      <button class="del" data-del="${r.id}">×</button>
+    </div>`;
+  }).join("") || `<div class="empty">まだ入力がありません</div>`;
+
+  const dealerAgari = cur.toggles[dealerIndex][K_TSUMO]===1 || cur.toggles[dealerIndex][K_RON]===1;
+  const nonDealerAgari = cur.toggles.some((t,i)=> i!==dealerIndex && (t[K_TSUMO]===1 || t[K_RON]===1));
+  const anyAgari = dealerAgari || nonDealerAgari;
+  const renchanDisabled = nonDealerAgari; // 子のアガリが発生している局は連荘にできない
+  const nextDisabled = dealerAgari;       // 親のアガリが発生している局は「次の局へ」にできない（連荘を選ぶ）
+  const nextResultType = anyAgari ? "next" : "ryuukyoku"; // 子のアガリが無ければ、この局は「流局」として扱う
+  const nextSmallLabel = anyAgari ? "子のアガリ" : "";
+  const anyChombo = cur.toggles.some(t=>t[K_CHOMBO]===1); // チョンボが誰も発生していない場合はチョンボボタンを選択できない
+
+  return `
+    ${state.editingId ? `
+    <div class="edit-banner">
+      <span>✎ 編集中：${fmtShortDate(cur.date)} ${cur.hanchanNo}-${KYOKU_LIST[cur.kyoku]}${cur.honba?'・'+cur.honba+'本場':''}</span>
+      <button type="button" id="cancelEditBtn">キャンセル</button>
+    </div>` : ``}
+    <div class="card">
+      <div class="row-between">
+        <h2>日付</h2>
+        <div class="date-stepper">
+          <button type="button" data-day="-1">−</button>
+          <input type="date" id="dateInput" value="${cur.date}">
+          <button type="button" data-day="1">＋</button>
+        </div>
+      </div>
+      <div class="row-between" style="margin-top:14px">
+        <h2>半荘 <span class="n">No.</span></h2>
+        <div class="hanchan-stepper">
+          <button data-hanchan="-1">−</button>
+          <div class="num">${cur.hanchanNo}</div>
+          <button data-hanchan="1">＋</button>
+        </div>
+      </div>
+      <div class="row-between" style="margin-top:14px">
+        <h2>座席</h2>
+        <button type="button" class="shuffle-btn" id="shuffleSeats">🔀 シャッフル</button>
+      </div>
+      <div class="seat-grid">${seatFields}</div>
+      <h2 style="margin-top:14px">局</h2>
+      <div class="kyoku-grid">${kyokuBtns}</div>
+      <div class="row-between" style="margin-top:14px">
+        <h2>積み場</h2>
+        <div class="hanchan-stepper">
+          <button data-honba="-1">−</button>
+          <div class="num -honba">${cur.honba}本場</div>
+          <button data-honba="1">＋</button>
+        </div>
+      </div>
+      ${state.editingId ? "" : `
+      <button type="button" class="btn-ghost" id="resultOnlyBtn" style="margin-top:12px;">📋 結果のみ入力する（局の詳細は省略）</button>
+      `}
+    </div>
+
+    <div class="card">
+      <h2>対局者</h2>
+      ${playerRows}
+    </div>
+
+    <div class="save-bar">
+      <div class="save-grid">
+        <button class="btn-save btn-save-renchan" data-result="renchan" ${renchanDisabled?'disabled':''}>${state.editingId?'更新：':''}連荘</button>
+        <button class="btn-save btn-save-next" data-result="${nextResultType}" ${nextDisabled?'disabled':''}>${state.editingId?'更新：':''}次の局へ${nextSmallLabel?`<small>${nextSmallLabel}</small>`:''}</button>
+      </div>
+      <button class="btn-save-chombo-small" data-result="chombo" ${anyChombo?'':'disabled'}>${state.editingId?'更新：':''}チョンボ</button>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2>直近の入力</h2>
+      ${recent}
+    </div>
+  `;
+}
+
+// プレイヤーindex(0-3)から座席ラベル（東家/南家/西家/北家）を求める
+function seatLabelForPlayer(seatOrder, playerIdx){
+  const pos = seatOrder.indexOf(playerIdx);
+  return pos===-1 ? "-" : SEAT_LABELS[pos];
+}
+
+function renderHanchanTab(){
+  const allGroups = hanchanGroups();
+  if(!allGroups.length) return `<div class="card"><div class="empty">局入力タブでデータを入力すると、ここに半荘ごとの集計が表示されます。</div></div>`;
+  const filter = state.hanchanMonthFilter;
+  const groups = filter ? allGroups.filter(g=>g.date.slice(0,7)===filter) : allGroups;
+  const filterBar = `
+    <div class="card" style="padding:12px 14px;">
+      <div class="graph-range" style="margin-bottom:0;">
+        <span class="n-sub" style="font-weight:800; color:var(--ink);">年月で絞り込み</span>
+        <input type="month" id="hanchanMonthFilter" value="${filter}">
+        ${filter ? `<button type="button" class="chip" id="hanchanMonthClear">すべて表示</button>` : ""}
+      </div>
+    </div>`;
+  if(filter && !groups.length){
+    return filterBar + `<div class="card"><div class="empty">${filter.slice(0,4)}年${filter.slice(5,7)}月に該当する半荘がありません</div></div>`;
+  }
+  return filterBar + groups.map(({date,hanchanNo})=>{
+    const key = `${date}_${hanchanNo}`;
+    const names = namesForHanchan(date, hanchanNo);
+    const totals = computeHanchanTotals(date, hanchanNo);
+    const kyokuStats = computeHanchanKyokuStats(date, hanchanNo);
+    const chomboPt = computeHanchanChomboPt(date, hanchanNo);
+    const ranks = state.ranks[key] || [null,null,null,null];
+    const scores = state.finalScores[key] || [null,null,null,null];
+    const points = state.finalPoints[key] || [null,null,null,null];
+    const confirmed = !!state.hanchanConfirmed[key];
+    const seatOrder = getSeatOrder(date, hanchanNo);
+    const isResultOnlyHanchan = state.records.some(r=>r.date===date && r.hanchanNo===hanchanNo && r.resultType==="resultonly");
+    // 結果のみ入力の半荘は座席データを記録・保持しないため、座席表示も常に「-」とする（seatLabelForPlayerを呼ばない）
+    const seatLabel = (i)=> isResultOnlyHanchan ? "-" : seatLabelForPlayer(seatOrder, i);
+    const headMeta = `<span class="n">半荘No.${hanchanNo}</span> <span class="n-sub">${isResultOnlyHanchan ? "結果のみ入力（局の詳細なし）" : `総局数${kyokuStats.total} ・ 流局数${kyokuStats.ryuukyoku}`}</span>`;
+
+    if(confirmed){
+      // ---- 確定済み：順位の昇順（1着→4着、同着は同じ順位）に並べ替えて表示 ----
+      // 最小化⇔展開：最小化時はヘッダー情報（見出し）のみ表示し、展開時に集計テーブルを表示する。デフォルトは最小化。
+      const collapsed = state.hanchanCollapsed[key] !== false;
+      const order = [0,1,2,3].sort((a,b)=>(ranks[a]||9)-(ranks[b]||9) || a-b);
+      const rows = order.map(i=>{
+        const name = names[i];
+        const score = scores[i];
+        const pt = points[i];
+        return `
+        <tr>
+          <td class="rank-cell"><span class="rank-chip on-${ranks[i]}" style="pointer-events:none">${ranks[i]||"-"}</span></td>
+          <td style="text-align:left; font-weight:800">${escapeHtml(name||"P"+(i+1))}${chomboMark(totals[i].chombo)}</td>
+          <td class="n-sub">${seatLabel(i)}</td>
+          <td class="score-cell ${score<0?'neg':''}">${score===null||score===undefined?"-":score.toLocaleString()}</td>
+          <td class="score-cell ${pt<0?'neg':''}">${fmtPt(pt)}</td>
+          <td>${totals[i].riichi}</td><td>${totals[i].fuuro}</td><td>${totals[i].tsumo}</td><td>${totals[i].ron}</td><td>${totals[i].houjuu}</td>
+        </tr>`;
+      }).join("");
+      return `
+      <div class="card" id="hanchan-${key}">
+        <div class="row-between" data-toggle-hanchan-collapse="${key}" style="cursor:pointer;">
+          <h2 style="margin:0">${fmtDate(date)} ${headMeta}</h2>
+          <span class="n-sub" style="font-size:13px;">${collapsed?'▶':'▼'}</span>
+        </div>
+        ${collapsed ? "" : `
+        <div class="row-between" style="margin-top:8px;">
+          <div></div>
+          <div style="display:flex; gap:6px;">
+            <button class="chip" data-edit-hanchan="${key}" style="color:var(--primary); font-weight:800; border-color:var(--primary);">✎ 編集</button>
+            <button class="chip" data-delete-hanchan="${key}" style="color:var(--houjuu); font-weight:800; border-color:var(--houjuu);">🗑 削除</button>
+          </div>
+        </div>
+        <table class="stat-mini-table" style="margin-top:10px;">
+          <tr><th></th><th style="text-align:left">選手</th><th>座席</th><th>持ち点</th><th>得点pt</th><th>リーチ</th><th>副露</th><th>ツモ</th><th>ロン</th><th>放銃</th></tr>
+          ${rows}
+        </table>
+        `}
+      </div>`;
+    }
+
+    // ---- 編集中：最終持ち点(素点)を入力する段階（順位・得点ptは素点＋チョンボ罰則から自動算出） ----
+    const recordList = renderHanchanRecordList(date, hanchanNo, names);
+    const previewRanks = computeRanksFromScores(scores) || [null,null,null,null];
+    const previewBasePoints = computeFinalPoints(scores, seatOrder);
+    const previewPoints = previewBasePoints ? previewBasePoints.map((p,i)=>p+chomboPt[i]) : null;
+    const diff = scoreSumDiff(scores);
+    const sumNow = scores.every(s=>s!==null && s!==undefined && s!=="" && !isNaN(s)) ? scores.reduce((a,b)=>a+Number(b),0) : null;
+    const rows = [0,1,2,3].map(i=>`
+      <tr>
+        <td style="text-align:left; font-weight:800">${escapeHtml(names[i]||"P"+(i+1))}${chomboMark(totals[i].chombo)}</td>
+        <td class="n-sub">${seatLabel(i)}</td>
+        <td>${totals[i].riichi}</td><td>${totals[i].fuuro}</td><td>${totals[i].tsumo}</td><td>${totals[i].ron}</td><td>${totals[i].houjuu}</td>
+      </tr>`).join("");
+    const scoreRows = [0,1,2,3].map(i=>{
+      const r = previewRanks[i];
+      const val = (scores[i]===null || scores[i]===undefined) ? "" : scores[i];
+      const ptPreview = previewPoints ? fmtPt(previewPoints[i]) : "-";
+      return `
+      <div class="score-row">
+        <div class="nm">${escapeHtml(names[i]||"P"+(i+1))} <span class="n-sub">${seatLabel(i)}</span></div>
+        <div class="score-input-wrap">
+          <span class="rank-chip rank-preview ${r?'on-'+r:''}">${r||"-"}</span>
+          <input type="number" inputmode="numeric" step="100" class="score-input" placeholder="0"
+            data-score-key="${key}" data-score-p="${i}" value="${val}">
+          <span class="n-sub" style="min-width:44px; text-align:right;">${ptPreview}</span>
+        </div>
+      </div>`;
+    }).join("");
+    const sumNote = sumNow===null
+      ? `<div class="empty" style="text-align:left; padding:6px 0 0;">4人分の最終持ち点（素点）を入力すると、合計と得点pt（オカ・ウマ・チョンボ罰則反映）が自動計算されます。</div>`
+      : diff===null
+        ? `<div class="empty" style="text-align:left; padding:6px 0 0; color:var(--primary);">合計 ${sumNow.toLocaleString()}点（OK：配給原点合計100,000点と一致）</div>`
+        : `<div class="empty" style="text-align:left; padding:6px 0 0; color:var(--houjuu);">合計 ${sumNow.toLocaleString()}点（100,000点との差分：${diff>0?'+':''}${diff}点）。合計が100,000点になるよう修正してください。</div>`;
+    return `
+      <div class="card" id="hanchan-${key}">
+        <div class="row-between">
+          <h2 style="margin:0">${fmtDate(date)} ${headMeta}</h2>
+          <button class="chip" data-delete-hanchan="${key}" style="color:var(--houjuu); font-weight:800; border-color:var(--houjuu);">🗑 削除</button>
+        </div>
+        <table class="stat-mini-table">
+          <tr><th style="text-align:left">選手</th><th>座席</th><th>リーチ</th><th>副露</th><th>ツモ</th><th>ロン</th><th>放銃</th></tr>
+          ${rows}
+        </table>
+        <h2 style="margin-top:14px">最終持ち点（素点）</h2>
+        ${scoreRows}
+        ${sumNote}
+        <button class="btn-confirm-rank" data-confirm-hanchan="${key}">順位を確定する</button>
+        ${recordList}
+      </div>`;
+  }).join("");
+}
+
+// チョンボは発生することが稀なため、他の数値と同じ列で常に表示するのではなく、
+// 発生した場合のみ小さなマークとして選手名の隣に添える。
+function chomboMark(count){
+  return count>0 ? ` <span class="chombo-mark">⚠️チョンボ×${count}</span>` : "";
+}
+
+// 半荘集計カード内に、その半荘を構成する局ごとの記録一覧を表示する（局入力タブと同じ✎編集／×削除操作が可能）。
+function renderHanchanRecordList(date, hanchanNo, names){
+  const recs = state.records.filter(r=>r.date===date && r.hanchanNo===hanchanNo);
+  if(!recs.length) return "";
+  const rows = recs.map(r=>{
+    const tags = [];
+    r.stats.forEach((s,i)=>{
+      const t=[]; if(s[K_RIICHI])t.push("リ"); if(s[K_FUURO])t.push("副"); if(s[K_TSUMO])t.push("ツ"); if(s[K_RON])t.push("ロ"); if(s[K_HOUJUU])t.push("放"); if(s[K_CHOMBO])t.push("チョ");
+      if(t.length) tags.push(`${names[i]}:${t.join("")}`);
+    });
+    const desc = tags.join(" / ") || "変化なし";
+    const short = RESULT_SHORT[r.resultType];
+    const honbaTag = r.honba ? `${r.honba}本場` : "";
+    const tag = `${r.kyoku}${honbaTag?"・"+honbaTag:""}${short?"・"+short:""}`;
+    return `<div class="history-item">
+      <span class="tag">${tag}</span>
+      <span class="desc">${escapeHtml(desc)}</span>
+      <button class="edit" data-hanchan-edit-record="${r.id}">✎</button>
+      <button class="del" data-hanchan-del-record="${r.id}">×</button>
+    </div>`;
+  }).join("");
+  return `<div class="stat-section-label" style="margin-top:12px;">局ごとの記録（${recs.length}局）</div>${rows}`;
+}
+function renderSettings(){
+  const roster = state.playerRoster;
+  const rosterChips = roster.length ? `
+    <div class="chip-row">${roster.map(n=>`
+      <span class="chip">${escapeHtml(n)}<button type="button" class="chip-del" data-roster-del="${escapeAttr(n)}">×</button></span>`).join("")}</div>`
+    : `<div class="empty">まだリストに名前が登録されていません。</div>`;
+  const selects = state.players.map((name,i)=>{
+    const opts = [`<option value="">未選択</option>`].concat(
+      roster.map(n=>`<option value="${escapeAttr(n)}" ${name===n?'selected':''}>${escapeHtml(n)}</option>`)
+    ).join("");
+    return `
+    <div class="field">
+      <label>プレイヤー${i+1}</label>
+      <select data-player-select="${i}" style="width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:15px; background:var(--surface); color:var(--ink); font-weight:700; font-family:inherit;">
+        ${opts}
+      </select>
+    </div>`;
+  }).join("");
+  return `
+    <div class="card">
+      <h2>プレイヤー名リスト（事前登録）</h2>
+      <div class="field" style="display:flex; gap:8px; align-items:flex-end; margin-bottom:6px;">
+        <div style="flex:1;"><input type="text" id="rosterNameInput" placeholder="名前を入力して追加"></div>
+        <button type="button" class="btn-ghost" id="addRosterBtn" style="width:auto; padding:11px 16px; margin-top:0;">＋追加</button>
+      </div>
+      ${rosterChips}
+    </div>
+    <div class="card">
+      <h2>対局メンバー（4人）</h2>
+      <div class="empty" style="text-align:left; padding:0 0 10px;">上のリストから、今回対局する4人を選んでください。ここでの変更は今後の入力にのみ適用され、<b style="color:var(--ink);">過去に記録した半荘の選手名（半荘集計・統計タブでの表示）は変わりません</b>（記録した時点のメンバーで固定されます）。</div>
+      ${selects}
+    </div>
+    <div class="card">
+      <h2>データ管理</h2>
+      <button class="btn-ghost" id="exportBtn">CSVで書き出す</button>
+      <label class="btn-ghost" style="display:block; text-align:center; margin-top:8px; cursor:pointer;">
+        CSVから読み込む
+        <input type="file" id="importCsvInput" accept=".csv,text/csv" style="display:none;">
+      </label>
+      <button class="btn-ghost" id="importCsvUrlBtn" style="margin-top:8px;">🌐 サイト上のhanchan.csvを読み込む</button>
+      <div class="empty" style="text-align:left; padding:14px 0 6px;">半荘の順位・スコアだけを記録した過去大会データ（局の詳細なし）も取り込めます。「半荘ID,プレイヤー,素点」の列（旧集計表の元データ形式もそのまま可）があればOKです。</div>
+    </div>
+    <div class="card">
+      <h2>データのバックアップ</h2>
+      <div class="empty" style="text-align:left; padding:0 0 10px;">記録はこの端末のブラウザ内（ローカル）に保存されています。ブラウザのキャッシュ削除や機種変更でデータが消えないよう、バックアップファイルの保存をおすすめします。</div>
+      <button class="btn-ghost" id="exportBackupBtn">📤 バックアップをダウンロード（JSON）</button>
+      <label class="btn-ghost" style="display:block; text-align:center; margin-top:8px; cursor:pointer;">
+        📥 バックアップから復元
+        <input type="file" id="importBackupInput" accept="application/json" style="display:none;">
+      </label>
+      <button class="btn-ghost" id="importBackupUrlBtn" style="margin-top:8px;">🌐 サイト上のbackup.jsonから復元</button>
+    </div>
+    <div class="card">
+      <h2 style="color:var(--houjuu);">危険な操作</h2>
+      <div class="empty" style="text-align:left; padding:0 0 10px;">この端末に保存されている、このアプリの記録・設定を<b style="color:var(--houjuu);">すべて削除</b>します。元に戻せません。実行前に「バックアップをダウンロード」で保存しておくことをおすすめします。</div>
+      <button class="btn-ghost" id="resetAllDataBtn" style="border-color:var(--houjuu); color:var(--houjuu);">🗑 このアプリのデータを全削除する</button>
+    </div>
+  `;
+}
+
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+
+// ---------- events ----------
+function bindEvents(){
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; render(); });
+
+  if(state.tab==="input"){
+    const dateInput = document.getElementById("dateInput");
+    if(dateInput) dateInput.onchange = ()=>{
+      const val = dateInput.value;
+      if(!val) return;
+      state.current.date = val;
+      const pos = resumePositionForDate(val);
+      state.current.hanchanNo = pos.hanchanNo;
+      state.current.kyoku = pos.kyoku;
+      state.current.honba = pos.honba;
+      state.current.toggles = emptyToggles();
+      render();
+    };
+    document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{
+      const delta = Number(b.dataset.day);
+      const d = new Date(state.current.date+"T00:00:00");
+      d.setDate(d.getDate()+delta);
+      const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+      const newDate = `${y}-${m}-${day}`;
+      state.current.date = newDate;
+      const pos = resumePositionForDate(newDate);
+      state.current.hanchanNo = pos.hanchanNo;
+      state.current.kyoku = pos.kyoku;
+      state.current.honba = pos.honba;
+      state.current.toggles = emptyToggles();
+      render();
+    });
+    document.querySelectorAll("[data-seat]").forEach(sel=>{
+      sel.onchange = ()=>{
+        const seatI = Number(sel.dataset.seat);
+        const newPlayer = Number(sel.value);
+        const order = getSeatOrder(state.current.date, state.current.hanchanNo).slice();
+        const oldPlayer = order[seatI];
+        const conflictSeat = order.findIndex((p,i)=> i!==seatI && p===newPlayer);
+        if(conflictSeat !== -1) order[conflictSeat] = oldPlayer; // 入れ替え先の座席に元の人を移す
+        order[seatI] = newPlayer;
+        setSeatOrder(state.current.date, state.current.hanchanNo, order);
+        render();
+      };
+    });
+    const shuffleBtn = document.getElementById("shuffleSeats");
+    if(shuffleBtn) shuffleBtn.onclick = ()=>{
+      const order = [0,1,2,3];
+      for(let i=order.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [order[i],order[j]] = [order[j],order[i]];
+      }
+      setSeatOrder(state.current.date, state.current.hanchanNo, order);
+      render();
+      toast("座席をシャッフルしました");
+    };
+    document.querySelectorAll("[data-kyoku]").forEach(b=>b.onclick=()=>{
+      // 局を手動で切り替えた場合は積み場を0から入力し直す（必要なら「積み場」の±で調整）
+      state.current.kyoku = Number(b.dataset.kyoku);
+      state.current.honba = 0;
+      render();
+    });
+    document.querySelectorAll("[data-hanchan]").forEach(b=>b.onclick=()=>{
+      const newHanchanNo = Math.max(1, state.current.hanchanNo + Number(b.dataset.hanchan));
+      const pos = resumePositionForDateHanchan(state.current.date, newHanchanNo);
+      state.current.hanchanNo = pos.hanchanNo;
+      state.current.kyoku = pos.kyoku;
+      state.current.honba = pos.honba;
+      state.current.toggles = emptyToggles();
+      render();
+    });
+    document.querySelectorAll("[data-honba]").forEach(b=>b.onclick=()=>{
+      state.current.honba = Math.max(0, state.current.honba + Number(b.dataset.honba)); render();
+    });
+    document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{
+      toggleStat(Number(b.dataset.p), Number(b.dataset.k));
+      render();
+    });
+    document.querySelectorAll("[data-p-chombo]").forEach(cb=>{
+      cb.onchange = ()=>{
+        toggleStat(Number(cb.dataset.pChombo), K_CHOMBO);
+        render();
+      };
+    });
+    document.querySelectorAll("[data-result]").forEach(b=>b.onclick=()=>{
+      const resultType = b.dataset.result;
+      if(resultType!=="chombo" && !validateAgariHoujuuConsistency()) return; // ロン成立時は放銃1名の入力を必須にする
+      if(state.editingId) commitEdit(resultType); else onSave(resultType);
+    });
+    const resultOnlyBtn = document.getElementById("resultOnlyBtn");
+    if(resultOnlyBtn) resultOnlyBtn.onclick = onSaveResultOnly;
+    document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    if(cancelEditBtn) cancelEditBtn.onclick = cancelEdit;
+    document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+      if(state.editingId === b.dataset.del){ state.editingId = null; state.editBackup = null; }
+      state.records = state.records.filter(r=>r.id!==b.dataset.del);
+      saveRecords(); render(); toast("削除しました");
+    });
+  }
+  if(state.tab==="hanchan"){
+    const monthFilter = document.getElementById("hanchanMonthFilter");
+    if(monthFilter) monthFilter.onchange = ()=>{ state.hanchanMonthFilter = monthFilter.value; render(); };
+    const monthClear = document.getElementById("hanchanMonthClear");
+    if(monthClear) monthClear.onclick = ()=>{ state.hanchanMonthFilter = ""; render(); };
+    document.querySelectorAll("[data-toggle-hanchan-collapse]").forEach(el=>el.onclick=()=>{
+      const key = el.dataset.toggleHanchanCollapse;
+      const wasCollapsed = state.hanchanCollapsed[key] !== false;
+      state.hanchanCollapsed[key] = wasCollapsed ? false : true;
+      render();
+    });
+    document.querySelectorAll("[data-score-key]").forEach(inp=>{
+      inp.onchange = ()=>{
+        const key = inp.dataset.scoreKey, p = Number(inp.dataset.scoreP);
+        if(!state.finalScores[key]) state.finalScores[key] = [null,null,null,null];
+        const raw = inp.value.trim();
+        state.finalScores[key][p] = raw==="" ? null : Math.trunc(Number(raw));
+        saveFinalScores(); render();
+      };
+    });
+    document.querySelectorAll("[data-confirm-hanchan]").forEach(b=>b.onclick=()=>{
+      const key = b.dataset.confirmHanchan;
+      const idx = key.lastIndexOf("_");
+      const date = key.slice(0,idx), hanchanNo = Number(key.slice(idx+1));
+      const res = tryConfirmHanchan(date, hanchanNo);
+      if(!res.ok){ toast(res.reason); return; }
+      saveRanks(); saveFinalPoints(); saveHanchanConfirmed();
+      render();
+      toast("順位を確定しました");
+    });
+    document.querySelectorAll("[data-edit-hanchan]").forEach(b=>b.onclick=()=>{
+      const key = b.dataset.editHanchan;
+      state.hanchanConfirmed[key] = false;
+      saveHanchanConfirmed();
+      render();
+    });
+    document.querySelectorAll("[data-delete-hanchan]").forEach(b=>b.onclick=()=>{
+      const key = b.dataset.deleteHanchan;
+      if(!confirm("この半荘の記録（局データ・順位・持ち点）をすべて削除します。よろしいですか？")) return;
+      const idx = key.lastIndexOf("_");
+      const date = key.slice(0,idx), hanchanNo = Number(key.slice(idx+1));
+      state.records = state.records.filter(r=>!(r.date===date && r.hanchanNo===hanchanNo));
+      delete state.ranks[key]; delete state.finalScores[key]; delete state.finalPoints[key];
+      delete state.hanchanConfirmed[key]; delete state.dealers[key]; delete state.recordPlayers[key];
+      saveRecords(); saveRanks(); saveFinalScores(); saveFinalPoints(); saveHanchanConfirmed(); saveDealers(); saveRecordPlayers();
+      render();
+      toast("半荘を削除しました");
+    });
+    document.querySelectorAll("[data-hanchan-edit-record]").forEach(b=>b.onclick=()=>{
+      state.tab = "input";
+      startEdit(b.dataset.hanchanEditRecord);
+    });
+    document.querySelectorAll("[data-hanchan-del-record]").forEach(b=>b.onclick=()=>{
+      const id = b.dataset.hanchanDelRecord;
+      if(!confirm("この局の記録を削除します。よろしいですか？")) return;
+      if(state.editingId === id){ state.editingId = null; state.editBackup = null; }
+      state.records = state.records.filter(r=>r.id!==id);
+      saveRecords(); render(); toast("削除しました");
+    });
+  }
+  if(state.tab==="ranking"){
+    const rankingFrom = document.getElementById("rankingFrom");
+    if(rankingFrom) rankingFrom.onchange = ()=>{ state.rankingRange.from = rankingFrom.value; render(); };
+    const rankingTo = document.getElementById("rankingTo");
+    if(rankingTo) rankingTo.onchange = ()=>{ state.rankingRange.to = rankingTo.value; render(); };
+  }
+  if(state.tab==="settings"){
+    const exp = document.getElementById("exportBtn");
+    if(exp) exp.onclick = exportCsv;
+    const importCsvInput = document.getElementById("importCsvInput");
+    if(importCsvInput) importCsvInput.onchange = ()=>{
+      if(importCsvInput.files && importCsvInput.files[0]) importCsvFile(importCsvInput.files[0]);
+      importCsvInput.value = "";
+    };
+    const importCsvUrlBtn = document.getElementById("importCsvUrlBtn");
+    if(importCsvUrlBtn) importCsvUrlBtn.onclick = importCsvFromServer;
+    const addRosterBtn = document.getElementById("addRosterBtn");
+    const rosterInput = document.getElementById("rosterNameInput");
+    if(addRosterBtn) addRosterBtn.onclick = ()=>{
+      const val = (rosterInput.value||"").trim();
+      if(!val){ toast("名前を入力してください"); return; }
+      if(state.playerRoster.includes(val)){ toast("すでにリストにあります"); return; }
+      state.playerRoster.push(val);
+      saveSettings(); render(); toast("リストに追加しました");
+    };
+    document.querySelectorAll("[data-roster-del]").forEach(b=>b.onclick=()=>{
+      const name = b.dataset.rosterDel;
+      state.playerRoster = state.playerRoster.filter(n=>n!==name);
+      saveSettings(); render(); toast("リストから削除しました");
+    });
+    document.querySelectorAll("[data-player-select]").forEach(sel=>{
+      sel.onchange = ()=>{
+        const i = Number(sel.dataset.playerSelect);
+        state.players[i] = sel.value;
+        saveSettings(); render(); toast("保存しました");
+      };
+    });
+    const exportBackupBtn = document.getElementById("exportBackupBtn");
+    if(exportBackupBtn) exportBackupBtn.onclick = exportBackup;
+    const importBackupInput = document.getElementById("importBackupInput");
+    if(importBackupInput) importBackupInput.onchange = ()=>{
+      if(importBackupInput.files && importBackupInput.files[0]) importBackupFile(importBackupInput.files[0]);
+      importBackupInput.value = "";
+    };
+    const importBackupUrlBtn = document.getElementById("importBackupUrlBtn");
+    if(importBackupUrlBtn) importBackupUrlBtn.onclick = importBackupFromServer;
+    const resetAllDataBtn = document.getElementById("resetAllDataBtn");
+    if(resetAllDataBtn) resetAllDataBtn.onclick = resetAllData;
+  }
+}
+
+// 直近の入力の「✎」から呼ばれる：既存レコードの内容を入力フォームに読み込んで編集状態にする
+function startEdit(id){
+  const rec = state.records.find(r=>r.id===id);
+  if(!rec) return;
+  state.editBackup = JSON.parse(JSON.stringify(state.current)); // 編集キャンセル時に戻すための退避
+  state.editingId = id;
+  state.current.date = rec.date;
+  state.current.hanchanNo = rec.hanchanNo;
+  state.current.kyoku = KYOKU_LIST.indexOf(rec.kyoku);
+  state.current.honba = rec.honba || 0;
+  state.current.toggles = rec.stats.map(t=>t.slice());
+  render();
+}
+function cancelEdit(){
+  if(state.editBackup) state.current = state.editBackup;
+  state.editBackup = null;
+  state.editingId = null;
+  render();
+  toast("編集をキャンセルしました");
+}
+function commitEdit(resultType){
+  const idx = state.records.findIndex(r=>r.id===state.editingId);
+  if(idx===-1){ state.editingId = null; state.editBackup = null; render(); return; }
+  const cur = state.current;
+  ensureRecordPlayersSnapshot(cur.date, cur.hanchanNo);
+  state.records[idx] = {
+    ...state.records[idx],
+    date: cur.date, hanchanNo: cur.hanchanNo, kyoku: KYOKU_LIST[cur.kyoku], honba: cur.honba,
+    resultType, stats: cur.toggles.map(t=>t.slice())
+  };
+  saveRecords();
+  state.current = state.editBackup || state.current; // 編集前の入力位置に戻る（進行状態は動かさない）
+  state.editBackup = null;
+  state.editingId = null;
+  render();
+  toast("更新しました");
+}
+
+// 「結果のみ入力する」：局の詳細（リーチ・副露・ツモ・ロン・放銃など）を記録せず、
+// この半荘そのものを「詳細なし」の1件のマーカーレコードとして記録し、即座に半荘集計タブへ遷移して
+// 最終持ち点・順位の入力を促す。このレコードは総局数・流局数・打点系スタッツのいずれの集計対象にも含めない（resultType==="resultonly"）。
+// 局を実際にプレイしていないため、座席（起家〜北家の割り当て）も意味を持たない。
+// 将来的にCSV出力後のデータ加工などで「座席と成績の相関」を扱う可能性があるため、
+// 紛らわしい座席データが残らないよう、この半荘の座席設定は明示的にクリアする
+// （すでに他の局の記録がある半荘に対して押した場合は、その局の座席データを壊さないよう座席クリアは行わない）。
+function onSaveResultOnly(){
+  const cur = state.current;
+  ensureRecordPlayersSnapshot(cur.date, cur.hanchanNo);
+  const hasOtherRecords = state.records.some(r=>r.date===cur.date && r.hanchanNo===cur.hanchanNo);
+  const rec = {
+    id: uid(), date: cur.date, hanchanNo: cur.hanchanNo, kyoku: "-", honba: cur.honba,
+    resultType: "resultonly",
+    stats: emptyToggles()
+  };
+  state.records.push(rec);
+  saveRecords();
+
+  if(!hasOtherRecords){
+    const key = `${cur.date}_${cur.hanchanNo}`;
+    if(state.dealers[key] !== undefined){
+      delete state.dealers[key];
+      saveDealers();
+    }
+  }
+
+  const pos = nextPositionFromRecord(rec);
+  cur.hanchanNo = pos.hanchanNo;
+  cur.kyoku = pos.kyoku;
+  cur.honba = pos.honba;
+  cur.toggles = emptyToggles();
+
+  state.tab = "hanchan";
+  state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月フィルタは解除する
+  state.scrollToHanchanKey = `${rec.date}_${rec.hanchanNo}`;
+  render();
+  toast("結果のみ入力で記録しました。順位を入力しましょう");
+}
+
+
+// ・「次の局へ」ボタン＝子のアガリが発生していればその局は子のアガリ扱い　　→ 次局へ進行し、積み場は消滅（0にリセット）
+// 　　　　　　　　　　誰もアガっていなければ自動的に「流局」（親ノーテン想定）扱い　→ 次局へ進行するが、積み場は+1のまま維持
+// ・「連荘」ボタン＝親のアガリ、または親テンパイでの流局　→ 同一局のまま積み場+1（局・半荘Noは進めない）
+// ・小さな「チョンボ」ボタン＝反則によるその局のやり直し　→ 同一局・同一積み場のまま
+// ※子のアガリが発生している局は連荘を選べず、親のアガリが発生している局は「次の局へ」を選べないよう、ボタン側で制御する。
+// ※南4局で「次の局へ」が発生した場合（子のアガリ・流局のいずれも）は、その半荘の最終局のため半荘は終了。
+//   次の半荘No.の東1・積み場0からとなり、半荘集計タブで順位を入力できるよう自動的に切り替える。
+function onSave(resultType){
+  const cur = state.current;
+  ensureRecordPlayersSnapshot(cur.date, cur.hanchanNo); // この半荘の対局者名を、記録時点のメンバーで固定する
+  const rec = {
+    id: uid(), date: cur.date, hanchanNo: cur.hanchanNo, kyoku: KYOKU_LIST[cur.kyoku], honba: cur.honba,
+    resultType: resultType,
+    stats: cur.toggles.map(t=>t.slice())
+  };
+  state.records.push(rec);
+  saveRecords();
+
+  const hanchanEnded = cur.kyoku === 7 && resultType !== "renchan" && resultType !== "chombo"; // 南4で子のアガリ／親ノーテン流局（チョンボは局のやり直しなので半荘は終了しない）
+  const pos = nextPositionFromRecord(rec);
+  cur.hanchanNo = pos.hanchanNo;
+  cur.kyoku = pos.kyoku;
+  cur.honba = pos.honba;
+  cur.toggles = emptyToggles();
+
+  if(hanchanEnded){
+    state.tab = "hanchan";
+    state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月フィルタは解除する
+    state.scrollToHanchanKey = `${rec.date}_${rec.hanchanNo}`;
+    render();
+    toast("半荘が終了しました。順位を入力しましょう");
+  }else{
+    render();
+    toast(`保存しました（${RESULT_LABEL[resultType]}）`);
+  }
+}
+
+// 各行にその半荘の対局者名も含める（プレイヤー名リストは今後変わりうるため、行ごとに自己完結させる。
+// Excelなど外部ツールでの加工や、後日別セッションのCSVを取り込む際にも、記録当時の名前を正しく復元できる）。
+// CSVは「局データ（リーチ・副露などの詳細）」と「半荘の最終素点（順位確定に使う値）」を1行＝1局の
+// ワイド形式1種類に統一して書き出す。各プレイヤーの列は 名前/リーチ/副露/ツモ/ロン/放銃/チョンボ/素点 の8列で、
+// 素点はその半荘が「確定済み」の場合のみ、同じ半荘の全行に同じ値を繰り返し記載する（未確定なら空欄）。
+// 局の詳細を持たない「結果のみ入力」の半荘も、局="-"・トグル全OFFの1行として同じ形式でそのまま書き出される。
+function exportCsv(){
+  const header = ["日付","半荘No","局","本場","結果", ...[0,1,2,3].flatMap(i=>[`P${i+1}_名前`,`P${i+1}_リーチ`,`P${i+1}_副露`,`P${i+1}_ツモ`,`P${i+1}_ロン`,`P${i+1}_放銃`,`P${i+1}_チョンボ`,`P${i+1}_素点`])];
+  const lines = [header.join(",")];
+  state.records.forEach(r=>{
+    const names = namesForHanchan(r.date, r.hanchanNo);
+    const key = `${r.date}_${r.hanchanNo}`;
+    const confirmed = !!state.hanchanConfirmed[key];
+    const scores = confirmed ? (state.finalScores[key] || [null,null,null,null]) : [null,null,null,null];
+    const perPlayer = [0,1,2,3].flatMap(i=>[
+      names[i]||`P${i+1}`, ...r.stats[i],
+      (scores[i]===null||scores[i]===undefined) ? "" : scores[i]
+    ]);
+    const row = [fmtDate(r.date), r.hanchanNo, r.kyoku, r.honba||0, RESULT_LABEL[r.resultType]||"", ...perPlayer];
+    lines.push(row.join(","));
+  });
+  if(lines.length<2){ toast("書き出せるデータがありません"); return; }
+  const blob = new Blob(["\uFEFF"+lines.join("\n")], {type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "hanchan.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 「局データをCSVで書き出す」で出力した形式（日付,半荘No,局,本場,結果, 選手ごとに 名前/リーチ/副露/ツモ/ロン/放銃/チョンボ ×4人）のCSVを読み込み、
+// 既存の局データに追加する（上書きではなく追記。日付は "YYYY/MM/DD" 表記を "YYYY-MM-DD" に変換して取り込む）。
+// あわせて、CSV内の名前列からその半荘の名前スナップショット(recordPlayers)も復元する（既存のスナップショットがある場合は上書きしない）。
+function reverseResultLabel(label){
+  const entry = Object.entries(RESULT_LABEL).find(([k,v])=>v===label);
+  return entry ? entry[0] : "next";
+}
+function parseCsvDate(s){
+  const parts = (s||"").trim().split("/");
+  if(parts.length!==3) return null;
+  const [y,m,d] = parts;
+  return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+}
+// CSVの読み込みは1種類の入力窓口（importCsvFile）に統一する。ヘッダーに「半荘ID」列があれば、
+// 局の詳細を持たない過去大会の結果データ（旧集計表の元データ形式も含む）とみなしてロング形式で読み込み、
+// それ以外はこのアプリの標準書き出し形式（1行＝1局のワイド形式、末尾に各プレイヤーの素点列を含む）として読み込む。
+function importCsvFile(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{ processCsvText(String(reader.result||"")); };
+  reader.readAsText(file, "utf-8");
+}
+// CSVテキストそのものを受け取って取り込む共通処理（ファイル選択・サーバー読み込みの両方から呼ばれる）。
+function processCsvText(rawText){
+  const text = String(rawText||"").replace(/^\uFEFF/, "");
+  const lines = text.split(/\r?\n/).filter(l=>l.trim()!=="");
+  if(lines.length < 2){ toast("読み込めるデータがありません"); return; }
+  const header = lines[0].split(",").map(h=>h.trim());
+  if(header.includes("半荘ID")){
+    importLegacyHanchanResultsCsv(lines, header);
+  }else{
+    importWideKyokuCsv(lines);
+  }
+}
+// サイト上（同じNetlifyサイトのルート）に置かれているhanchan.csvをfetchで取得して取り込む。
+// input-app.htmlとhanchan.csvが同じオリジンに配置されている前提（index.htmlからの相対パスと同じ）。
+async function importCsvFromServer(){
+  if(!checkSitePassword()) return;
+  try{
+    const res = await fetch("./hanchan.csv", { cache: "no-store" });
+    if(!res.ok){ toast(`サーバーのCSVを取得できませんでした（${res.status}）`); return; }
+    const text = await res.text();
+    processCsvText(text);
+  }catch(e){
+    toast("サーバーのCSVを取得できませんでした（通信エラー）");
+  }
+}
+
+// 標準形式（日付,半荘No,局,本場,結果, [名前,リーチ,副露,ツモ,ロン,放銃,チョンボ,素点]×4人）を読み込む。
+// 素点列が無い古い書き出し（名前あり／名前なし）も引き続き読み込める。
+function importWideKyokuCsv(lines){
+  const colsPerPlayerScore = 8; // 名前 + 6スタッツ + 素点（現行形式）
+  const colsPerPlayerNew = 7;   // 名前 + 6スタッツ（素点列を追加する前の形式）
+  const colsPerPlayerOld = 6;   // 6スタッツのみ（最旧形式・名前列なし）
+  const requiredColsScore = 5 + 4*colsPerPlayerScore;
+  const requiredColsNew = 5 + 4*colsPerPlayerNew;
+  const requiredColsOld = 5 + 4*colsPerPlayerOld;
+  const newRecords = [];
+  const snapshotsToApply = {}; // key -> [name0..3]（既存スナップショットが無い半荘にのみ後で適用）
+  const scoresByHanchan = {};  // key -> [素点0..3]（4人分そろった半荘のみ、後でまとめて確定判定する）
+  for(let li=1; li<lines.length; li++){
+    const cols = lines[li].split(",");
+    const hasScore = cols.length >= requiredColsScore;
+    const hasNames = hasScore || cols.length >= requiredColsNew;
+    if(!hasNames && cols.length < requiredColsOld) continue;
+    const colsPerPlayer = hasScore ? colsPerPlayerScore : (hasNames ? colsPerPlayerNew : colsPerPlayerOld);
+    const date = parseCsvDate(cols[0]);
+    if(!date) continue;
+    const hanchanNo = Number(cols[1]) || 1;
+    const kyoku = cols[2];
+    const honba = Number(cols[3]) || 0;
+    const resultType = reverseResultLabel(cols[4]);
+    const names = [];
+    const scores = [];
+    const stats = [0,1,2,3].map(pi=>{
+      const base = 5 + pi*colsPerPlayer;
+      if(hasNames){
+        names.push(cols[base] || `P${pi+1}`);
+        if(hasScore){
+          const sc = cols[base+7];
+          scores.push(sc==="" || sc===undefined ? null : Number(sc));
+        }
+        return [0,1,2,3,4,5].map(k => Number(cols[base+1+k]) || 0);
+      }
+      return [0,1,2,3,4,5].map(k => Number(cols[base+k]) || 0);
+    });
+    newRecords.push({ id: uid(), date, hanchanNo, kyoku, honba, resultType, stats });
+    if(hasNames){
+      const key = `${date}_${hanchanNo}`;
+      if(!snapshotsToApply[key]) snapshotsToApply[key] = names;
+      if(hasScore && !scoresByHanchan[key] && scores.every(s=>s!==null && !isNaN(s))){
+        scoresByHanchan[key] = scores;
+      }
+    }
+  }
+  if(!newRecords.length){ toast("有効な局データが見つかりませんでした（書き出し形式と一致するか確認してください）"); return; }
+  if(!confirm(`${newRecords.length}件の局データを、既存のデータに追加します。よろしいですか？`)) return;
+  state.records = state.records.concat(newRecords);
+  Object.entries(snapshotsToApply).forEach(([key,names])=>{
+    if(!state.recordPlayers[key]) state.recordPlayers[key] = names;
+  });
+  // 素点が4人分そろっている半荘のみ、まだ未確定であればこのアプリの計算式で順位・得点ptを確定する
+  let confirmedCount = 0;
+  Object.entries(scoresByHanchan).forEach(([key,scores])=>{
+    if(state.hanchanConfirmed[key]) return;
+    if(scoreSumDiff(scores) !== null) return;
+    const idx = key.lastIndexOf("_");
+    const date = key.slice(0,idx), hanchanNo = Number(key.slice(idx+1));
+    state.finalScores[key] = scores;
+    const result = tryConfirmHanchan(date, hanchanNo);
+    if(result.ok) confirmedCount++;
+  });
+  saveRecords();
+  saveRecordPlayers();
+  saveFinalScores(); saveRanks(); saveFinalPoints(); saveHanchanConfirmed();
+  render();
+  toast(`${newRecords.length}件を追加しました${confirmedCount?`（うち${confirmedCount}半荘の順位を確定）`:""}`);
+}
+
+// ================= 半荘結果（順位・スコア）のみのロング形式CSV読み込み =================
+// 局の詳細（リーチ・副露など）を持たない「結果のみ」の半荘データを、ロング形式（1行=1半荘×1プレイヤー）で
+// 読み込む。過去大会の集計表（元データシート：半荘ID,年,月日,曜日,回,プレイヤー,素点,スコア,順位）
+// をそのまま読み込めるよう、半荘ID列（YYYYMMDD-NN形式）から日付と半荘Noを復元する。
+// スコア(pt)・順位は取り込み時にこのアプリのMリーグ公式ルール計算式で必ず再計算する（ファイル内の値は使わない）
+// ことで、ウマ・オカの計算方法をアプリ内の記録と完全に統一する。
+
+// 半荘ID（例："20240911-01"）から日付("2024-09-11")と半荘No(1)を復元する。形式が合わなければnull。
+function reverseHanchanIdToDateNo(id){
+  const m = /^(\d{4})(\d{2})(\d{2})-(\d+)$/.exec((id||"").trim());
+  if(!m) return null;
+  return { date: `${m[1]}-${m[2]}-${m[3]}`, hanchanNo: Number(m[4]) };
+}
+// "YYYY/MM/DD" "YYYY-MM-DD" のどちらでも受け付ける日付パーサ（半荘IDが無い場合のフォールバック用）
+function parseFlexibleDate(s){
+  const m = /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/.exec((s||"").trim());
+  if(!m) return null;
+  return `${m[1]}-${String(m[2]).padStart(2,"0")}-${String(m[3]).padStart(2,"0")}`;
+}
+
+// 半荘ID・日付・プレイヤー・素点などの列を持つロング形式（過去大会データ／旧集計表）を読み込む。
+// 局の詳細を持たないため「結果のみ入力」の半荘として取り込み、統計の打点系スタッツ（リーチ率など）には含めない。
+function importLegacyHanchanResultsCsv(lines, header){
+  const idxOf = (...names)=>{ for(const n of names){ const i = header.indexOf(n); if(i!==-1) return i; } return -1; };
+  const colId = idxOf("半荘ID");
+  const colDate = idxOf("日付");
+  const colNo = idxOf("半荘No","回");
+  const colName = idxOf("プレイヤー","プレイヤー名","名前");
+  const colScore = idxOf("素点");
+  if(colName===-1 || colScore===-1){ toast("CSVの形式が正しくありません（プレイヤー・素点の列が必要です）"); return; }
+
+  const existingKeys = new Set(hanchanGroups().map(g=>`${g.date}_${g.hanchanNo}`));
+  const groupsMap = new Map(); // key -> {date, hanchanNo, rows:[{name,score}]}
+  for(let li=1; li<lines.length; li++){
+    const cols = lines[li].split(",");
+    let date=null, hanchanNo=null;
+    if(colId!==-1){
+      const parsed = reverseHanchanIdToDateNo(cols[colId]);
+      if(parsed){ date=parsed.date; hanchanNo=parsed.hanchanNo; }
+    }
+    if(!date && colDate!==-1){
+      date = parseFlexibleDate(cols[colDate]);
+      hanchanNo = colNo!==-1 ? (Number(cols[colNo])||1) : 1;
+    }
+    if(!date || !hanchanNo) continue;
+    const name = (cols[colName]||"").trim();
+    const score = Number(cols[colScore]);
+    if(!name || cols[colScore]==="" || isNaN(score)) continue;
+    const key = `${date}_${hanchanNo}`;
+    if(!groupsMap.has(key)) groupsMap.set(key, {date, hanchanNo, rows:[]});
+    groupsMap.get(key).rows.push({name, score});
+  }
+
+  let skippedExisting=0, skippedInvalid=0;
+  const validGroups = [];
+  groupsMap.forEach((g,key)=>{
+    if(existingKeys.has(key)){ skippedExisting++; return; }
+    if(g.rows.length !== 4){ skippedInvalid++; return; }
+    const scores = g.rows.map(r=>r.score);
+    if(scoreSumDiff(scores) !== null){ skippedInvalid++; return; }
+    validGroups.push(g);
+  });
+
+  if(!validGroups.length){
+    toast(`取り込める半荘がありませんでした（既存と重複:${skippedExisting}件／形式不正:${skippedInvalid}件）`);
+    return;
+  }
+  if(!confirm(`${validGroups.length}件の半荘結果を新規に取り込みます（重複スキップ:${skippedExisting}件、形式不正スキップ:${skippedInvalid}件）。\nこれらは「結果のみ入力」の半荘として、統計の打点系スタッツ（リーチ率など）には含めず、順位・スコア系の集計にのみ反映されます。よろしいですか？`)) return;
+
+  validGroups.forEach(g=>{
+    const key = `${g.date}_${g.hanchanNo}`;
+    const names = g.rows.map(r=>r.name);
+    const scores = g.rows.map(r=>r.score);
+    state.recordPlayers[key] = names;
+    state.finalScores[key] = scores;
+    state.records.push({ id: uid(), date:g.date, hanchanNo:g.hanchanNo, kyoku:"-", honba:0, resultType:"resultonly", stats: emptyToggles() });
+    tryConfirmHanchan(g.date, g.hanchanNo); // 合計は上で検証済みのため必ず成功する
+  });
+
+  saveRecords(); saveRecordPlayers(); saveFinalScores(); saveRanks(); saveFinalPoints(); saveHanchanConfirmed();
+  render();
+  toast(`${validGroups.length}件の半荘結果を取り込みました`);
+}
+
+loadAll();
+</script>
+</body>
+</html>

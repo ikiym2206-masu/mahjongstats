@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>麻雀スタッツ（PC分析ビューア）</title>
+<link rel="icon" href="./icons-viewer/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons-viewer/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons-viewer/favicon-16.png">
+<link rel="apple-touch-icon" href="./icons-viewer/apple-touch-icon.png">
+<link rel="manifest" href="./manifest-viewer.json">
+<meta name="theme-color" content="#C98A2B">
+<meta name="apple-mobile-web-app-title" content="麻雀分析">
+<style>
+  :root{
+    --bg:#F6F3EC;
+    --surface:#FFFFFF;
+    --ink:#242629;
+    --muted:#767b83;
+    --line:#E4DFD3;
+    --primary:#1F6F54;
+    --primary-dark:#154A38;
+    --primary-tint:#E4EFE9;
+    --houjuu:#B23A2E;
+    --ron:#2E6DA4;
+    --radius:14px;
+    --sidebar-w:252px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Segoe UI",sans-serif;
+    height:100%;}
+  #app{min-height:100vh; display:flex;}
+
+  /* ---------- loader screen ---------- */
+  .loader-screen{flex:1; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .loader-card{max-width:480px; width:100%; text-align:center; padding:44px 36px; border:2px dashed var(--line);
+    border-radius:20px; background:var(--surface); transition:border-color .15s, background .15s;}
+  .loader-card.dragover{border-color:var(--primary); background:var(--primary-tint);}
+  .loader-icon{font-size:40px; margin-bottom:8px;}
+  .loader-card h1{font-size:19px; margin:0 0 12px; letter-spacing:.02em;}
+  .loader-desc{font-size:13px; color:var(--muted); line-height:1.8; margin:0 0 22px;}
+  .file-select-btn{display:inline-block; padding:12px 28px; border-radius:999px; background:var(--primary);
+    color:#fff; font-size:14px; font-weight:800; cursor:pointer;}
+  .file-select-btn:hover{background:var(--primary-dark);}
+  .loader-hint{font-size:12px; color:var(--muted); margin:18px 0 0;}
+  .loader-note{font-size:11px; color:var(--muted); margin:20px 0 0; padding-top:16px; border-top:1px solid var(--line);}
+  .loader-error{font-size:12px; color:var(--houjuu); font-weight:700; margin-top:12px; min-height:16px;}
+
+  /* ---------- sidebar ---------- */
+  .sidebar{width:var(--sidebar-w); flex:0 0 var(--sidebar-w); background:var(--surface); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; padding:22px 16px; position:sticky; top:0; height:100vh; overflow-y:auto;}
+  .app-title{font-size:15px; font-weight:800; line-height:1.4; margin-bottom:16px;}
+  .sidebar-summary{border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:16px;}
+  .summary-line{font-size:11.5px; color:var(--muted); font-weight:600; line-height:1.9;}
+  .side-nav{display:flex; flex-direction:column; gap:4px;}
+  .side-nav button{display:flex; align-items:center; gap:10px; text-align:left; padding:11px 12px; border-radius:11px;
+    border:none; background:transparent; font-size:13.5px; font-weight:700; color:var(--muted); cursor:pointer;
+    font-family:inherit;}
+  .side-nav button:hover{background:var(--bg);}
+  .side-nav button.active{background:var(--primary-tint); color:var(--primary);}
+  .nav-num{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:7px;
+    background:var(--bg); font-size:11px; font-weight:800; flex:0 0 auto;}
+  .side-nav button.active .nav-num{background:var(--primary); color:#fff;}
+  .reload-btn{margin-top:auto; padding:10px 0; border:1px solid var(--line); border-radius:10px; background:var(--surface);
+    color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;}
+  .reload-btn:hover{background:var(--bg);}
+
+  /* ---------- main ---------- */
+  .main{flex:1; padding:28px 36px 60px; max-width:1280px;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin-bottom:20px;}
+  .card h2{font-size:16px; font-weight:800; margin:0; letter-spacing:.01em;}
+  .card h3{font-size:14px; font-weight:800; margin:0;}
+  .n-sub{color:var(--muted); font-weight:600; margin-left:8px; font-size:11.5px;}
+  .section-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
+  .tool-btn{border:1px solid var(--line); background:var(--surface); color:var(--ink); font-size:12px; font-weight:700;
+    border-radius:9px; padding:8px 14px; cursor:pointer; font-family:inherit; white-space:nowrap;}
+  .tool-btn:hover{background:var(--bg);}
+  .tool-btn:disabled{opacity:.4; cursor:default;}
+  .tool-btn.small{padding:5px 10px; font-size:11px;}
+  .empty{color:var(--muted); font-size:13px; text-align:center; padding:26px 0;}
+
+  /* chip bar (shared selection for ②③) */
+  .chip-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 16px; background:var(--surface);
+    border:1px solid var(--line); border-radius:12px; margin-bottom:20px;}
+  .chip-bar-label{font-size:11.5px; font-weight:800; color:var(--muted); margin-right:2px;}
+  .chip-bar-empty{font-size:12px; color:var(--muted);}
+  .sel-chip{display:inline-flex; align-items:center; gap:6px; border:1.5px solid; border-radius:999px; padding:5px 6px 5px 12px;
+    font-size:12.5px; font-weight:800;}
+  .sel-chip button{border:none; background:transparent; color:inherit; font-weight:800; font-size:13px; cursor:pointer;
+    padding:2px 4px; line-height:1;}
+  .chip-clear-btn{margin-left:auto; border:none; background:transparent; color:var(--muted); font-size:11.5px;
+    font-weight:700; cursor:pointer; text-decoration:underline; font-family:inherit;}
+
+  /* tables */
+  .table-scroll{overflow-x:auto;}
+  .stat-mini-table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  .stat-mini-table th{color:var(--muted); font-weight:700; padding:9px 8px; text-align:center; white-space:nowrap; cursor:default;}
+  .stat-mini-table td{padding:10px 8px; text-align:center; font-weight:700; border-top:1px solid var(--line);}
+  .stat-mini-table tr:nth-child(even) td{background:rgba(118,123,131,.06);}
+  .stat-mini-table .col-name{text-align:left; font-weight:800; white-space:nowrap;}
+  #compare-table .col-name{position:sticky; left:0; z-index:1; background:var(--surface);
+    box-shadow:2px 0 4px -2px rgba(36,38,41,.18);}
+  #compare-table tr:nth-child(even) .col-name{background:var(--bg);}
+  #compare-table th.col-name{z-index:2;}
+  .stat-mini-table .col-rank{width:44px; color:var(--muted); font-weight:800;}
+
+  .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{padding:6px 12px; border-radius:999px; background:var(--bg); border:1px solid var(--line);
+    font-size:12.5px; color:var(--muted); font-weight:700; cursor:pointer; font-family:inherit;}
+  .roster-chip input{margin-right:5px; vertical-align:middle;}
+  .legend-chip{display:inline-flex; align-items:center; gap:6px; border:1.5px solid var(--line); background:var(--surface);}
+  .legend-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  .legend-row{margin-top:14px;}
+  .axis-note{display:block; margin-top:10px; line-height:1.7;}
+
+  .target-select{margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--line);}
+  .target-select .chip-bar-label{display:block; margin-bottom:8px;}
+  .target-chip.on{background:var(--primary-tint); border-color:var(--primary); color:var(--primary);}
+
+  .graph-range{display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); font-weight:700;}
+  .graph-range input[type=date]{border:1.5px solid var(--line); border-radius:8px; padding:6px 8px; font-size:12.5px;
+    font-weight:700; color:var(--ink); background:var(--surface); font-family:inherit; margin-left:4px;}
+
+  /* ---------- 統計タブ：プレイヤー別スタッツカード ---------- */
+  .stats-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(360px,1fr)); gap:16px;}
+  .stat-player-card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;}
+  .stat-name{font-size:16px; font-weight:800;}
+  .stat-section-label{font-size:11.5px; font-weight:800; color:var(--muted); letter-spacing:.05em;
+    margin:14px 0 8px; text-transform:uppercase;}
+  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .stat-tile{background:var(--bg); border-radius:10px; padding:10px 8px; text-align:center;}
+  .stat-tile .v{font-size:18px; font-weight:800;}
+  .stat-tile .l{font-size:11.5px; color:var(--muted); font-weight:700; margin-top:3px;}
+  .row-between{display:flex; align-items:center; justify-content:space-between; cursor:pointer;}
+  .glossary{font-size:12.5px; color:var(--muted); line-height:1.8; padding-top:2px;}
+
+  .radar-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:18px;}
+  .radar-grid-card{border:1px solid var(--line); border-radius:12px; padding:16px;}
+  .radar-grid-card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+  .radar-grid-card-head h3{font-size:14px; font-weight:800; margin:0;}
+  .compat-legend-row{display:flex; justify-content:space-between; padding:3px 0; font-size:12px; color:var(--muted); font-weight:700;}
+
+  .toast{position:fixed; left:50%; top:24px; transform:translateX(-50%); background:var(--primary-dark); color:#fff;
+    padding:10px 18px; border-radius:999px; font-size:12.5px; font-weight:700; opacity:0; pointer-events:none;
+    transition:opacity .2s; z-index:50;}
+  .toast.show{opacity:1;}
+
+  @media (max-width:900px){
+    #app{flex-direction:column;}
+    .sidebar{width:100%; flex:0 0 auto; height:auto; position:relative; flex-direction:row; align-items:center; flex-wrap:wrap; gap:12px;}
+    .side-nav{flex-direction:row; flex-wrap:wrap;}
+    .reload-btn{margin-top:0;}
+    .main{padding:20px;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- 定数 ----------
+const K_RIICHI=0, K_FUURO=1, K_TSUMO=2, K_RON=3, K_HOUJUU=4, K_CHOMBO=5;
+const CHART_PALETTE = ["#1F6F54","#2E6DA4","#C98A2B","#B23A2E","#6B4FA0","#3B8C6E","#8B94A0","#A9673A"];
+
+const COMPARE_METRICS = [
+  {key:"kyokuCount", label:"総局数", fmt:v=>v},
+  {key:"hanchanRankedCount", label:"半荘数", fmt:v=>v},
+  {key:"avgRank", label:"平均順位", fmt:fmtAvg},
+  {key:"top", label:"トップ率", fmt:fmtPct},
+  {key:"second", label:"2着率", fmt:fmtPct},
+  {key:"third", label:"3着率", fmt:fmtPct},
+  {key:"last", label:"ラス率", fmt:fmtPct},
+  {key:"agariRate", label:"和了率", fmt:fmtPct},
+  {key:"houjuuRate", label:"放銃率", fmt:fmtPct},
+  {key:"riichiRate", label:"リーチ率", fmt:fmtPct},
+  {key:"fuuroRate", label:"副露率", fmt:fmtPct},
+  {key:"riichiAgariRate", label:"リーチ後和了率", fmt:fmtPct},
+  {key:"riichiHoujuuRate", label:"リーチ後放銃率", fmt:fmtPct},
+  {key:"fuuroAgariRate", label:"副露後和了率", fmt:fmtPct},
+  {key:"fuuroHoujuuRate", label:"副露後放銃率", fmt:fmtPct},
+];
+
+const RADAR_AXES = [
+  {key:"agariRate", label:"和了率", invert:false},
+  {key:"top", label:"トップ率", invert:false},
+  {key:"last", label:"ラス率", invert:true},
+  {key:"houjuuRate", label:"放銃率", invert:true},
+];
+const COMPARE_DEFAULT_TARGET_COUNT = 6; // ①比較表：初期表示の目安人数（チップで自由に増減できる）
+
+// ---------- state ----------
+const state = {
+  raw: null,
+  loaded: false,
+  section: "stats", // stats | compare | radar | graph | compatradar
+  sort: {key:"avgRank", dir:"asc"},
+  chips: [],            // ②③共有の選択中プレイヤー名（ハイライト用）
+  compareTargets: null,  // ①比較表専用の選択中プレイヤー名（nullなら未初期化）
+  graphRange: {from:"", to:""}, // ③スコア推移グラフの期間フィルタ
+  compatRadarTargets: null, // ④相性レーダーチャートの対象プレイヤー名（nullなら未初期化）
+  statsCollapsed: {}, // 統計タブ：プレイヤー名（または"__avg__"）→ false で明示的に展開。未設定（デフォルト）は折りたたみ表示
+};
+
+// ---------- format helpers ----------
+function fmtPct(n){ return isFinite(n) ? (n*100).toFixed(1)+"%" : "0.0%"; }
+function fmtAvg(n){ return isFinite(n) ? n.toFixed(2) : "0.00"; }
+function fmtPt(n){
+  if(n===null || n===undefined || isNaN(n)) return "-";
+  const v = Math.round(n*10)/10;
+  return (v>0?"+":"") + v.toFixed(1);
+}
+function fmtSigned(n){
+  if(n===null || n===undefined || isNaN(n)) return "-";
+  const v = Math.round(n*10)/10;
+  return (v>0?"+":"") + v.toFixed(1);
+}
+function fmtDateTime(iso){
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return String(iso||"-");
+  const p = n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+function hashStr(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))>>>0; } return h; }
+const NEUTRAL_COLOR = "#B9BEC5";
+// 選択チップに入れた順にパレット色を固有割当（同時ハイライト数が多くない前提のため、名前ハッシュより衝突しにくい）
+function colorForChip(name){
+  const idx = state.chips.indexOf(name);
+  if(idx < 0) return NEUTRAL_COLOR;
+  return CHART_PALETTE[idx % CHART_PALETTE.length];
+}
+function hexToRgb(hex){ hex=hex.replace("#",""); return [parseInt(hex.slice(0,2),16), parseInt(hex.slice(2,4),16), parseInt(hex.slice(4,6),16)]; }
+function mixColor(hex1, hex2, t){
+  const a=hexToRgb(hex1), b=hexToRgb(hex2);
+  const r=Math.round(a[0]+(b[0]-a[0])*t), g=Math.round(a[1]+(b[1]-a[1])*t), bl=Math.round(a[2]+(b[2]-a[2])*t);
+  return `rgb(${r},${g},${bl})`;
+}
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>el.classList.remove("show"), 2200);
+}
+
+// ---------- データ集計（入力アプリのロジックを移植） ----------
+function namesForHanchan(date, hanchanNo){
+  const key = `${date}_${hanchanNo}`;
+  const snap = state.raw.recordPlayers && state.raw.recordPlayers[key];
+  if(snap && snap.length===4) return snap;
+  return state.raw.players || ["P1","P2","P3","P4"];
+}
+
+function hanchanGroups(){
+  const map = new Map();
+  (state.raw.records||[]).forEach(r=>{
+    const key = `${r.date}_${r.hanchanNo}`;
+    if(!map.has(key)) map.set(key, {date:r.date, hanchanNo:r.hanchanNo});
+  });
+  Object.keys(state.raw.ranks||{}).forEach(k=>{
+    if(!map.has(k) && state.raw.ranks[k]){
+      const idx = k.lastIndexOf("_");
+      const date = k.slice(0,idx), hanchanNo = Number(k.slice(idx+1));
+      if(date) map.set(k, {date, hanchanNo});
+    }
+  });
+  return Array.from(map.values()).sort((a,b)=>{
+    if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.hanchanNo - b.hanchanNo;
+  });
+}
+
+function computeHanchanKyokuStats(date, hanchanNo){
+  const recs = (state.raw.records||[]).filter(r=>r.date===date && r.hanchanNo===hanchanNo && r.resultType!=="chombo" && r.resultType!=="resultonly");
+  const total = recs.length;
+  const ryuukyoku = recs.filter(r=>!r.stats.some(s=>s[K_TSUMO]===1 || s[K_RON]===1)).length;
+  return {total, ryuukyoku};
+}
+
+function computeOverallStats(range){
+  const inRange = d => !range || ((!range.from || d>=range.from) && (!range.to || d<=range.to));
+  const byName = new Map();
+  function ensure(name){
+    const key = name || "";
+    if(!byName.has(key)){
+      byName.set(key, {
+        name: key,
+        riichi:0, fuuro:0, tsumo:0, ron:0, houjuu:0, riichiAgari:0, riichiHoujuu:0, fuuroAgari:0, fuuroHoujuu:0,
+        chombo:0, chomboPt:0, kyokuCount:0, ranks:[], totalPt:0, scores:[]
+      });
+    }
+    return byName.get(key);
+  }
+  (state.raw.playerRoster||[]).forEach(n=>{ if(n) ensure(n); });
+
+  (state.raw.records||[]).forEach(r=>{
+    if(!inRange(r.date)) return;
+    const names = namesForHanchan(r.date, r.hanchanNo);
+    const isChomboResult = r.resultType === "chombo";
+    const isResultOnly = r.resultType === "resultonly";
+    r.stats.forEach((s,i)=>{
+      const name = names[i] || `P${i+1}`;
+      const p = ensure(name);
+      const ri=s[K_RIICHI], fu=s[K_FUURO]||0, tsu=s[K_TSUMO], ron=s[K_RON], ho=s[K_HOUJUU];
+      p.riichi += ri; p.fuuro += fu; p.tsumo += tsu; p.ron += ron; p.houjuu += ho;
+      if(ri && (tsu || ron)) p.riichiAgari += 1;
+      if(ri && ho) p.riichiHoujuu += 1;
+      if(fu && (tsu || ron)) p.fuuroAgari += 1;
+      if(fu && ho) p.fuuroHoujuu += 1;
+      if(!isChomboResult && !isResultOnly) p.kyokuCount += 1;
+      if(s[K_CHOMBO]){
+        p.chombo += 1;
+        p.chomboPt -= 15;
+        for(let j=0;j<4;j++){ if(j!==i) ensure(names[j] || `P${j+1}`).chomboPt += 5; }
+      }
+    });
+  });
+
+  Object.entries(state.raw.ranks||{}).forEach(([key,arr])=>{
+    if(!arr || !state.raw.hanchanConfirmed[key]) return;
+    const idx = key.lastIndexOf("_");
+    const date = key.slice(0,idx), hanchanNo = Number(key.slice(idx+1));
+    if(!inRange(date)) return;
+    const names = namesForHanchan(date, hanchanNo);
+    const pts = state.raw.finalPoints[key];
+    const scores = state.raw.finalScores[key];
+    arr.forEach((rk,i)=>{
+      if(!rk) return;
+      const p = ensure(names[i] || `P${i+1}`);
+      p.ranks.push(rk);
+      if(pts) p.totalPt += (pts[i]||0);
+      if(scores && scores[i]!==null && scores[i]!==undefined && !isNaN(scores[i])) p.scores.push(scores[i]);
+    });
+  });
+
+  return Array.from(byName.values()).map(p=>{
+    const n = p.ranks.length;
+    const avg = n ? p.ranks.reduce((a,b)=>a+b,0)/n : 0;
+    const rate = (k)=> n ? p.ranks.filter(x=>x===k).length/n : 0;
+    const agari = p.tsumo + p.ron;
+    const scoreN = p.scores.length;
+    return {
+      ...p,
+      agari,
+      hanchanRankedCount: n,
+      avgRank: avg,
+      top: rate(1), second: rate(2), third: rate(3), last: rate(4),
+      hakoRate: scoreN ? p.scores.filter(s=>s<0).length/scoreN : 0,
+      riichiRate: p.kyokuCount ? p.riichi/p.kyokuCount : 0,
+      fuuroRate: p.kyokuCount ? p.fuuro/p.kyokuCount : 0,
+      agariRate: p.kyokuCount ? agari/p.kyokuCount : 0,
+      houjuuRate: p.kyokuCount ? p.houjuu/p.kyokuCount : 0,
+      riichiAgariRate: p.riichi ? p.riichiAgari/p.riichi : 0,
+      riichiHoujuuRate: p.riichi ? p.riichiHoujuu/p.riichi : 0,
+      fuuroAgariRate: p.fuuro ? p.fuuroAgari/p.fuuro : 0,
+      fuuroHoujuuRate: p.fuuro ? p.fuuroHoujuu/p.fuuro : 0,
+    };
+  });
+}
+// 仕様書6.1：①②③④の対象は「対局実績（総局数＞0）または半荘実績があるプレイヤー全員」
+function computeActiveStats(){ return computeOverallStats().filter(s=>s.kyokuCount>0 || s.hanchanRankedCount>0); }
+// ---------- 統計タブ（プレイヤー別スタッツカード。入力アプリの統計タブを移植） ----------
+// 全プレイヤーの打点系スタッツ（率・数）を単純平均した値を算出する（着順系・チョンボ系は対象外）。
+function computeAverageStats(statsList){
+  if(!statsList.length) return null;
+  const n = statsList.length;
+  const avg = (key)=> statsList.reduce((a,p)=>a+(p[key]||0),0)/n;
+  return {
+    kyokuCount: avg('kyokuCount'),
+    riichi: avg('riichi'), fuuro: avg('fuuro'), agari: avg('agari'), tsumo: avg('tsumo'), ron: avg('ron'), houjuu: avg('houjuu'),
+    riichiRate: avg('riichiRate'), fuuroRate: avg('fuuroRate'), agariRate: avg('agariRate'), houjuuRate: avg('houjuuRate'),
+    riichiAgariRate: avg('riichiAgariRate'), riichiHoujuuRate: avg('riichiHoujuuRate'),
+    fuuroAgariRate: avg('fuuroAgariRate'), fuuroHoujuuRate: avg('fuuroHoujuuRate'),
+  };
+}
+function renderAverageStatCard(avg){
+  const key = "__avg__";
+  const collapsed = state.statsCollapsed[key] !== false; // デフォルトは折りたたみ
+  return `
+    <div class="stat-player-card">
+      <div class="row-between" data-toggle-stats-collapse="${key}">
+        <div class="stat-name">📊 全プレイヤー平均値</div>
+        <span class="n-sub">${collapsed?'▶':'▼'}</span>
+      </div>
+      ${collapsed ? "" : `
+      <div class="stat-section-label">打点（平均）</div>
+      <div class="stat-grid">
+        <div class="stat-tile"><div class="v">${fmtAvg(avg.kyokuCount)}</div><div class="l">総局数（詳細）</div></div>
+        <div class="stat-tile"><div class="v">${fmtAvg(avg.riichi)}</div><div class="l">リーチ数</div></div>
+        <div class="stat-tile"><div class="v">${fmtAvg(avg.fuuro)}</div><div class="l">副露局数</div></div>
+        <div class="stat-tile"><div class="v">${fmtAvg(avg.agari)}</div><div class="l">和了数</div></div>
+        <div class="stat-tile"><div class="v">${fmtAvg(avg.tsumo)}</div><div class="l">ツモ数</div></div>
+        <div class="stat-tile"><div class="v">${fmtAvg(avg.ron)}</div><div class="l">ロン数</div></div>
+        <div class="stat-tile"><div class="v">${fmtAvg(avg.houjuu)}</div><div class="l">放銃数</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(avg.riichiRate)}</div><div class="l">リーチ率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(avg.fuuroRate)}</div><div class="l">副露率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(avg.agariRate)}</div><div class="l">和了率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(avg.houjuuRate)}</div><div class="l">放銃率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(avg.riichiAgariRate)}</div><div class="l">リーチ後和了率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(avg.riichiHoujuuRate)}</div><div class="l">リーチ後放銃率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(avg.fuuroAgariRate)}</div><div class="l">副露後和了率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(avg.fuuroHoujuuRate)}</div><div class="l">副露後放銃率</div></div>
+      </div>`}
+    </div>`;
+}
+function renderPlayerStatCard(s){
+  const key = s.name || "";
+  const collapsed = state.statsCollapsed[key] !== false; // デフォルトは折りたたみ
+  return `
+    <div class="stat-player-card">
+      <div class="row-between" data-toggle-stats-collapse="${escapeAttr(key)}">
+        <div class="stat-name">${escapeHtml(s.name||"（名前未設定）")}</div>
+        <span class="n-sub">${collapsed?'▶':'▼'}</span>
+      </div>
+      ${collapsed ? "" : `
+      <div class="stat-section-label">着順（半荘${s.hanchanRankedCount}回分）</div>
+      <div class="stat-grid">
+        <div class="stat-tile"><div class="v">${fmtAvg(s.avgRank)}</div><div class="l">平均順位</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.top)}</div><div class="l">トップ率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.second)}</div><div class="l">2着率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.third)}</div><div class="l">3着率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.last)}</div><div class="l">ラス率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.hakoRate)}</div><div class="l">ハコ率</div></div>
+      </div>
+      <div class="stat-section-label">打点</div>
+      <div class="stat-grid">
+        <div class="stat-tile"><div class="v">${s.kyokuCount}</div><div class="l">総局数（詳細）</div></div>
+        <div class="stat-tile"><div class="v">${s.riichi}</div><div class="l">リーチ数</div></div>
+        <div class="stat-tile"><div class="v">${s.fuuro}</div><div class="l">副露局数</div></div>
+        <div class="stat-tile"><div class="v">${s.agari}</div><div class="l">和了数</div></div>
+        <div class="stat-tile"><div class="v">${s.tsumo}</div><div class="l">ツモ数</div></div>
+        <div class="stat-tile"><div class="v">${s.ron}</div><div class="l">ロン数</div></div>
+        <div class="stat-tile"><div class="v">${s.houjuu}</div><div class="l">放銃数</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.riichiRate)}</div><div class="l">リーチ率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.fuuroRate)}</div><div class="l">副露率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.agariRate)}</div><div class="l">和了率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.houjuuRate)}</div><div class="l">放銃率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.riichiAgariRate)}</div><div class="l">リーチ後和了率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.riichiHoujuuRate)}</div><div class="l">リーチ後放銃率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.fuuroAgariRate)}</div><div class="l">副露後和了率</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.fuuroHoujuuRate)}</div><div class="l">副露後放銃率</div></div>
+      </div>`}
+    </div>`;
+}
+function renderStatsSection(){
+  const allStats = computeOverallStats(); // 統計タブは対局実績0のプレイヤーも一覧に含める（入力アプリと同じ挙動）
+  if(!allStats.length){
+    return `<div class="card"><div class="empty">プレイヤーが登録されていません。</div></div>`;
+  }
+  const activeStats = allStats.filter(s=>s.kyokuCount>0);
+  const avg = computeAverageStats(activeStats);
+  const avgCard = avg ? renderAverageStatCard(avg) : "";
+  const cards = avgCard + allStats.map(s=>renderPlayerStatCard(s)).join("");
+  return `
+    <div class="card">
+      <div class="section-head">
+        <h2>統計<span class="n-sub">プレイヤー別スタッツ（クリックで折りたたみ／展開）</span></h2>
+      </div>
+      <div class="stats-grid">${cards}</div>
+      <div class="glossary" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
+        ・和了＝アガリ　・放銃＝ロンされること　・副露＝ポン／チー／カンなど鳴く行為　・チョンボ＝ゲームの進行を止めるルール違反行為（アガリ放棄は含まない）
+      </div>
+    </div>`;
+}
+
+function computeHeadToHead(nameA, nameB){
+  if(!nameA || !nameB || nameA===nameB) return {count:0};
+  const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`]);
+  let count=0, totalKyoku=0, sumRankA=0, sumRankB=0, sumPtA=0, sumPtB=0;
+  const rankCountA = {1:0,2:0,3:0,4:0}, rankCountB = {1:0,2:0,3:0,4:0};
+  groups.forEach(g=>{
+    const key = `${g.date}_${g.hanchanNo}`;
+    const names = namesForHanchan(g.date, g.hanchanNo);
+    const idxA = names.indexOf(nameA), idxB = names.indexOf(nameB);
+    if(idxA===-1 || idxB===-1) return;
+    const ranks = state.raw.ranks[key], pts = state.raw.finalPoints[key];
+    if(!ranks || !pts) return;
+    count++;
+    totalKyoku += computeHanchanKyokuStats(g.date, g.hanchanNo).total;
+    sumRankA += ranks[idxA]||0; sumRankB += ranks[idxB]||0;
+    sumPtA += pts[idxA]||0; sumPtB += pts[idxB]||0;
+    if(rankCountA[ranks[idxA]] !== undefined) rankCountA[ranks[idxA]]++;
+    if(rankCountB[ranks[idxB]] !== undefined) rankCountB[ranks[idxB]]++;
+  });
+  if(!count) return {count:0};
+  return {
+    count, totalKyoku,
+    avgRankA: sumRankA/count, avgRankB: sumRankB/count,
+    avgPtA: sumPtA/count, avgPtB: sumPtB/count,
+    topA: rankCountA[1]/count, secondA: rankCountA[2]/count, thirdA: rankCountA[3]/count, lastA: rankCountA[4]/count,
+    topB: rankCountB[1]/count, secondB: rankCountB[2]/count, thirdB: rankCountB[3]/count, lastB: rankCountB[4]/count,
+  };
+}
+
+// ---------- render: loader ----------
+function renderLoader(){
+  return `
+  <div class="loader-screen">
+    <div class="loader-card" id="dropzone">
+      <div class="loader-icon">🀄</div>
+      <h1>麻雀スタッツ PC分析ビューア</h1>
+      <p class="loader-desc">入力アプリの設定タブから書き出した<br>バックアップJSONファイルを読み込んでください。<br>閲覧・分析専用で、データの編集・保存は行いません。</p>
+      <label class="file-select-btn">ファイルを選択
+        <input type="file" accept="application/json,.json" id="file-input" style="display:none;">
+      </label>
+      <p class="loader-hint">またはこの枠内にファイルをドラッグ&ドロップ</p>
+      <button type="button" class="file-select-btn" id="load-from-server-btn" style="margin-top:10px;">🌐 サイト上のbackup.jsonを読み込む</button>
+      <div class="loader-error" id="loader-error"></div>
+      <p class="loader-note">読み込んだデータはこの画面を閉じる・再読み込みすると消去されます（保存されません）。</p>
+    </div>
+  </div>`;
+}
+function bindLoaderEvents(){
+  const input = document.getElementById("file-input");
+  if(input) input.addEventListener("change", e=>{ const f=e.target.files[0]; if(f) handleFileObj(f); });
+  const dz = document.getElementById("dropzone");
+  if(dz){
+    ["dragenter","dragover"].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add("dragover"); }));
+    ["dragleave","drop"].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove("dragover"); }));
+    dz.addEventListener("drop", e=>{
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if(f) handleFileObj(f);
+    });
+  }
+  const serverBtn = document.getElementById("load-from-server-btn");
+  if(serverBtn) serverBtn.addEventListener("click", loadFromServer);
+}
+function handleFileObj(file){
+  const errEl = document.getElementById("loader-error");
+  if(errEl) errEl.textContent = "";
+  const reader = new FileReader();
+  reader.onload = ()=>{ processBackupText(reader.result, errEl); };
+  reader.onerror = ()=>{ if(errEl) errEl.textContent = "ファイルの読み込みに失敗しました。"; };
+  reader.readAsText(file, "utf-8");
+}
+// バックアップJSONのテキストそのものを受け取って読み込む共通処理（ファイル選択・ドラッグ&ドロップ・サーバー読み込みの全てから呼ばれる）。
+function processBackupText(rawText, errEl){
+  let parsed;
+  try{ parsed = JSON.parse(rawText); }
+  catch(e){ if(errEl) errEl.textContent = "JSONファイルとして読み込めませんでした。"; return; }
+  if(parsed.app !== "mahjong-stats-backup"){
+    if(errEl) errEl.textContent = "麻雀スタッツ入力アプリのバックアップファイルではないようです。";
+    return;
+  }
+  state.raw = parsed;
+  state.loaded = true;
+  state.section = "stats";
+  state.chips = [];
+  state.compareTargets = null;
+  state.graphRange = {from:"", to:""};
+  state.compatRadarTargets = null;
+  state.statsCollapsed = {};
+  render();
+}
+// サイト上のデータ（backup.json）を読み込む前にパスワードを確認する共通処理。
+// キャンセル時は何も表示せず、不一致時のみエラーを通知する。
+function checkSitePassword(errEl){
+  const pw = window.prompt("サイト上のデータを読み込みます。パスワードを入力してください");
+  if(pw === null) return false;
+  if(pw !== "masu"){ if(errEl) errEl.textContent = "パスワードが違います。"; return false; }
+  return true;
+}
+// サイト上（同じNetlifyサイトのルート）に置かれているbackup.jsonをfetchで取得して読み込む。
+async function loadFromServer(){
+  const errEl = document.getElementById("loader-error");
+  if(errEl) errEl.textContent = "";
+  if(!checkSitePassword(errEl)) return;
+  try{
+    const res = await fetch("./backup.json", { cache: "no-store" });
+    if(!res.ok){
+      if(errEl) errEl.textContent = `サイト上のbackup.jsonを取得できませんでした（${res.status}）`;
+      return;
+    }
+    const text = await res.text();
+    processBackupText(text, errEl);
+  }catch(e){
+    if(errEl) errEl.textContent = "サイト上のbackup.jsonを取得できませんでした（通信エラー）。";
+  }
+}
+
+// ---------- render: shell ----------
+function render(){
+  const app = document.getElementById("app");
+  if(!state.loaded){
+    app.innerHTML = renderLoader();
+    bindLoaderEvents();
+    return;
+  }
+  const stats = computeActiveStats();
+  app.innerHTML = `
+    <div class="sidebar">${renderSidebar(stats)}</div>
+    <div class="main">${renderSectionWrap(stats)}</div>
+  `;
+  bindEvents(stats);
+}
+
+function renderSidebar(stats){
+  const raw = state.raw;
+  const totalHanchan = hanchanGroups().length;
+  const confirmedCount = Object.values(raw.hanchanConfirmed||{}).filter(Boolean).length;
+  return `
+    <div class="sidebar-summary">
+      <div class="app-title">🀄 麻雀スタッツ<br>PC分析ビューア</div>
+      <div class="summary-line">書き出し日時：${escapeHtml(fmtDateTime(raw.exportedAt))}</div>
+      <div class="summary-line">半荘：${confirmedCount}／${totalHanchan}件（確定済み／全体）</div>
+      <div class="summary-line">分析対象プレイヤー：${stats.length}名<span style="font-weight:400;">（対局・半荘のいずれかの実績あり）</span></div>
+    </div>
+    <nav class="side-nav">
+      ${navBtn("stats","📊","統計")}
+      ${navBtn("compare","①","比較表")}
+      ${navBtn("radar","②","レーダーチャート")}
+      ${navBtn("graph","③","スコア推移")}
+      ${navBtn("compatradar","④","相性レーダーチャート")}
+    </nav>
+    <button class="reload-btn" data-reload>📂 別のファイルを読み込む</button>
+  `;
+}
+function navBtn(id, num, label){
+  return `<button data-section="${id}" class="${state.section===id?'active':''}"><span class="nav-num">${num}</span>${label}</button>`;
+}
+
+function renderSectionWrap(stats){
+  if(state.section==="stats"){
+    return renderStatsSection(); // 統計タブは対局実績0のプレイヤーも含めて表示するため、専用に分岐（他セクションの空判定より前）
+  }
+  if(stats.length===0){
+    return `<div class="card"><div class="empty">対局実績のあるプレイヤーがいません。入力アプリでデータを記録してから、書き出したJSONを読み込んでください。</div></div>`;
+  }
+  let body;
+  if(state.section==="compare"){
+    body = stats.length>=2 ? renderCompareSection(stats) : renderNeedMorePlayers("①比較表");
+  }else if(state.section==="radar"){
+    body = stats.length>=2 ? renderRadarSection(stats) : renderNeedMorePlayers("②レーダーチャート");
+  }else if(state.section==="graph"){
+    body = renderGraphSection();
+  }else{
+    body = renderCompatRadarGridSection(stats);
+  }
+  const showChipBar = state.section==="radar" || state.section==="graph";
+  return (showChipBar ? renderChipBar() : "") + body;
+}
+function renderNeedMorePlayers(label){
+  return `<div class="card"><div class="empty">${escapeHtml(label)}を表示するには、対局実績のあるプレイヤーが2人以上必要です。</div></div>`;
+}
+
+function renderChipBar(){
+  const chips = state.chips.map(n=>{
+    const color = colorForChip(n);
+    return `<span class="sel-chip" style="border-color:${color}; color:${color}; background:${color}18;">
+      ${escapeHtml(n)}<button data-chip-remove="${escapeAttr(n)}" aria-label="解除">×</button></span>`;
+  }).join("");
+  const clearBtn = state.chips.length ? `<button class="chip-clear-btn" data-chip-clear>選択をクリア</button>` : "";
+  return `<div class="chip-bar">
+    <span class="chip-bar-label">選択中プレイヤー</span>
+    ${chips || '<span class="chip-bar-empty">②の凡例をクリックして選択すると③に反映されます</span>'}
+    ${clearBtn}
+  </div>`;
+}
+
+// ---------- render: ①比較表 ----------
+// 表示するプレイヤーを選択チップ（②レーダーチャートや④相性レーダーチャートと同様のUI）で選ぶ方式にする。
+function renderCompareSection(allStats){
+  const allNames = allStats.map(s=>s.name);
+  if(state.compareTargets === null){
+    state.compareTargets = allNames.length<=COMPARE_DEFAULT_TARGET_COUNT ? allNames.slice()
+      : allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).slice(0,COMPARE_DEFAULT_TARGET_COUNT).map(s=>s.name);
+  }else{
+    state.compareTargets = state.compareTargets.filter(n=>allNames.includes(n));
+  }
+  const targets = state.compareTargets;
+
+  const targetChips = allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).map(s=>{
+    const on = targets.includes(s.name);
+    return `<label class="chip roster-chip target-chip ${on?'on':''}">
+      <input type="checkbox" data-compare-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}（${s.hanchanRankedCount}半荘）</label>`;
+  }).join("");
+
+  let tableHtml;
+  if(!targets.length){
+    tableHtml = `<div class="empty">プレイヤーを1人以上選択してください。</div>`;
+  }else{
+    const selStats = targets.map(n=>allStats.find(s=>s.name===n)).filter(Boolean);
+    const headerCells = selStats.map(s=>{
+      const selected = state.chips.includes(s.name);
+      const color = colorForChip(s.name);
+      const style = selected ? `background:${color}22; color:${color}; border-bottom:3px solid ${color};` : "";
+      return `<th style="${style}">${escapeHtml(s.name)}</th>`;
+    }).join("");
+    const rows = COMPARE_METRICS.map(m=>{
+      const cells = selStats.map(s=>{
+        const selected = state.chips.includes(s.name);
+        const color = colorForChip(s.name);
+        const style = selected ? `background:${color}14;` : "";
+        return `<td style="${style}">${m.fmt(s[m.key])}</td>`;
+      }).join("");
+      return `<tr><td class="col-name">${m.label}</td>${cells}</tr>`;
+    }).join("");
+    tableHtml = `
+      <div class="table-scroll">
+        <table class="stat-mini-table" id="compare-table">
+          <tr><th class="col-name"></th>${headerCells}</tr>
+          ${rows}
+        </table>
+      </div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="section-head">
+        <h2>① 比較表<span class="n-sub">選手を選んで比較</span></h2>
+        <button class="tool-btn" data-copy-table="compare">📋 表をコピー</button>
+      </div>
+      <div class="target-select">
+        <span class="chip-bar-label">対象プレイヤー（初期表示は目安${COMPARE_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます）</span>
+        <div class="chip-row">${targetChips}</div>
+      </div>
+      ${tableHtml}
+    </div>`;
+}
+
+// ---------- render: ②レーダーチャート ----------
+function renderRadarSection(stats){
+  const maxByAxis = {};
+  RADAR_AXES.forEach(ax=>{ maxByAxis[ax.key] = Math.max(0.0001, ...stats.map(s=>s[ax.key]||0)); });
+  const w=520, h=520, cx=260, cy=260, r=190;
+  const n = RADAR_AXES.length;
+  const angleFor = i => -Math.PI/2 + i*(2*Math.PI/n);
+  const axisLines = RADAR_AXES.map((ax,i)=>{
+    const a=angleFor(i); const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E4DFD3" stroke-width="1"/>`;
+  }).join("");
+  const gridPolys = [0.25,0.5,0.75,1.0].map(level=>{
+    const pts = RADAR_AXES.map((ax,i)=>{ const a=angleFor(i), rr=r*level; return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`; }).join(" ");
+    return `<polygon points="${pts}" fill="none" stroke="#E4DFD3" stroke-width="1" stroke-dasharray="${level===1?'0':'3,3'}"/>`;
+  }).join("");
+  const labels = RADAR_AXES.map((ax,i)=>{
+    const a=angleFor(i); const x=cx+(r+30)*Math.cos(a), y=cy+(r+26)*Math.sin(a);
+    const cosA=Math.cos(a); const anchor = cosA>0.3 ? "start" : cosA<-0.3 ? "end" : "middle";
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="15" fill="#767b83" text-anchor="${anchor}" font-weight="700">${ax.label}</text>`;
+  }).join("");
+  const selectedSet = new Set(state.chips.filter(n=>stats.some(s=>s.name===n)));
+  const order = stats.slice().sort((a,b)=> (selectedSet.has(a.name)?1:0) - (selectedSet.has(b.name)?1:0));
+  const polys = order.map(s=>{
+    const isSel = selectedSet.has(s.name);
+    const color = isSel ? colorForChip(s.name) : NEUTRAL_COLOR;
+    const pts = RADAR_AXES.map((ax,i)=>{
+      const a=angleFor(i);
+      const raw = (s[ax.key]||0) / maxByAxis[ax.key];
+      const norm = ax.invert ? (1-raw) : raw;
+      const rr = r*Math.max(0, Math.min(1, norm));
+      return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`;
+    }).join(" ");
+    const fillOp = isSel? 0.22 : 0.04;
+    const strokeW = isSel? 3 : 1.2;
+    const strokeOp = isSel? 1 : 0.3;
+    return `<polygon data-radar-name="${escapeAttr(s.name)}" points="${pts}" fill="${color}" fill-opacity="${fillOp}" stroke="${color}" stroke-opacity="${strokeOp}" stroke-width="${strokeW}" style="cursor:pointer;"/>`;
+  }).join("");
+  const legend = stats.map(s=>{
+    const isSel = selectedSet.has(s.name);
+    const color = isSel ? colorForChip(s.name) : NEUTRAL_COLOR;
+    const style = isSel ? `background:${color}22; border-color:${color}; color:${color};` : "";
+    return `<button class="chip legend-chip" data-chip-toggle="${escapeAttr(s.name)}" style="${style}"><span class="legend-dot" style="background:${color};"></span>${escapeHtml(s.name)}</button>`;
+  }).join("");
+  return `
+    <div class="card">
+      <div class="section-head">
+        <h2>② レーダーチャート比較<span class="n-sub">選手名クリックでハイライトON/OFF（①③と連動）</span></h2>
+      </div>
+      <svg viewBox="0 0 ${w} ${h}" id="radar-svg" style="width:100%; max-width:560px; height:auto; display:block; margin:0 auto;">
+        <rect x="0" y="0" width="${w}" height="${h}" fill="#FFFFFF"/>
+        ${gridPolys}${axisLines}${polys}${labels}
+      </svg>
+      <div class="chip-row legend-row">${legend}</div>
+      <div class="n-sub axis-note">放銃率・ラス率は低いほど外側（良い）になるよう反転しています。各軸は対局実績のある全プレイヤー中の最大値を基準に正規化しています。全員を薄色で表示し、選択中の選手だけ濃く強調します。</div>
+    </div>`;
+}
+
+// ---------- render: ③スコア推移 ----------
+// 期間指定（state.graphRange）で絞り込んだ範囲に確定した半荘のみを対象に、その範囲内でのスコア推移を計算する
+// （範囲より前の半荘の得点は含めない＝期間の先頭で0からの推移になる）。
+function renderGraphSection(){
+  const range = state.graphRange;
+  const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`]);
+  const filtered = groups.filter(g=> (!range.from || g.date>=range.from) && (!range.to || g.date<=range.to));
+
+  const rangeControls = `
+    <div class="graph-range">
+      <label>期間：<input type="date" data-graph-from value="${escapeAttr(range.from)}"></label>
+      <label>〜<input type="date" data-graph-to value="${escapeAttr(range.to)}"></label>
+      ${(range.from || range.to) ? `<button class="tool-btn small" data-graph-clear>指定なし</button>` : ""}
+    </div>`;
+
+  if(!filtered.length){
+    return `<div class="card"><div class="section-head"><h2>③ スコア推移</h2></div>${rangeControls}<div class="empty">対象期間に確定済みの半荘がありません。</div></div>`;
+  }
+
+  const allNames = [];
+  const seen = new Set();
+  filtered.forEach(g=>{
+    namesForHanchan(g.date, g.hanchanNo).forEach(nm=>{
+      const n = nm || "?";
+      if(!seen.has(n)){ seen.add(n); allNames.push(n); }
+    });
+  });
+
+  const cum = {}; allNames.forEach(n=>{ cum[n]=0; });
+  const series = {}; allNames.forEach(n=>{ series[n]=[]; });
+  filtered.forEach(g=>{
+    const key = `${g.date}_${g.hanchanNo}`;
+    const names = namesForHanchan(g.date, g.hanchanNo);
+    const pts = state.raw.finalPoints[key] || [0,0,0,0];
+    allNames.forEach(n=>{
+      const slot = names.indexOf(n);
+      if(slot !== -1) cum[n] += (pts[slot]||0);
+      series[n].push(cum[n]);
+    });
+  });
+
+  const w=900, h=420, padL=54, padR=20, padT=20, padB=32;
+  const n = filtered.length;
+  const allVals = allNames.flatMap(nm=>series[nm]).concat([0]);
+  const maxV = Math.max(...allVals), minV = Math.min(...allVals);
+  const xAt = i => padL + (n<=1 ? 0 : (i*(w-padL-padR)/(n-1)));
+  const yAt = v => (h-padB) - ((v-minV)/((maxV-minV)||1))*(h-padT-padB);
+
+  const selectedSet = new Set(state.chips.filter(nm=>allNames.includes(nm)));
+  const order = allNames.slice().sort((a,b)=> (selectedSet.has(a)?1:0) - (selectedSet.has(b)?1:0));
+
+  // y軸の目安線（0とmax/min付近）
+  const gridLevels = [minV, (minV+maxV)/2, maxV];
+  const gridLines = gridLevels.map(v=>{
+    const y = yAt(v).toFixed(1);
+    return `<line x1="${padL}" y1="${y}" x2="${w-padR}" y2="${y}" stroke="#E4DFD3" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="${padL-8}" y="${(+y+4).toFixed(1)}" font-size="11" fill="#767b83" text-anchor="end">${fmtPt(v)}</text>`;
+  }).join("");
+  const zeroY = yAt(0).toFixed(1);
+  const zeroLine = (minV<0 && maxV>0) ? `<line x1="${padL}" y1="${zeroY}" x2="${w-padR}" y2="${zeroY}" stroke="#767b83" stroke-width="1.2"/>` : "";
+
+  const lines = order.map(nm=>{
+    const isSel = selectedSet.has(nm);
+    const color = isSel ? colorForChip(nm) : NEUTRAL_COLOR;
+    const s = series[nm];
+    const points = s.map((v,i)=>`${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(" ");
+    const strokeW = isSel ? 3 : 1.4;
+    const strokeOp = isSel ? 1 : 0.4;
+    return `<polyline data-graph-name="${escapeAttr(nm)}" points="${points}" fill="none" stroke="${color}" stroke-opacity="${strokeOp}" stroke-width="${strokeW}"/>`;
+  }).join("");
+
+  const legend = allNames.map(nm=>{
+    const isSel = selectedSet.has(nm);
+    const color = isSel ? colorForChip(nm) : NEUTRAL_COLOR;
+    const style = isSel ? `background:${color}22; border-color:${color}; color:${color};` : "";
+    return `<button class="chip legend-chip" data-chip-toggle="${escapeAttr(nm)}" style="${style}"><span class="legend-dot" style="background:${color};"></span>${escapeHtml(nm)}</button>`;
+  }).join("");
+
+  return `
+    <div class="card">
+      <div class="section-head">
+        <h2>③ スコア推移<span class="n-sub">確定済み半荘・プレイヤー名単位で集計（期間内のスコアのみで算出）</span></h2>
+      </div>
+      ${rangeControls}
+      <svg viewBox="0 0 ${w} ${h}" id="graph-svg" style="width:100%; height:auto; margin-top:14px;">
+        <rect x="0" y="0" width="${w}" height="${h}" fill="#FFFFFF"/>
+        ${gridLines}${zeroLine}${lines}
+      </svg>
+      <div class="chip-row legend-row">${legend}</div>
+      <div class="n-sub" style="display:block; margin-top:8px;">対象：確定済み半荘 ${n}件／選手名クリックでハイライトON/OFF（①②と連動）</div>
+    </div>`;
+}
+
+// ---------- render: ④相性レーダーチャート（プレイヤー毎に並べて表示） ----------
+// 同卓者別の相性を見る指標：軸＝同卓した相手、値＝「基準プレイヤーの平均得点pt－相手の平均得点pt」
+// （確定済み半荘で実際に同卓した範囲のみが対象）。0を基準に、外側＝勝ち越し、内側＝負け越しを表す。
+const COMPAT_RADAR_DEFAULT_TARGET_COUNT = 8;
+function computeCompatAxes(baseName, stats, targetNames){
+  const pool = targetNames ? stats.filter(s=>targetNames.includes(s.name)) : stats;
+  return pool.filter(s=>s.name!==baseName).map(s=>{
+    const h2h = computeHeadToHead(baseName, s.name);
+    return { name: s.name, count: h2h.count||0, diff: h2h.count ? (h2h.avgPtA - h2h.avgPtB) : null };
+  }).filter(a=>a.count>0);
+}
+function renderCompatRadarCard(baseName, axes, color, svgId){
+  if(!axes.length){
+    return `<div class="radar-grid-card">
+      <div class="radar-grid-card-head"><h3>${escapeHtml(baseName)}</h3></div>
+      <div class="empty">同卓した確定済み半荘が見つかりませんでした。</div>
+    </div>`;
+  }
+  const maxAbs = Math.max(1, ...axes.map(a=>Math.abs(a.diff)));
+  const w=280, h=280, cx=140, cy=140, r=98;
+  const n = axes.length;
+  const angleFor = i => -Math.PI/2 + i*(2*Math.PI/n);
+  const axisLines = axes.map((ax,i)=>{
+    const a=angleFor(i); const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E4DFD3" stroke-width="1"/>`;
+  }).join("");
+  const gridPolys = [0.25,0.5,0.75,1.0].map(level=>{
+    const pts = axes.map((ax,i)=>{ const a=angleFor(i), rr=r*level; return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`; }).join(" ");
+    return `<polygon points="${pts}" fill="none" stroke="#E4DFD3" stroke-width="1" stroke-dasharray="${level===1?'0':'2,2'}"/>`;
+  }).join("");
+  const zeroPts = axes.map((ax,i)=>{ const a=angleFor(i), rr=r*0.5; return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`; }).join(" ");
+  const zeroPoly = `<polygon points="${zeroPts}" fill="none" stroke="#767b83" stroke-width="1.4" stroke-dasharray="4,2"/>`;
+  const labels = axes.map((ax,i)=>{
+    const a=angleFor(i); const x=cx+(r+20)*Math.cos(a), y=cy+(r+16)*Math.sin(a);
+    const cosA=Math.cos(a); const anchor = cosA>0.3?"start":cosA<-0.3?"end":"middle";
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="11" fill="#767b83" text-anchor="${anchor}">${escapeHtml(ax.name)}</text>`;
+  }).join("");
+  const dataPts = axes.map((ax,i)=>{
+    const a=angleFor(i);
+    const frac = Math.max(0, Math.min(1, (ax.diff+maxAbs)/(2*maxAbs)));
+    const rr = r*frac;
+    return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`;
+  }).join(" ");
+  const dataPoly = `<polygon points="${dataPts}" fill="${color}" fill-opacity="0.18" stroke="${color}" stroke-width="2"/>`;
+  const legendRows = axes.map(ax=>`
+    <div class="compat-legend-row">
+      <span>${escapeHtml(ax.name)}</span>
+      <span style="font-weight:800; color:${ax.diff>=0?'#1F6F54':'#B23A2E'};">${fmtPt(ax.diff)}（${ax.count}回同卓）</span>
+    </div>`).join("");
+  return `
+    <div class="radar-grid-card">
+      <div class="radar-grid-card-head">
+        <h3>${escapeHtml(baseName)}</h3>
+      </div>
+      <svg viewBox="0 0 ${w} ${h}" id="${svgId}" style="width:100%; height:auto; display:block;">
+        <rect x="0" y="0" width="${w}" height="${h}" fill="#FFFFFF"/>
+        ${gridPolys}${zeroPoly}${axisLines}${dataPoly}${labels}
+      </svg>
+      <div class="n-sub" style="display:block; margin:6px 0 8px;">点線の円＝スコア差0（互角）。外側ほど${escapeHtml(baseName)}さんの勝ち越し。</div>
+      ${legendRows}
+    </div>`;
+}
+function renderCompatRadarGridSection(allStats){
+  const allNames = allStats.map(s=>s.name);
+  if(state.compatRadarTargets === null){
+    if(allNames.length <= COMPAT_RADAR_DEFAULT_TARGET_COUNT){
+      state.compatRadarTargets = allNames.slice();
+    }else{
+      state.compatRadarTargets = allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount)
+        .slice(0, COMPAT_RADAR_DEFAULT_TARGET_COUNT).map(s=>s.name);
+    }
+  }else{
+    state.compatRadarTargets = state.compatRadarTargets.filter(n=>allNames.includes(n));
+  }
+  const targets = state.compatRadarTargets;
+
+  const targetChips = allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).map(s=>{
+    const on = targets.includes(s.name);
+    return `<label class="chip roster-chip target-chip ${on?'on':''}">
+      <input type="checkbox" data-compatradar-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}（${s.hanchanRankedCount}半荘）</label>`;
+  }).join("");
+
+  let body;
+  if(!targets.length){
+    body = `<div class="empty">プレイヤーを1人以上選択してください。</div>`;
+  }else{
+    const cards = targets.map((name,i)=>{
+      const axes = computeCompatAxes(name, allStats, targets);
+      const color = CHART_PALETTE[i % CHART_PALETTE.length];
+      return renderCompatRadarCard(name, axes, color, `compat-radar-svg-${i}`);
+    }).join("");
+    body = `<div class="radar-grid">${cards}</div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="section-head">
+        <h2>④ 相性レーダーチャート<span class="n-sub">選手ごとに、同卓した相手との平均得点pt差を表示</span></h2>
+      </div>
+      <div class="target-select">
+        <span class="chip-bar-label">対象プレイヤー（初期表示は目安${COMPAT_RADAR_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます）</span>
+        <div class="chip-row">${targetChips}</div>
+      </div>
+      ${body}
+    </div>`;
+}
+
+// ---------- 選択チップの共通操作 ----------
+function toggleChip(name){
+  const idx = state.chips.indexOf(name);
+  if(idx>=0) state.chips.splice(idx,1); else state.chips.push(name);
+  render();
+}
+
+// ---------- 表のコピー（①比較表） ----------
+function copyCompareTsv(allStats){
+  const targets = state.compareTargets || [];
+  const stats = targets.map(n=>allStats.find(s=>s.name===n)).filter(Boolean);
+  const header = [""].concat(stats.map(s=>s.name));
+  const lines = [header.join("\t")];
+  COMPARE_METRICS.forEach(m=>{
+    lines.push([m.label].concat(stats.map(s=>String(m.fmt(s[m.key])))).join("\t"));
+  });
+  copyText(lines.join("\n"));
+}
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>toast("表をコピーしました")).catch(()=>fallbackCopy(text));
+  }else{
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position="fixed"; ta.style.left="-9999px";
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand("copy"); toast("表をコピーしました"); }
+  catch(e){ toast("コピーに失敗しました"); }
+  document.body.removeChild(ta);
+}
+
+// ---------- イベント束縛 ----------
+function bindEvents(stats){
+  const app = document.getElementById("app");
+
+  app.querySelectorAll("[data-section]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ state.section = btn.dataset.section; render(); });
+  });
+
+  app.querySelectorAll("[data-toggle-stats-collapse]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const key = el.dataset.toggleStatsCollapse;
+      const collapsedNow = state.statsCollapsed[key] !== false;
+      state.statsCollapsed[key] = collapsedNow ? false : true;
+      render();
+    });
+  });
+
+  const reloadBtn = app.querySelector("[data-reload]");
+  if(reloadBtn) reloadBtn.addEventListener("click", ()=>{
+    if(confirm("表示中のデータを破棄して、別のファイルを読み込みますか？")){
+      state.raw = null; state.loaded = false; render();
+    }
+  });
+
+  app.querySelectorAll("[data-chip-toggle]").forEach(el=>{
+    el.addEventListener("click", ()=> toggleChip(el.dataset.chipToggle));
+  });
+  app.querySelectorAll("[data-radar-name]").forEach(el=>{
+    el.addEventListener("click", ()=> toggleChip(el.dataset.radarName));
+  });
+  app.querySelectorAll("[data-graph-name]").forEach(el=>{
+    el.addEventListener("click", ()=> toggleChip(el.dataset.graphName));
+  });
+  const graphFrom = app.querySelector("[data-graph-from]");
+  if(graphFrom) graphFrom.addEventListener("change", ()=>{ state.graphRange.from = graphFrom.value; render(); });
+  const graphTo = app.querySelector("[data-graph-to]");
+  if(graphTo) graphTo.addEventListener("change", ()=>{ state.graphRange.to = graphTo.value; render(); });
+  const graphClear = app.querySelector("[data-graph-clear]");
+  if(graphClear) graphClear.addEventListener("click", ()=>{ state.graphRange = {from:"", to:""}; render(); });
+  app.querySelectorAll("[data-chip-remove]").forEach(btn=>{
+    btn.addEventListener("click", e=>{ e.stopPropagation(); toggleChip(btn.dataset.chipRemove); });
+  });
+  const clearBtn = app.querySelector("[data-chip-clear]");
+  if(clearBtn) clearBtn.addEventListener("click", ()=>{ state.chips = []; render(); });
+
+  app.querySelectorAll("[data-compare-toggle]").forEach(cb=>{
+    cb.addEventListener("change", ()=>{
+      const name = cb.dataset.compareToggle;
+      const idx = state.compareTargets.indexOf(name);
+      if(idx>=0) state.compareTargets.splice(idx,1); else state.compareTargets.push(name);
+      render();
+    });
+  });
+  app.querySelectorAll("[data-compatradar-toggle]").forEach(cb=>{
+    cb.addEventListener("change", ()=>{
+      const name = cb.dataset.compatradarToggle;
+      const idx = state.compatRadarTargets.indexOf(name);
+      if(idx>=0) state.compatRadarTargets.splice(idx,1); else state.compatRadarTargets.push(name);
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-copy-table]").forEach(btn=>{
+    btn.addEventListener("click", ()=> copyCompareTsv(stats));
+  });
+}
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>麻雀スタッツ 取扱説明書</title>
+<style>
+  :root{
+    --bg:#F6F3EC; --surface:#FFFFFF; --ink:#242629; --muted:#767b83; --line:#E4DFD3;
+    --primary:#1F6F54; --primary-dark:#154A38; --primary-tint:#E4EFE9;
+    --riichi:#C98A2B; --riichi-tint:#F7ECD8;
+    --agari:#1F6F54; --agari-tint:#E4EFE9;
+    --ron:#2E6DA4; --ron-tint:#E2EBF5;
+    --houjuu:#B23A2E; --houjuu-tint:#F7E3E1;
+    --chombo:#6B4FA0; --chombo-tint:#EBE6F5;
+    --fuuro:#3B8C6E; --fuuro-tint:#E1F0EA;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Segoe UI",sans-serif;}
+  body{padding:0 0 48px;}
+  header{position:sticky; top:0; z-index:10; background:var(--bg); padding:18px 16px 10px; text-align:center;
+    border-bottom:1px solid var(--line);}
+  h1{margin:0 0 2px; font-size:19px; color:var(--primary-dark); letter-spacing:.02em;}
+  .sub{margin:0 0 14px; font-size:12px; color:var(--muted);}
+  .switch{display:inline-flex; background:var(--surface); border:1px solid var(--line); border-radius:999px;
+    padding:3px; gap:2px;}
+  .switch button{border:none; background:transparent; padding:8px 18px; border-radius:999px; font-size:13.5px;
+    font-weight:700; color:var(--muted); cursor:pointer; font-family:inherit;}
+  .switch button.active{background:var(--primary); color:#fff;}
+  main{max-width:640px; margin:0 auto; padding:16px;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 16px 14px; margin-bottom:12px;}
+  .card h2{margin:0 0 10px; font-size:15.5px; display:flex; align-items:center; gap:8px; color:var(--ink);}
+  .card h2 .n{width:20px; height:20px; border-radius:50%; background:var(--primary-tint); color:var(--primary-dark);
+    font-size:11px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; flex:none;}
+  .flow{display:flex; align-items:center; flex-wrap:wrap; gap:4px 2px; font-size:11.5px;}
+  .step{display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; width:64px;}
+  .step .ic{width:40px; height:40px; border-radius:11px; background:var(--bg); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:18px;}
+  .step .lb{line-height:1.25; color:var(--ink); font-weight:600;}
+  .arrow{color:var(--line); font-size:16px; padding:0 1px; align-self:center; flex:none;}
+  .badges{display:flex; flex-wrap:wrap; gap:6px; margin:2px 0;}
+  .badge{padding:6px 11px; border-radius:9px; font-size:12px; font-weight:800;}
+  .b-riichi{background:var(--riichi-tint); color:var(--riichi);}
+  .b-fuuro{background:var(--fuuro-tint); color:var(--fuuro);}
+  .b-tsumo{background:var(--agari-tint); color:var(--agari);}
+  .b-ron{background:var(--ron-tint); color:var(--ron);}
+  .b-houjuu{background:var(--houjuu-tint); color:var(--houjuu);}
+  .b-chombo{background:var(--chombo-tint); color:var(--chombo);}
+  .pill{padding:6px 11px; border-radius:999px; background:var(--primary-tint); color:var(--primary-dark);
+    font-size:12px; font-weight:700;}
+  .pill.warn{background:var(--houjuu-tint); color:var(--houjuu);}
+  .pill.ghost{background:var(--bg); color:var(--muted); border:1px solid var(--line);}
+  .row{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:2px 0;}
+  .sec{margin:0 0 8px; font-size:11.5px; font-weight:800; color:var(--primary-dark);}
+  .note{margin-top:9px; font-size:11.5px; color:var(--muted); line-height:1.5;}
+  .note b{color:var(--ink);}
+  hr.d{border:none; border-top:1px dashed var(--line); margin:10px 0;}
+  .bullets{display:flex; flex-direction:column; gap:7px;}
+  .bl{display:flex; gap:8px; align-items:flex-start; font-size:12.5px;}
+  .bl .dot{width:22px; height:22px; border-radius:7px; background:var(--bg); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:12px; flex:none;}
+  .bl .tx{padding-top:2px;}
+  .bl .tx b{color:var(--ink);}
+  .legend{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:2px 0 4px;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{padding:5px 10px; border-radius:999px; background:var(--bg); border:1px solid var(--line); font-size:11.5px; font-weight:700;}
+  .chip.c1{border-color:#1F6F54; color:#1F6F54;}
+  .chip.c2{border-color:#2E6DA4; color:#2E6DA4;}
+  .chip.c3{border-color:#C98A2B; color:#C98A2B;}
+  .chip.gray{border-color:#B9BEC5; color:#8B94A0;}
+  .tag{display:inline-block; font-size:10px; font-weight:800; color:#fff; background:var(--primary); border-radius:6px; padding:2px 6px; margin-left:4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>麻雀スタッツ 取扱説明書</h1>
+  <p class="sub">見て触ればわかる早見ガイド</p>
+  <div class="switch">
+    <button id="btn-m" class="active" onclick="show('m')">📱 スマホ入力</button>
+    <button id="btn-p" onclick="show('p')">💻 PC分析</button>
+  </div>
+</header>
+
+<main>
+
+<div class="card" style="display:flex; gap:10px; align-items:flex-start;">
+  <div style="width:36px; height:36px; border-radius:10px; background:var(--primary-tint);
+    display:flex; align-items:center; justify-content:center; font-size:17px; flex:none;">🔗</div>
+  <p class="note" style="margin:2px 0 0; color:var(--ink);">入力アプリ・分析ビューアは、公開サイトのトップページ（<b>index.html</b>）の各カードから開ける。カード右の<b>「⬇」ボタン</b>で、アプリを開かずHTMLファイル単体をダウンロードすることもできる。</p>
+</div>
+
+<!-- ===== スマホ入力アプリ（4タブ：局入力／半荘集計／ランキング／設定） ===== -->
+<div id="view-m" class="view active">
+
+  <div class="card">
+    <h2><span class="n">1</span>🎴 局入力</h2>
+
+    <p class="sec">a. 基本情報を設定</p>
+    <div class="flow">
+      <div class="step"><div class="ic">📅</div><div class="lb">日付<br>±で調整</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🔢</div><div class="lb">半荘No.<br>±で調整</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">💺</div><div class="lb">座席を選択<br>🔀で自動</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🀄</div><div class="lb">局を選択<br>東1〜南4</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">➕</div><div class="lb">積み場<br>±で調整</div></div>
+    </div>
+    <p class="note">局を切り替えると<b>積み場は自動で0にリセット</b>。座席は選び直すと衝突した席同士が自動で入れ替わる。局の詳細を省きたい時は<b>「📋結果のみ入力する」</b>で半荘集計タブへ直行。</p>
+
+    <hr class="d">
+    <p class="sec">b. 4人分をタップ入力（1人ずつ繰り返し）</p>
+    <div class="flow">
+      <div class="step"><div class="ic">🙋</div><div class="lb">親には<br>「親」表示</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🟠</div><div class="lb">リーチ／<br>副露（1つ）</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🟢</div><div class="lb">ツモ／ロン／<br>放銃（1つ）</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🟣</div><div class="lb">該当あれば<br>☑チョンボ</div></div>
+    </div>
+    <div class="badges" style="margin-top:8px;">
+      <span class="badge b-riichi">リーチ</span>
+      <span class="badge b-fuuro">副露</span>
+      <span class="badge b-tsumo">ツモ</span>
+      <span class="badge b-ron">ロン</span>
+      <span class="badge b-houjuu">放銃</span>
+      <span class="badge b-chombo">☑チョンボ</span>
+    </div>
+    <div class="bullets" style="margin-top:10px;">
+      <div class="bl"><div class="dot">🔁</div><div class="tx">リーチ・副露は<b>1人につきどちらか1つ</b>だけ選べる</div></div>
+      <div class="bl"><div class="dot">🔁</div><div class="tx">ツモ・ロン・放銃も<b>1人につき1つだけ</b></div></div>
+      <div class="bl"><div class="dot">1️⃣</div><div class="tx">ツモ・ロンは<b>局に1人まで</b>（別の人を押すと前の人は自動OFF）</div></div>
+      <div class="bl"><div class="dot">🙅</div><div class="tx">ツモを押すと<b>全員の放銃が自動OFF</b>になる（自摸に放銃者はいない）</div></div>
+      <div class="bl"><div class="dot">🎯</div><div class="tx">放銃は<b>ロンが出ている時だけ</b>押せる。常に他の1人だけがON</div></div>
+      <div class="bl"><div class="dot">⚠️</div><div class="tx">ロンなのに放銃が未選択のまま保存しようとすると警告が出て止まる</div></div>
+    </div>
+
+    <hr class="d">
+    <p class="sec">c. 保存ボタンで次の局へ</p>
+    <div class="row">
+      <span class="pill">連荘</span><span class="pill">次の局へ</span>
+      <span class="pill warn">チョンボ</span><span class="pill ghost">📋 結果のみ入力する</span>
+    </div>
+    <div class="bullets" style="margin-top:8px;">
+      <div class="bl"><div class="dot">🈶</div><div class="tx"><b>連荘</b>＝親のアガリ・親テンパイ流局。子がアガっていると押せない</div></div>
+      <div class="bl"><div class="dot">➡️</div><div class="tx"><b>次の局へ</b>＝子のアガリ or 流局。親がアガっていると押せない</div></div>
+      <div class="bl"><div class="dot">🟣</div><div class="tx"><b>チョンボ</b>＝誰か1人でも☑を入れていないと押せない</div></div>
+      <div class="bl"><div class="dot">📋</div><div class="tx"><b>結果のみ入力</b>＝この半荘の詳細記録をやめ、最終持ち点だけ入力する（新規入力時のみ表示）</div></div>
+      <div class="bl"><div class="dot">🏁</div><div class="tx">南4局で半荘が終わる操作をすると<b>自動で半荘集計タブへ移動</b></div></div>
+    </div>
+    <p class="note">「直近の入力」に最新5件が並び、各行の✎編集／×削除でその場修正できる。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">2</span>🧮 半荘集計</h2>
+    <p class="sec">a. 未確定の半荘（編集中）</p>
+    <div class="flow">
+      <div class="step"><div class="ic">📃</div><div class="lb">局ごとの<br>内訳を確認</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🔢</div><div class="lb">4人の<br>素点を入力</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">⚖️</div><div class="lb">合計<br>100,000</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">✅</div><div class="lb">順位を<br>確定する</div></div>
+    </div>
+    <p class="note">入力するたびに<b>順位・ptのプレビュー</b>がリアルタイム表示。カード内「局ごとの記録」から個々の局を✎編集／×削除でき、カード右上の🗑でその半荘を丸ごと削除できる。</p>
+    <hr class="d">
+    <p class="sec">b. 確定済みの半荘</p>
+    <div class="bullets">
+      <div class="bl"><div class="dot">👆</div><div class="tx"><b>タップで開閉</b>。展開すると着順・座席・持ち点・pt・内訳を表示</div></div>
+      <div class="bl"><div class="dot">⚠️</div><div class="tx">チョンボがあった人には<span class="tag">⚠️チョンボ×n</span>を選手名の隣に表示（罰則はpt済み反映）</div></div>
+      <div class="bl"><div class="dot">✎</div><div class="tx"><b>編集</b>で確定を解除し素点を入力し直せる／<b>削除</b>で丸ごと消せる</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">3</span>🏆 ランキング</h2>
+    <div class="flow">
+      <div class="step"><div class="ic">📆</div><div class="lb">期間を<br>指定（任意）</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🏅</div><div class="lb">累計pt順に<br>並ぶ</div></div>
+    </div>
+    <p class="note">表示列は<b>順位／選手／累計pt／半荘数</b>のみ。詳しいスタッツ（率や比較・レーダーなど）はPC分析ビューア側で見る。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">4</span>⚙️ 設定</h2>
+    <div class="flow">
+      <div class="step"><div class="ic">📝</div><div class="lb">名前を<br>登録</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🧑‍🤝‍🧑</div><div class="lb">対局<br>4人選択</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">📤</div><div class="lb">CSV<br>書出/読込</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">💽</div><div class="lb">バック<br>アップ</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🗑️</div><div class="lb">全削除<br>⚠️注意</div></div>
+    </div>
+    <p class="note">CSVの読み込みは<b>1つの窓口で自動判別</b>（局データ／過去大会の結果のみデータのどちらでもOK）。対局メンバーの変更は<b>今後の入力のみ</b>に反映し、過去の記録の表示名は変わらない。</p>
+    <p class="note">ファイル選択に加えて、それぞれ「🌐 サイト上のhanchan.csvを読み込む」「🌐 サイト上のbackup.jsonから復元」ボタンもある。これは<b>このアプリが置かれているサイト上に公開されている</b>hanchan.csv／backup.jsonをその場で取得して取り込むもので、ファイルを端末に保存・選択する手間なしに使える（サーバー側への書き込み・更新機能ではなく、読み込み専用）。</p>
+  </div>
+
+</div>
+
+<!-- ===== PC分析ビューア（5セクション：統計／①比較表／②レーダー／③スコア推移／④相性レーダー） ===== -->
+<div id="view-p" class="view">
+
+  <div class="card">
+    <h2>📂 はじめに</h2>
+    <div class="flow">
+      <div class="step"><div class="ic">💽</div><div class="lb">入力アプリで<br>バックアップ</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">🖱️</div><div class="lb">JSONを<br>選択/ドロップ</div></div>
+      <span class="arrow">→</span>
+      <div class="step"><div class="ic">📈</div><div class="lb">分析<br>画面へ</div></div>
+    </div>
+    <p class="note">閲覧専用（保存機能なし）。閉じる・再読込でデータは消える。入力アプリ本体には影響しない。</p>
+    <p class="note">JSONの選択/ドロップに加えて「🌐 サイト上のbackup.jsonを読み込む」ボタンもある。このアプリが置かれているサイト上に公開されているbackup.jsonをその場で取得して読み込むもので、事前にファイルをダウンロードしておく必要がない（読み込み専用。サーバー側への書き込みは行わない）。</p>
+  </div>
+
+  <div class="card">
+    <h2>🎨 選手の選び方</h2>
+    <div class="legend">
+      <span class="chip c2">②レーダー</span>／<span class="chip c1">③スコア推移</span>
+    </div>
+    <p class="note">上の2つは<b>選択チップを共有</b>（凡例やグラフのクリックで連動）。<b>①比較表</b>はチップに合わせてハイライトされるだけで、①自体からは追加できない（チェックボックスのみ）。<b>④相性レーダー</b>は完全に別管理の独立チェックボックス。</p>
+  </div>
+
+  <div class="card">
+    <h2>📊 統計</h2>
+    <div class="bullets">
+      <div class="bl"><div class="dot">👥</div><div class="tx"><b>全プレイヤー平均値</b>／タップで開閉</div></div>
+      <div class="bl"><div class="dot">🧑</div><div class="tx"><b>選手ごとのカード</b>／着順・打点の内訳、タップで開閉</div></div>
+      <div class="bl"><div class="dot">📖</div><div class="tx"><b>用語説明</b>／和了・放銃・副露・チョンボ</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">1</span>① 比較表</h2>
+    <div class="bullets">
+      <div class="bl"><div class="dot">☑️</div><div class="tx">チェックボックスで<b>対象選手を選ぶ</b>（人数上限なし）</div></div>
+      <div class="bl"><div class="dot">📌</div><div class="tx">「指標」列は<b>固定（sticky）</b>、選手数が多いと横スクロール</div></div>
+      <div class="bl"><div class="dot">📋</div><div class="tx"><b>表をコピー</b>でExcelに貼付け可</div></div>
+    </div>
+    <p class="note">対局実績のある選手が<b>2人未満だと非表示</b>。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">2</span>② レーダーチャート</h2>
+    <div class="badges" style="margin-bottom:4px;">
+      <span class="badge b-tsumo">和了率</span>
+      <span class="badge b-riichi">トップ率</span>
+      <span class="badge b-houjuu">ラス率（反転）</span>
+      <span class="badge b-ron">放銃率（反転）</span>
+    </div>
+    <p class="note" style="margin-top:0;">全員を薄いグレーで重ね表示 → 選択中の選手だけ<b>色付き・太線</b>で強調。凡例やポリゴンのクリックで選択ON/OFF。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">3</span>③ スコア推移</h2>
+    <p class="note" style="margin-top:0;">期間（from〜to）を指定 → 対象期間の<b>累計pt推移</b>を折れ線で表示（期間の先頭から0スタート）。「指定なし」で期間クリア。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">4</span>④ 相性レーダーチャート</h2>
+    <p class="note" style="margin-top:0;">選手ごとのカードで、<b>同卓した相手との得点pt差</b>を放射状に表示。外側＝勝ち越し。対象選手は独自のチェックボックスで選ぶ（初期は半荘数上位8名の目安）。</p>
+  </div>
+
+</div>
+
+</main>
+
+<script>
+function show(v){
+  document.getElementById('view-m').classList.toggle('active', v==='m');
+  document.getElementById('view-p').classList.toggle('active', v==='p');
+  document.getElementById('btn-m').classList.toggle('active', v==='m');
+  document.getElementById('btn-p').classList.toggle('active', v==='p');
+}
+</script>
+</body>
+</html>
