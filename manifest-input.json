@@ -1,0 +1,16 @@
+{
+  "name": "麻雀スタッツ 入力",
+  "short_name": "麻雀入力",
+  "description": "半荘ごとの局入力・素点集計アプリ",
+  "start_url": "./input-app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F3EC",
+  "theme_color": "#1F6F54",
+  "icons": [
+    { "src": "./icon-input-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-input-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-input-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
