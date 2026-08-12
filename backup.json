@@ -1,11 +1,11 @@
 {
   "app": "mahjong-stats-backup",
   "version": 3,
-  "exportedAt": "2026-08-07T16:03:42.038Z",
+  "exportedAt": "2026-08-12T13:59:48.000Z",
   "players": [
     "増本",
     "本郷",
-    "光岡",
+    "一平",
     "坂口"
   ],
   "playerRoster": [
@@ -10858,7 +10858,7 @@
       ]
     },
     {
-      "id": "msj4wqdnvp18",
+      "id": "msj6jj7j9arw",
       "date": "2024-09-15",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -10900,7 +10900,7 @@
       ]
     },
     {
-      "id": "msj4wqdn1m0c",
+      "id": "msj6jj7jffc1",
       "date": "2024-09-15",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -10942,7 +10942,7 @@
       ]
     },
     {
-      "id": "msj4wqdnpt5b",
+      "id": "msj6jj7jcjbc",
       "date": "2024-09-15",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -10984,7 +10984,7 @@
       ]
     },
     {
-      "id": "msj4wqdnaij9",
+      "id": "msj6jj7jhdjg",
       "date": "2024-09-15",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -11026,7 +11026,7 @@
       ]
     },
     {
-      "id": "msj4wqdnnsss",
+      "id": "msj6jj7jdb1l",
       "date": "2024-09-15",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -11068,7 +11068,7 @@
       ]
     },
     {
-      "id": "msj4wqdnksco",
+      "id": "msj6jj7jdyls",
       "date": "2024-09-15",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -11110,7 +11110,7 @@
       ]
     },
     {
-      "id": "msj4wqdnwyo3",
+      "id": "msj6jj7jwkb5",
       "date": "2024-09-15",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -11152,7 +11152,7 @@
       ]
     },
     {
-      "id": "msj4wqdnbtbm",
+      "id": "msj6jj7jnoo5",
       "date": "2024-09-15",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -11194,7 +11194,7 @@
       ]
     },
     {
-      "id": "msj4wqdnv6m2",
+      "id": "msj6jj7kxn2y",
       "date": "2024-10-12",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -11236,7 +11236,7 @@
       ]
     },
     {
-      "id": "msj4wqdnyl0j",
+      "id": "msj6jj7kg8ll",
       "date": "2024-10-12",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -11278,7 +11278,7 @@
       ]
     },
     {
-      "id": "msj4wqdn9p6p",
+      "id": "msj6jj7k0osm",
       "date": "2024-10-12",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -11320,7 +11320,7 @@
       ]
     },
     {
-      "id": "msj4wqdnnrnx",
+      "id": "msj6jj7kojqt",
       "date": "2024-10-12",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -11362,7 +11362,7 @@
       ]
     },
     {
-      "id": "msj4wqdnza6q",
+      "id": "msj6jj7kyccc",
       "date": "2024-10-12",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -11404,7 +11404,7 @@
       ]
     },
     {
-      "id": "msj4wqdnau4l",
+      "id": "msj6jj7kyrgo",
       "date": "2024-10-12",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -11446,7 +11446,7 @@
       ]
     },
     {
-      "id": "msj4wqdnqj5i",
+      "id": "msj6jj7kfyci",
       "date": "2024-10-12",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -11488,7 +11488,7 @@
       ]
     },
     {
-      "id": "msj4wqdnl0q2",
+      "id": "msj6jj7kwufr",
       "date": "2024-11-02",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -11530,7 +11530,7 @@
       ]
     },
     {
-      "id": "msj4wqdn1zuc",
+      "id": "msj6jj7kgxwt",
       "date": "2024-11-02",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -11572,7 +11572,7 @@
       ]
     },
     {
-      "id": "msj4wqdnf2kd",
+      "id": "msj6jj7k02gl",
       "date": "2024-11-02",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -11614,7 +11614,7 @@
       ]
     },
     {
-      "id": "msj4wqdnmweo",
+      "id": "msj6jj7krwhy",
       "date": "2024-11-02",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -11656,7 +11656,7 @@
       ]
     },
     {
-      "id": "msj4wqdnveks",
+      "id": "msj6jj7k4sut",
       "date": "2024-11-02",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -11698,7 +11698,7 @@
       ]
     },
     {
-      "id": "msj4wqdn7owz",
+      "id": "msj6jj7k3ta1",
       "date": "2024-11-02",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -11740,7 +11740,7 @@
       ]
     },
     {
-      "id": "msj4wqdnlkty",
+      "id": "msj6jj7kdcjj",
       "date": "2024-11-02",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -11782,7 +11782,7 @@
       ]
     },
     {
-      "id": "msj4wqdntqa6",
+      "id": "msj6jj7lydgr",
       "date": "2024-11-02",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -11824,7 +11824,7 @@
       ]
     },
     {
-      "id": "msj4wqdoj401",
+      "id": "msj6jj7llh38",
       "date": "2024-12-07",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -11866,7 +11866,7 @@
       ]
     },
     {
-      "id": "msj4wqdod5v5",
+      "id": "msj6jj7lwxcr",
       "date": "2024-12-07",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -11908,7 +11908,7 @@
       ]
     },
     {
-      "id": "msj4wqdo7smb",
+      "id": "msj6jj7l97rk",
       "date": "2024-12-07",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -11950,7 +11950,7 @@
       ]
     },
     {
-      "id": "msj4wqdoi3xj",
+      "id": "msj6jj7ll4sv",
       "date": "2024-12-07",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -11992,7 +11992,7 @@
       ]
     },
     {
-      "id": "msj4wqdolvrf",
+      "id": "msj6jj7lfsza",
       "date": "2024-12-07",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -12034,7 +12034,7 @@
       ]
     },
     {
-      "id": "msj4wqdoftu4",
+      "id": "msj6jj7l9q78",
       "date": "2024-12-07",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -12076,7 +12076,7 @@
       ]
     },
     {
-      "id": "msj4wqdoud31",
+      "id": "msj6jj7lykkj",
       "date": "2024-12-07",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -12118,7 +12118,7 @@
       ]
     },
     {
-      "id": "msj4wqdo1l6z",
+      "id": "msj6jj7lxmjj",
       "date": "2024-12-07",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -12160,7 +12160,7 @@
       ]
     },
     {
-      "id": "msj4wqdogdid",
+      "id": "msj6jj7lm48s",
       "date": "2025-03-22",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -12202,7 +12202,7 @@
       ]
     },
     {
-      "id": "msj4wqdo4c7y",
+      "id": "msj6jj7lydh4",
       "date": "2025-03-22",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -12244,7 +12244,7 @@
       ]
     },
     {
-      "id": "msj4wqdoy4yt",
+      "id": "msj6jj7lawvk",
       "date": "2025-03-22",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -12286,7 +12286,7 @@
       ]
     },
     {
-      "id": "msj4wqdo5bxd",
+      "id": "msj6jj7mizau",
       "date": "2025-03-22",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -12328,7 +12328,7 @@
       ]
     },
     {
-      "id": "msj4wqdod9yt",
+      "id": "msj6jj7mc6k2",
       "date": "2025-03-22",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -12370,7 +12370,7 @@
       ]
     },
     {
-      "id": "msj4wqdokd7y",
+      "id": "msj6jj7mlvdt",
       "date": "2025-03-22",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -12412,7 +12412,7 @@
       ]
     },
     {
-      "id": "msj4wqdo9ov0",
+      "id": "msj6jj7mq83g",
       "date": "2025-03-22",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -12454,7 +12454,7 @@
       ]
     },
     {
-      "id": "msj4wqdorc1h",
+      "id": "msj6jj7m22ww",
       "date": "2025-03-22",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -12496,7 +12496,7 @@
       ]
     },
     {
-      "id": "msj4wqdo8ito",
+      "id": "msj6jj7mjglh",
       "date": "2025-03-22",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -12538,7 +12538,7 @@
       ]
     },
     {
-      "id": "msj4wqdo6rlu",
+      "id": "msj6jj7m9cfg",
       "date": "2025-04-05",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -12580,7 +12580,7 @@
       ]
     },
     {
-      "id": "msj4wqdodt3y",
+      "id": "msj6jj7mih33",
       "date": "2025-04-05",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -12622,7 +12622,7 @@
       ]
     },
     {
-      "id": "msj4wqdosxna",
+      "id": "msj6jj7mx6y2",
       "date": "2025-04-05",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -12664,7 +12664,7 @@
       ]
     },
     {
-      "id": "msj4wqdow8pa",
+      "id": "msj6jj7mkedx",
       "date": "2025-04-05",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -12706,7 +12706,7 @@
       ]
     },
     {
-      "id": "msj4wqdo8qe4",
+      "id": "msj6jj7mff1m",
       "date": "2025-04-05",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -12748,7 +12748,7 @@
       ]
     },
     {
-      "id": "msj4wqdoj6u3",
+      "id": "msj6jj7mt8vk",
       "date": "2025-04-05",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -12790,7 +12790,7 @@
       ]
     },
     {
-      "id": "msj4wqdowwni",
+      "id": "msj6jj7mzpcs",
       "date": "2025-04-05",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -12832,7 +12832,7 @@
       ]
     },
     {
-      "id": "msj4wqdortk1",
+      "id": "msj6jj7m9jb7",
       "date": "2025-04-05",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -12874,7 +12874,7 @@
       ]
     },
     {
-      "id": "msj4wqdodlpo",
+      "id": "msj6jj7mpkok",
       "date": "2025-06-28",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -12916,7 +12916,7 @@
       ]
     },
     {
-      "id": "msj4wqdodmsv",
+      "id": "msj6jj7m87aq",
       "date": "2025-06-28",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -12958,7 +12958,7 @@
       ]
     },
     {
-      "id": "msj4wqdojnmz",
+      "id": "msj6jj7mvfl7",
       "date": "2025-06-28",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -13000,7 +13000,7 @@
       ]
     },
     {
-      "id": "msj4wqdoe3a1",
+      "id": "msj6jj7mro07",
       "date": "2025-06-28",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -13042,7 +13042,7 @@
       ]
     },
     {
-      "id": "msj4wqdo8b6g",
+      "id": "msj6jj7myn77",
       "date": "2025-06-28",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -13084,7 +13084,7 @@
       ]
     },
     {
-      "id": "msj4wqdo5hsb",
+      "id": "msj6jj7mqo8i",
       "date": "2025-06-28",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -13126,7 +13126,7 @@
       ]
     },
     {
-      "id": "msj4wqdo99tp",
+      "id": "msj6jj7mxaj2",
       "date": "2025-06-28",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -13168,7 +13168,7 @@
       ]
     },
     {
-      "id": "msj4wqdopnuu",
+      "id": "msj6jj7mxcjl",
       "date": "2025-06-28",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -13210,7 +13210,7 @@
       ]
     },
     {
-      "id": "msj4wqdomen5",
+      "id": "msj6jj7mnlww",
       "date": "2025-07-12",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -13252,7 +13252,7 @@
       ]
     },
     {
-      "id": "msj4wqdomaup",
+      "id": "msj6jj7mniur",
       "date": "2025-07-12",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -13294,7 +13294,7 @@
       ]
     },
     {
-      "id": "msj4wqdolqej",
+      "id": "msj6jj7mh1q3",
       "date": "2025-07-12",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -13336,7 +13336,7 @@
       ]
     },
     {
-      "id": "msj4wqdoqz0w",
+      "id": "msj6jj7mp3yn",
       "date": "2025-07-12",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -13378,7 +13378,7 @@
       ]
     },
     {
-      "id": "msj4wqdogbke",
+      "id": "msj6jj7mfqzl",
       "date": "2025-07-12",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -13420,7 +13420,7 @@
       ]
     },
     {
-      "id": "msj4wqdoq3a8",
+      "id": "msj6jj7m4yvd",
       "date": "2025-07-12",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -13462,7 +13462,7 @@
       ]
     },
     {
-      "id": "msj4wqdop7ti",
+      "id": "msj6jj7mnm3w",
       "date": "2025-07-12",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -13504,7 +13504,7 @@
       ]
     },
     {
-      "id": "msj4wqdoq4h4",
+      "id": "msj6jj7moil4",
       "date": "2025-07-12",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -13546,7 +13546,7 @@
       ]
     },
     {
-      "id": "msj4wqdo5l95",
+      "id": "msj6jj7mtslo",
       "date": "2025-07-12",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -13588,7 +13588,7 @@
       ]
     },
     {
-      "id": "msj4wqdo6822",
+      "id": "msj6jj7mbpti",
       "date": "2025-08-02",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -13630,7 +13630,7 @@
       ]
     },
     {
-      "id": "msj4wqdodg2h",
+      "id": "msj6jj7mbfhc",
       "date": "2025-08-02",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -13672,7 +13672,7 @@
       ]
     },
     {
-      "id": "msj4wqdoix4q",
+      "id": "msj6jj7mkccx",
       "date": "2025-08-02",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -13714,7 +13714,7 @@
       ]
     },
     {
-      "id": "msj4wqdo3bkv",
+      "id": "msj6jj7mh0q9",
       "date": "2025-08-02",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -13756,7 +13756,7 @@
       ]
     },
     {
-      "id": "msj4wqdoro5n",
+      "id": "msj6jj7mmhrb",
       "date": "2025-08-02",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -13798,7 +13798,7 @@
       ]
     },
     {
-      "id": "msj4wqdo1kse",
+      "id": "msj6jj7mr8og",
       "date": "2025-08-02",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -13840,7 +13840,7 @@
       ]
     },
     {
-      "id": "msj4wqdoaxps",
+      "id": "msj6jj7m4azn",
       "date": "2025-08-02",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -13882,7 +13882,7 @@
       ]
     },
     {
-      "id": "msj4wqdozyk9",
+      "id": "msj6jj7md66t",
       "date": "2025-08-30",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -13924,7 +13924,7 @@
       ]
     },
     {
-      "id": "msj4wqdowuz7",
+      "id": "msj6jj7mc1us",
       "date": "2025-08-30",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -13966,7 +13966,7 @@
       ]
     },
     {
-      "id": "msj4wqdovt1f",
+      "id": "msj6jj7m5vom",
       "date": "2025-08-30",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -14008,7 +14008,7 @@
       ]
     },
     {
-      "id": "msj4wqdoq2wc",
+      "id": "msj6jj7m1i7g",
       "date": "2025-08-30",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -14050,7 +14050,7 @@
       ]
     },
     {
-      "id": "msj4wqdocei5",
+      "id": "msj6jj7mkpgs",
       "date": "2025-08-30",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -14092,7 +14092,7 @@
       ]
     },
     {
-      "id": "msj4wqdogymk",
+      "id": "msj6jj7m17mz",
       "date": "2025-08-30",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -14134,7 +14134,7 @@
       ]
     },
     {
-      "id": "msj4wqdoj5h6",
+      "id": "msj6jj7mio4g",
       "date": "2025-08-30",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -14176,7 +14176,7 @@
       ]
     },
     {
-      "id": "msj4wqdpz3np",
+      "id": "msj6jj7mksv7",
       "date": "2025-08-30",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -14218,7 +14218,7 @@
       ]
     },
     {
-      "id": "msj4wqdplb8a",
+      "id": "msj6jj7mgrtu",
       "date": "2025-08-30",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -14260,7 +14260,7 @@
       ]
     },
     {
-      "id": "msj4wqdptii0",
+      "id": "msj6jj7mzy81",
       "date": "2025-08-30",
       "hanchanNo": 10,
       "kyoku": "-",
@@ -14302,7 +14302,7 @@
       ]
     },
     {
-      "id": "msj4wqdp8ruy",
+      "id": "msj6jj7mnnjz",
       "date": "2025-09-20",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -14344,7 +14344,7 @@
       ]
     },
     {
-      "id": "msj4wqdpbekn",
+      "id": "msj6jj7m5pcb",
       "date": "2025-09-20",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -14386,7 +14386,7 @@
       ]
     },
     {
-      "id": "msj4wqdpxsci",
+      "id": "msj6jj7mc2hj",
       "date": "2025-09-20",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -14428,7 +14428,7 @@
       ]
     },
     {
-      "id": "msj4wqdpx6ub",
+      "id": "msj6jj7mkc6w",
       "date": "2025-09-20",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -14470,7 +14470,7 @@
       ]
     },
     {
-      "id": "msj4wqdpa5e1",
+      "id": "msj6jj7mjfx5",
       "date": "2025-09-20",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -14512,7 +14512,7 @@
       ]
     },
     {
-      "id": "msj4wqdp0fqr",
+      "id": "msj6jj7mk8xk",
       "date": "2025-09-20",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -14554,7 +14554,7 @@
       ]
     },
     {
-      "id": "msj4wqdphyzk",
+      "id": "msj6jj7mve0b",
       "date": "2025-09-20",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -14596,7 +14596,7 @@
       ]
     },
     {
-      "id": "msj4wqdp63pj",
+      "id": "msj6jj7mjs0e",
       "date": "2025-09-20",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -14638,7 +14638,7 @@
       ]
     },
     {
-      "id": "msj4wqdprji5",
+      "id": "msj6jj7ms4ju",
       "date": "2025-09-20",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -14680,7 +14680,7 @@
       ]
     },
     {
-      "id": "msj4wqdptbt9",
+      "id": "msj6jj7p6e4l",
       "date": "2025-10-18",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -14722,7 +14722,7 @@
       ]
     },
     {
-      "id": "msj4wqdpn77p",
+      "id": "msj6jj7p2ve1",
       "date": "2025-10-18",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -14764,7 +14764,7 @@
       ]
     },
     {
-      "id": "msj4wqdpg5xd",
+      "id": "msj6jj7p4hxp",
       "date": "2025-10-18",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -14806,7 +14806,7 @@
       ]
     },
     {
-      "id": "msj4wqdp8uf6",
+      "id": "msj6jj7p07dn",
       "date": "2025-10-18",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -14848,7 +14848,7 @@
       ]
     },
     {
-      "id": "msj4wqdp77e3",
+      "id": "msj6jj7pp3hk",
       "date": "2025-10-18",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -14890,7 +14890,7 @@
       ]
     },
     {
-      "id": "msj4wqdptekm",
+      "id": "msj6jj7pie57",
       "date": "2025-10-18",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -14932,7 +14932,7 @@
       ]
     },
     {
-      "id": "msj4wqdp6a77",
+      "id": "msj6jj7p71v6",
       "date": "2025-10-18",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -14974,7 +14974,7 @@
       ]
     },
     {
-      "id": "msj4wqdpnlu8",
+      "id": "msj6jj7pjxyg",
       "date": "2025-10-18",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -15016,7 +15016,7 @@
       ]
     },
     {
-      "id": "msj4wqdprso9",
+      "id": "msj6jj7q9xgn",
       "date": "2025-11-22",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -15058,7 +15058,7 @@
       ]
     },
     {
-      "id": "msj4wqdpzrqx",
+      "id": "msj6jj7qmaxw",
       "date": "2025-11-22",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -15100,7 +15100,7 @@
       ]
     },
     {
-      "id": "msj4wqdptzbm",
+      "id": "msj6jj7qwth7",
       "date": "2025-11-22",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -15142,7 +15142,7 @@
       ]
     },
     {
-      "id": "msj4wqdp7wl2",
+      "id": "msj6jj7qsqxm",
       "date": "2025-11-22",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -15184,7 +15184,7 @@
       ]
     },
     {
-      "id": "msj4wqdpa4l7",
+      "id": "msj6jj7qd9pu",
       "date": "2025-11-22",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -15226,7 +15226,7 @@
       ]
     },
     {
-      "id": "msj4wqdp1h73",
+      "id": "msj6jj7q4ght",
       "date": "2025-11-22",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -15268,7 +15268,7 @@
       ]
     },
     {
-      "id": "msj4wqdpa6wu",
+      "id": "msj6jj7qlzfz",
       "date": "2025-11-22",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -15310,7 +15310,7 @@
       ]
     },
     {
-      "id": "msj4wqdp9v6f",
+      "id": "msj6jj7qucgr",
       "date": "2025-11-22",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -15352,7 +15352,7 @@
       ]
     },
     {
-      "id": "msj4wqdpx7xw",
+      "id": "msj6jj7q2f8d",
       "date": "2025-11-22",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -15394,7 +15394,7 @@
       ]
     },
     {
-      "id": "msj4wqdq7231",
+      "id": "msj6jj7qv1b1",
       "date": "2026-01-24",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -15436,7 +15436,7 @@
       ]
     },
     {
-      "id": "msj4wqdqpe1r",
+      "id": "msj6jj7qsy3j",
       "date": "2026-01-24",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -15478,7 +15478,7 @@
       ]
     },
     {
-      "id": "msj4wqdqdsqp",
+      "id": "msj6jj7qo115",
       "date": "2026-01-24",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -15520,7 +15520,7 @@
       ]
     },
     {
-      "id": "msj4wqdqbemj",
+      "id": "msj6jj7qm8zq",
       "date": "2026-01-24",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -15562,7 +15562,7 @@
       ]
     },
     {
-      "id": "msj4wqdq5ytj",
+      "id": "msj6jj7qhxuk",
       "date": "2026-01-24",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -15604,7 +15604,7 @@
       ]
     },
     {
-      "id": "msj4wqdqkyno",
+      "id": "msj6jj7q53cu",
       "date": "2026-01-24",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -15646,7 +15646,7 @@
       ]
     },
     {
-      "id": "msj4wqdqxrmu",
+      "id": "msj6jj7qh0d6",
       "date": "2026-01-24",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -15688,7 +15688,7 @@
       ]
     },
     {
-      "id": "msj4wqdqnbac",
+      "id": "msj6jj7q4zl9",
       "date": "2026-01-24",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -15730,7 +15730,7 @@
       ]
     },
     {
-      "id": "msj4wqdqv8h7",
+      "id": "msj6jj7qfpaq",
       "date": "2026-02-28",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -15772,7 +15772,7 @@
       ]
     },
     {
-      "id": "msj4wqdq6hn6",
+      "id": "msj6jj7q8nwn",
       "date": "2026-02-28",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -15814,7 +15814,7 @@
       ]
     },
     {
-      "id": "msj4wqdqxlrq",
+      "id": "msj6jj7qnpdy",
       "date": "2026-02-28",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -15856,7 +15856,7 @@
       ]
     },
     {
-      "id": "msj4wqdqmfpq",
+      "id": "msj6jj7qcz4q",
       "date": "2026-02-28",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -15898,7 +15898,7 @@
       ]
     },
     {
-      "id": "msj4wqdqe7f7",
+      "id": "msj6jj7qcw30",
       "date": "2026-02-28",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -15940,7 +15940,7 @@
       ]
     },
     {
-      "id": "msj4wqdqkie5",
+      "id": "msj6jj7qvp3s",
       "date": "2026-02-28",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -15982,7 +15982,7 @@
       ]
     },
     {
-      "id": "msj4wqdqv6i1",
+      "id": "msj6jj7qkdp6",
       "date": "2026-02-28",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -16024,7 +16024,7 @@
       ]
     },
     {
-      "id": "msj4wqdq4ri0",
+      "id": "msj6jj7qgl22",
       "date": "2026-02-28",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -16066,7 +16066,7 @@
       ]
     },
     {
-      "id": "msj4wqdqdfxf",
+      "id": "msj6jj7qnfnz",
       "date": "2026-02-28",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -16108,7 +16108,7 @@
       ]
     },
     {
-      "id": "msj4wqdq1r24",
+      "id": "msj6jj7qsm9g",
       "date": "2026-02-28",
       "hanchanNo": 10,
       "kyoku": "-",
@@ -16150,7 +16150,7 @@
       ]
     },
     {
-      "id": "msj4wqdqv13a",
+      "id": "msj6jj7r0rcj",
       "date": "2026-03-28",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -16192,7 +16192,7 @@
       ]
     },
     {
-      "id": "msj4wqdq8g7d",
+      "id": "msj6jj7rl8mt",
       "date": "2026-03-28",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -16234,7 +16234,7 @@
       ]
     },
     {
-      "id": "msj4wqdqaldo",
+      "id": "msj6jj7r0khv",
       "date": "2026-03-28",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -16276,7 +16276,7 @@
       ]
     },
     {
-      "id": "msj4wqdqve26",
+      "id": "msj6jj7rdt8w",
       "date": "2026-03-28",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -16318,7 +16318,7 @@
       ]
     },
     {
-      "id": "msj4wqdq3ol3",
+      "id": "msj6jj7r3zp9",
       "date": "2026-03-28",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -16360,7 +16360,7 @@
       ]
     },
     {
-      "id": "msj4wqdqk3sz",
+      "id": "msj6jj7r3m04",
       "date": "2026-03-28",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -16402,7 +16402,7 @@
       ]
     },
     {
-      "id": "msj4wqdqs02i",
+      "id": "msj6jj7r2m8n",
       "date": "2026-03-28",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -16444,7 +16444,7 @@
       ]
     },
     {
-      "id": "msj4wqdqqxj9",
+      "id": "msj6jj7rzwjh",
       "date": "2026-03-28",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -16486,7 +16486,7 @@
       ]
     },
     {
-      "id": "msj4wqdqr7hi",
+      "id": "msj6jj7rzbkr",
       "date": "2026-03-28",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -16528,7 +16528,7 @@
       ]
     },
     {
-      "id": "msj4wqdq3vu4",
+      "id": "msj6jj7rnbu3",
       "date": "2026-04-11",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -16570,7 +16570,7 @@
       ]
     },
     {
-      "id": "msj4wqdqy6rq",
+      "id": "msj6jj7r04oq",
       "date": "2026-04-11",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -16612,7 +16612,7 @@
       ]
     },
     {
-      "id": "msj4wqdqs6zu",
+      "id": "msj6jj7rei8o",
       "date": "2026-04-11",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -16654,7 +16654,7 @@
       ]
     },
     {
-      "id": "msj4wqdqk3xo",
+      "id": "msj6jj7ru1td",
       "date": "2026-04-11",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -16696,7 +16696,7 @@
       ]
     },
     {
-      "id": "msj4wqdqpgyw",
+      "id": "msj6jj7rko4a",
       "date": "2026-04-11",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -16738,7 +16738,7 @@
       ]
     },
     {
-      "id": "msj4wqdq52mu",
+      "id": "msj6jj7ry5a0",
       "date": "2026-04-11",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -16780,7 +16780,7 @@
       ]
     },
     {
-      "id": "msj4wqdqncxy",
+      "id": "msj6jj7rydc2",
       "date": "2026-04-11",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -16822,7 +16822,7 @@
       ]
     },
     {
-      "id": "msj4wqdqswmh",
+      "id": "msj6jj7rjcuu",
       "date": "2026-04-11",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -16864,7 +16864,7 @@
       ]
     },
     {
-      "id": "msj4wqdqp8e3",
+      "id": "msj6jj7rxiv4",
       "date": "2026-04-11",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -16906,7 +16906,7 @@
       ]
     },
     {
-      "id": "msj4wqdq7ysn",
+      "id": "msj6jj7rhpjj",
       "date": "2026-04-25",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -16948,7 +16948,7 @@
       ]
     },
     {
-      "id": "msj4wqdqz2fy",
+      "id": "msj6jj7rz0cf",
       "date": "2026-04-25",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -16990,7 +16990,7 @@
       ]
     },
     {
-      "id": "msj4wqdqpv1f",
+      "id": "msj6jj7rpu3t",
       "date": "2026-04-25",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -17032,7 +17032,7 @@
       ]
     },
     {
-      "id": "msj4wqdq1wrq",
+      "id": "msj6jj7re5b9",
       "date": "2026-04-25",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -17074,7 +17074,7 @@
       ]
     },
     {
-      "id": "msj4wqdr84nk",
+      "id": "msj6jj7ryy0k",
       "date": "2026-04-25",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -17116,7 +17116,7 @@
       ]
     },
     {
-      "id": "msj4wqdrigt4",
+      "id": "msj6jj7rqyby",
       "date": "2026-04-25",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -17158,7 +17158,7 @@
       ]
     },
     {
-      "id": "msj4wqdr5unw",
+      "id": "msj6jj7r07cj",
       "date": "2026-04-25",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -17200,7 +17200,7 @@
       ]
     },
     {
-      "id": "msj4wqdrums9",
+      "id": "msj6jj7rx02h",
       "date": "2026-04-25",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -17242,7 +17242,7 @@
       ]
     },
     {
-      "id": "msj4wqdr245s",
+      "id": "msj6jj7r0m5k",
       "date": "2026-04-25",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -17284,7 +17284,7 @@
       ]
     },
     {
-      "id": "msj4wqdrzpsi",
+      "id": "msj6jj7rf8mb",
       "date": "2026-04-25",
       "hanchanNo": 10,
       "kyoku": "-",
@@ -17326,7 +17326,7 @@
       ]
     },
     {
-      "id": "msj4wqdrkag0",
+      "id": "msj6jj7rlw00",
       "date": "2026-05-23",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -17368,7 +17368,7 @@
       ]
     },
     {
-      "id": "msj4wqdro68u",
+      "id": "msj6jj7r0ajg",
       "date": "2026-05-23",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -17410,7 +17410,7 @@
       ]
     },
     {
-      "id": "msj4wqdraegr",
+      "id": "msj6jj7ri726",
       "date": "2026-05-23",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -17452,7 +17452,7 @@
       ]
     },
     {
-      "id": "msj4wqdr5usz",
+      "id": "msj6jj7rj4z2",
       "date": "2026-05-23",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -17494,7 +17494,7 @@
       ]
     },
     {
-      "id": "msj4wqdryvn0",
+      "id": "msj6jj7rs9t5",
       "date": "2026-05-23",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -17536,7 +17536,7 @@
       ]
     },
     {
-      "id": "msj4wqdrl4w8",
+      "id": "msj6jj7rewdn",
       "date": "2026-05-23",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -17578,7 +17578,7 @@
       ]
     },
     {
-      "id": "msj4wqdrb62f",
+      "id": "msj6jj7rrx90",
       "date": "2026-05-23",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -17620,7 +17620,7 @@
       ]
     },
     {
-      "id": "msj4wqdrrqsp",
+      "id": "msj6jj7rd36y",
       "date": "2026-05-23",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -17662,7 +17662,7 @@
       ]
     },
     {
-      "id": "msj4wqdsc8sx",
+      "id": "msj6jj7rxev0",
       "date": "2026-06-20",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -17704,7 +17704,7 @@
       ]
     },
     {
-      "id": "msj4wqdsi0iw",
+      "id": "msj6jj7ryqia",
       "date": "2026-06-20",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -17746,7 +17746,7 @@
       ]
     },
     {
-      "id": "msj4wqds4l5m",
+      "id": "msj6jj7r3hyo",
       "date": "2026-06-20",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -17788,7 +17788,7 @@
       ]
     },
     {
-      "id": "msj4wqdsn5k2",
+      "id": "msj6jj7raao5",
       "date": "2026-06-20",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -17830,7 +17830,7 @@
       ]
     },
     {
-      "id": "msj4wqdsetr3",
+      "id": "msj6jj7r68sg",
       "date": "2026-06-20",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -17872,7 +17872,7 @@
       ]
     },
     {
-      "id": "msj4wqdsr32a",
+      "id": "msj6jj7rcfj9",
       "date": "2026-06-20",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -17914,7 +17914,7 @@
       ]
     },
     {
-      "id": "msj4wqds9rew",
+      "id": "msj6jj7retd5",
       "date": "2026-06-20",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -17956,7 +17956,7 @@
       ]
     },
     {
-      "id": "msj4wqdsx64n",
+      "id": "msj6jj7rh1b5",
       "date": "2026-06-20",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -17998,7 +17998,7 @@
       ]
     },
     {
-      "id": "msj4wqdsivvw",
+      "id": "msj6jj7r6pt1",
       "date": "2026-06-20",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -18040,7 +18040,7 @@
       ]
     },
     {
-      "id": "msj4wqdslun3",
+      "id": "msj6jj7rk53q",
       "date": "2026-06-20",
       "hanchanNo": 10,
       "kyoku": "-",
@@ -18082,7 +18082,7 @@
       ]
     },
     {
-      "id": "msj4wqds73ni",
+      "id": "msj6jj7sjoye",
       "date": "2026-07-04",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -18124,7 +18124,7 @@
       ]
     },
     {
-      "id": "msj4wqdseooa",
+      "id": "msj6jj7syyr6",
       "date": "2026-07-04",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -18166,7 +18166,7 @@
       ]
     },
     {
-      "id": "msj4wqds2df1",
+      "id": "msj6jj7segko",
       "date": "2026-07-04",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -18208,7 +18208,7 @@
       ]
     },
     {
-      "id": "msj4wqdsn718",
+      "id": "msj6jj7scimd",
       "date": "2026-07-04",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -18250,7 +18250,7 @@
       ]
     },
     {
-      "id": "msj4wqdsf4bu",
+      "id": "msj6jj7s7k5x",
       "date": "2026-07-04",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -18292,7 +18292,7 @@
       ]
     },
     {
-      "id": "msj4wqdsiipz",
+      "id": "msj6jj7sghol",
       "date": "2026-07-04",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -18334,7 +18334,7 @@
       ]
     },
     {
-      "id": "msj4wqdsu4jj",
+      "id": "msj6jj7s9dh2",
       "date": "2026-07-04",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -18376,7 +18376,7 @@
       ]
     },
     {
-      "id": "msj4wqdsxuxx",
+      "id": "msj6jj7sk3vy",
       "date": "2026-07-04",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -18418,7 +18418,7 @@
       ]
     },
     {
-      "id": "msj4wqdsmvi4",
+      "id": "msj6jj7srq88",
       "date": "2026-07-04",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -18460,7 +18460,7 @@
       ]
     },
     {
-      "id": "msj4wqdsnrrb",
+      "id": "msj6jj7spg9y",
       "date": "2026-07-04",
       "hanchanNo": 10,
       "kyoku": "-",
@@ -18502,7 +18502,7 @@
       ]
     },
     {
-      "id": "msj4wqdsrbuu",
+      "id": "msj6jj7szsfj",
       "date": "2026-08-01",
       "hanchanNo": 1,
       "kyoku": "-",
@@ -18544,7 +18544,7 @@
       ]
     },
     {
-      "id": "msj4wqdsqq5w",
+      "id": "msj6jj7scopa",
       "date": "2026-08-01",
       "hanchanNo": 2,
       "kyoku": "-",
@@ -18586,7 +18586,7 @@
       ]
     },
     {
-      "id": "msj4wqds8ary",
+      "id": "msj6jj7stdua",
       "date": "2026-08-01",
       "hanchanNo": 3,
       "kyoku": "-",
@@ -18628,7 +18628,7 @@
       ]
     },
     {
-      "id": "msj4wqdsb7ax",
+      "id": "msj6jj7stpnv",
       "date": "2026-08-01",
       "hanchanNo": 4,
       "kyoku": "-",
@@ -18670,7 +18670,7 @@
       ]
     },
     {
-      "id": "msj4wqds9fgm",
+      "id": "msj6jj7sk09s",
       "date": "2026-08-01",
       "hanchanNo": 5,
       "kyoku": "-",
@@ -18712,7 +18712,7 @@
       ]
     },
     {
-      "id": "msj4wqds4zgb",
+      "id": "msj6jj7srv6m",
       "date": "2026-08-01",
       "hanchanNo": 6,
       "kyoku": "-",
@@ -18754,7 +18754,7 @@
       ]
     },
     {
-      "id": "msj4wqds9rhp",
+      "id": "msj6jj7sr6uv",
       "date": "2026-08-01",
       "hanchanNo": 7,
       "kyoku": "-",
@@ -18796,7 +18796,7 @@
       ]
     },
     {
-      "id": "msj4wqds758k",
+      "id": "msj6jj7s076y",
       "date": "2026-08-01",
       "hanchanNo": 8,
       "kyoku": "-",
@@ -18838,7 +18838,7 @@
       ]
     },
     {
-      "id": "msj4wqdsildh",
+      "id": "msj6jj7sy6f2",
       "date": "2026-08-01",
       "hanchanNo": 9,
       "kyoku": "-",
@@ -18866,6 +18866,1728 @@
           0,
           0,
           0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspwcbbdez50",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "東1",
+      "honba": 0,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspwmnx1r4se",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "東1",
+      "honba": 1,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspwsleaa71n",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "東2",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspwzxp7ri9h",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "東3",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspx7xy3ch10",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "東4",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspxi4piuzl8",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "南1",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspxqugubvkz",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "南2",
+      "honba": 0,
+      "resultType": "renchan",
+      "stats": [
+        [
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspxuq3hr4i5",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "南2",
+      "honba": 1,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspy453qff4f",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "南3",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspycw31plyp",
+      "date": "2026-08-12",
+      "hanchanNo": 1,
+      "kyoku": "南4",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspyrrbloyqk",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "東1",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspyxo1i1pv9",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "東2",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspz5tkfbh9e",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "東3",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspzajaqohe7",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "東4",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspzicuyjbei",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南1",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mspzsclbh37o",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南2",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq00ayt4mn9",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南3",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq0bspva6m0",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南4",
+      "honba": 0,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq0khycxvjo",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南4",
+      "honba": 1,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq2h8jjaqcz",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "東4",
+      "honba": 0,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq2rn4dcibt",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "東4",
+      "honba": 1,
+      "resultType": "ryuukyoku",
+      "stats": [
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq3342c56rh",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南1",
+      "honba": 2,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq3apaow9cw",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南1",
+      "honba": 3,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq3lrj8ywwq",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南1",
+      "honba": 4,
+      "resultType": "ryuukyoku",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq3rced6gz5",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南2",
+      "honba": 5,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq3x0pqflll",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南3",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq48h1y27cv",
+      "date": "2026-08-12",
+      "hanchanNo": 2,
+      "kyoku": "南4",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq55hk2h24u",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "東1",
+      "honba": 0,
+      "resultType": "renchan",
+      "stats": [
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq55zq8vdhq",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "東1",
+      "honba": 1,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq56d0ixv5j",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "東2",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq56lhdzxw2",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "東3",
+      "honba": 0,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq56ys0ljus",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "東4",
+      "honba": 1,
+      "resultType": "renchan",
+      "stats": [
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5eb7mggo4",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "東4",
+      "honba": 2,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5eouda30r",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "南1",
+      "honba": 3,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5es3oj1a6",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "南1",
+      "honba": 4,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5f3dy9mx0",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "南1",
+      "honba": 5,
+      "resultType": "renchan",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5fuf2auur",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "南1",
+      "honba": 6,
+      "resultType": "ryuukyoku",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5ghl7a8fc",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "南1",
+      "honba": 7,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5gsjbm7f1",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "南2",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5hbnw1vwi",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "南3",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "msq5hvb4jirq",
+      "date": "2026-08-12",
+      "hanchanNo": 3,
+      "kyoku": "南4",
+      "honba": 0,
+      "resultType": "next",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
           0,
           0
         ],
@@ -20782,6 +22504,24 @@
       3,
       2,
       4
+    ],
+    "2026-08-12_1": [
+      3,
+      1,
+      2,
+      4
+    ],
+    "2026-08-12_2": [
+      2,
+      3,
+      1,
+      4
+    ],
+    "2026-08-12_3": [
+      3,
+      4,
+      1,
+      2
     ]
   },
   "dealers": {
@@ -20814,6 +22554,24 @@
       3,
       2,
       1
+    ],
+    "2026-08-12_1": [
+      2,
+      0,
+      1,
+      3
+    ],
+    "2026-08-12_2": [
+      2,
+      0,
+      1,
+      3
+    ],
+    "2026-08-12_3": [
+      2,
+      0,
+      1,
+      3
     ]
   },
   "hanchanConfirmed": {
@@ -21133,7 +22891,10 @@
     "2026-08-01_6": true,
     "2026-08-01_7": true,
     "2026-08-01_8": true,
-    "2026-08-01_9": true
+    "2026-08-01_9": true,
+    "2026-08-12_1": true,
+    "2026-08-12_2": true,
+    "2026-08-12_3": true
   },
   "finalScores": {
     "2026-02-25_1": [
@@ -23037,6 +24798,24 @@
       24100,
       29200,
       3200
+    ],
+    "2026-08-12_1": [
+      8000,
+      55000,
+      31300,
+      5700
+    ],
+    "2026-08-12_2": [
+      30600,
+      22300,
+      33900,
+      13200
+    ],
+    "2026-08-12_3": [
+      14200,
+      12200,
+      42200,
+      31400
     ]
   },
   "finalPoints": {
@@ -24941,6 +26720,24 @@
       -15.9,
       9.2,
       -56.8
+    ],
+    "2026-08-12_1": [
+      -32,
+      75,
+      11.3,
+      -54.3
+    ],
+    "2026-08-12_2": [
+      10.6,
+      -17.7,
+      53.9,
+      -46.8
+    ],
+    "2026-08-12_3": [
+      -25.8,
+      -47.8,
+      62.2,
+      11.4
     ]
   },
   "recordPlayers": {
@@ -26851,6 +28648,24 @@
       "本郷",
       "坂口",
       "星野"
+    ],
+    "2026-08-12_1": [
+      "増本",
+      "本郷",
+      "一平",
+      "坂口"
+    ],
+    "2026-08-12_2": [
+      "増本",
+      "本郷",
+      "一平",
+      "坂口"
+    ],
+    "2026-08-12_3": [
+      "増本",
+      "本郷",
+      "一平",
+      "坂口"
     ]
   }
 }
