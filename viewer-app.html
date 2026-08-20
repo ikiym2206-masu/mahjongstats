@@ -104,10 +104,22 @@
   #compare-table tr:nth-child(even) .col-name{background:var(--bg);}
   #compare-table th.col-name{z-index:2;}
   .stat-mini-table .col-rank{width:44px; color:var(--muted); font-weight:800;}
-  #compare-table{font-size:17.5px;}
-  #compare-table th{font-size:14.5px; padding:12px 10px;}
-  #compare-table td{padding:15px 10px; font-size:18.5px; font-weight:800;}
-  #compare-table .col-name{font-size:14.5px; font-weight:800;}
+  /* ①比較表：table-layoutをfixedにして「指標」列＋選手列の合計幅を常にコンテナ幅に収める
+     （文字が入りきらない場合は横スクロールではなく折り返しで対応し、列が画面からはみ出さないようにする） */
+  #compare-table{table-layout:fixed; font-size:15px;}
+  #compare-table th{font-size:12.5px; padding:8px 4px; white-space:normal; word-break:break-word; line-height:1.3;}
+  #compare-table td{padding:9px 4px; font-size:15px; font-weight:800; white-space:normal; word-break:break-word;}
+  #compare-table td.col-name, #compare-table th.col-name{width:72px; font-size:12px; font-weight:800;
+    white-space:normal; word-break:break-word; line-height:1.3;}
+
+  @media (max-width:480px){
+    .main{padding:12px;}
+    .card{padding:14px 12px;}
+    #compare-table{font-size:12.5px;}
+    #compare-table th{font-size:11px; padding:6px 3px;}
+    #compare-table td{padding:7px 3px; font-size:12.5px;}
+    #compare-table td.col-name, #compare-table th.col-name{width:58px; font-size:10.5px;}
+  }
 
   .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
   .chip{padding:6px 12px; border-radius:999px; background:var(--bg); border:1px solid var(--line);
