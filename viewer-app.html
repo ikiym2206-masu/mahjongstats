@@ -104,6 +104,10 @@
   #compare-table tr:nth-child(even) .col-name{background:var(--bg);}
   #compare-table th.col-name{z-index:2;}
   .stat-mini-table .col-rank{width:44px; color:var(--muted); font-weight:800;}
+  #compare-table{font-size:17.5px;}
+  #compare-table th{font-size:14.5px; padding:12px 10px;}
+  #compare-table td{padding:15px 10px; font-size:18.5px; font-weight:800;}
+  #compare-table .col-name{font-size:14.5px; font-weight:800;}
 
   .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
   .chip{padding:6px 12px; border-radius:999px; background:var(--bg); border:1px solid var(--line);
@@ -168,17 +172,11 @@ const K_RIICHI=0, K_FUURO=1, K_TSUMO=2, K_RON=3, K_HOUJUU=4, K_CHOMBO=5;
 const CHART_PALETTE = ["#1F6F54","#2E6DA4","#C98A2B","#B23A2E","#6B4FA0","#3B8C6E","#8B94A0","#A9673A"];
 
 const COMPARE_METRICS = [
-  {key:"kyokuCount", label:"総局数", fmt:v=>v},
-  {key:"hanchanRankedCount", label:"半荘数", fmt:v=>v},
-  {key:"avgRank", label:"平均順位", fmt:fmtAvg},
-  {key:"top", label:"トップ率", fmt:fmtPct},
-  {key:"second", label:"2着率", fmt:fmtPct},
-  {key:"third", label:"3着率", fmt:fmtPct},
-  {key:"last", label:"ラス率", fmt:fmtPct},
-  {key:"agariRate", label:"和了率", fmt:fmtPct},
-  {key:"houjuuRate", label:"放銃率", fmt:fmtPct},
+  {key:"kyokuCount", label:"総局数（詳細）", fmt:v=>v},
   {key:"riichiRate", label:"リーチ率", fmt:fmtPct},
   {key:"fuuroRate", label:"副露率", fmt:fmtPct},
+  {key:"agariRate", label:"和了率", fmt:fmtPct},
+  {key:"houjuuRate", label:"放銃率", fmt:fmtPct},
   {key:"riichiAgariRate", label:"リーチ後和了率", fmt:fmtPct},
   {key:"riichiHoujuuRate", label:"リーチ後放銃率", fmt:fmtPct},
   {key:"fuuroAgariRate", label:"副露後和了率", fmt:fmtPct},
@@ -201,6 +199,7 @@ const state = {
   sort: {key:"avgRank", dir:"asc"},
   chips: [],            // ②③共有の選択中プレイヤー名（ハイライト用）
   compareTargets: null,  // ①比較表専用の選択中プレイヤー名（nullなら未初期化）
+  compareRange: {from:"", to:""}, // ①比較表の期間フィルタ（③スコア推移と同じ機能）
   graphRange: {from:"", to:""}, // ③スコア推移グラフの期間フィルタ
   compatRadarTargets: null, // ④相性レーダーチャートの対象プレイヤー名（nullなら未初期化）
   statsCollapsed: {}, // 統計タブ：プレイヤー名（または"__avg__"）→ false で明示的に展開。未設定（デフォルト）は折りたたみ表示
@@ -379,7 +378,7 @@ function computeOverallStats(range){
   });
 }
 // 仕様書6.1：①②③④の対象は「対局実績（総局数＞0）または半荘実績があるプレイヤー全員」
-function computeActiveStats(){ return computeOverallStats().filter(s=>s.kyokuCount>0 || s.hanchanRankedCount>0); }
+function computeActiveStats(range){ return computeOverallStats(range).filter(s=>s.kyokuCount>0 || s.hanchanRankedCount>0); }
 // ---------- 統計タブ（プレイヤー別スタッツカード。入力アプリの統計タブを移植） ----------
 // 全プレイヤーの打点系スタッツ（率・数）を単純平均した値を算出する（着順系・チョンボ系は対象外）。
 function computeAverageStats(statsList){
@@ -568,6 +567,7 @@ function processBackupText(rawText, errEl){
   state.section = "stats";
   state.chips = [];
   state.compareTargets = null;
+  state.compareRange = {from:"", to:""};
   state.graphRange = {from:"", to:""};
   state.compatRadarTargets = null;
   state.statsCollapsed = {};
@@ -651,13 +651,14 @@ function renderSectionWrap(stats){
   if(state.section==="stats"){
     return renderStatsSection(); // 統計タブは対局実績0のプレイヤーも含めて表示するため、専用に分岐（他セクションの空判定より前）
   }
+  if(state.section==="compare"){
+    return renderCompareSection(computeActiveStats(state.compareRange));
+  }
   if(stats.length===0){
     return `<div class="card"><div class="empty">対局実績のあるプレイヤーがいません。入力アプリでデータを記録してから、書き出したJSONを読み込んでください。</div></div>`;
   }
   let body;
-  if(state.section==="compare"){
-    body = stats.length>=2 ? renderCompareSection(stats) : renderNeedMorePlayers("①比較表");
-  }else if(state.section==="radar"){
+  if(state.section==="radar"){
     body = stats.length>=2 ? renderRadarSection(stats) : renderNeedMorePlayers("②レーダーチャート");
   }else if(state.section==="graph"){
     body = renderGraphSection();
@@ -689,7 +690,16 @@ function renderChipBar(){
 
 // ---------- render: ①比較表 ----------
 // 表示するプレイヤーを選択チップ（②レーダーチャートや④相性レーダーチャートと同様のUI）で選ぶ方式にする。
+// 期間フィルタ（state.compareRange）は③スコア推移と同じ仕組み（from/to、サイドバーの曜日フィルタとAND条件）。
 function renderCompareSection(allStats){
+  const range = state.compareRange;
+  const rangeControls = `
+    <div class="graph-range">
+      <label>期間：<input type="date" data-compare-from value="${escapeAttr(range.from)}"></label>
+      <label>〜<input type="date" data-compare-to value="${escapeAttr(range.to)}"></label>
+      ${(range.from || range.to) ? `<button class="tool-btn small" data-compare-clear>指定なし</button>` : ""}
+    </div>`;
+
   const allNames = allStats.map(s=>s.name);
   if(state.compareTargets === null){
     state.compareTargets = allNames.length<=COMPARE_DEFAULT_TARGET_COUNT ? allNames.slice()
@@ -706,7 +716,9 @@ function renderCompareSection(allStats){
   }).join("");
 
   let tableHtml;
-  if(!targets.length){
+  if(allStats.length<2){
+    tableHtml = `<div class="empty">対象期間内に、対局実績のあるプレイヤーが2人以上必要です。</div>`;
+  }else if(!targets.length){
     tableHtml = `<div class="empty">プレイヤーを1人以上選択してください。</div>`;
   }else{
     const selStats = targets.map(n=>allStats.find(s=>s.name===n)).filter(Boolean);
@@ -737,13 +749,15 @@ function renderCompareSection(allStats){
   return `
     <div class="card">
       <div class="section-head">
-        <h2>① 比較表<span class="n-sub">選手を選んで比較</span></h2>
-        <button class="tool-btn" data-copy-table="compare">📋 表をコピー</button>
+        <h2>① 比較表<span class="n-sub">選手を選んで比較（打点系スタッツ）</span></h2>
+        <button class="tool-btn" data-copy-table="compare" ${targets.length? "":"disabled"}>📋 表をコピー</button>
       </div>
-      <div class="target-select">
+      ${rangeControls}
+      ${allStats.length>=2 ? `
+      <div class="target-select" style="margin-top:16px;">
         <span class="chip-bar-label">対象プレイヤー（初期表示は目安${COMPARE_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます）</span>
         <div class="chip-row">${targetChips}</div>
-      </div>
+      </div>` : ""}
       ${tableHtml}
     </div>`;
 }
@@ -1124,7 +1138,8 @@ function toggleChip(name){
 }
 
 // ---------- 表のコピー（①比較表） ----------
-function copyCompareTsv(allStats){
+function copyCompareTsv(){
+  const allStats = computeActiveStats(state.compareRange);
   const targets = state.compareTargets || [];
   const stats = targets.map(n=>allStats.find(s=>s.name===n)).filter(Boolean);
   const header = [""].concat(stats.map(s=>s.name));
@@ -1193,6 +1208,12 @@ function bindEvents(stats){
   if(graphTo) graphTo.addEventListener("change", ()=>{ state.graphRange.to = graphTo.value; render(); });
   const graphClear = app.querySelector("[data-graph-clear]");
   if(graphClear) graphClear.addEventListener("click", ()=>{ state.graphRange = {from:"", to:""}; render(); });
+  const compareFrom = app.querySelector("[data-compare-from]");
+  if(compareFrom) compareFrom.addEventListener("change", ()=>{ state.compareRange.from = compareFrom.value; render(); });
+  const compareTo = app.querySelector("[data-compare-to]");
+  if(compareTo) compareTo.addEventListener("change", ()=>{ state.compareRange.to = compareTo.value; render(); });
+  const compareClear = app.querySelector("[data-compare-clear]");
+  if(compareClear) compareClear.addEventListener("click", ()=>{ state.compareRange = {from:"", to:""}; render(); });
   app.querySelectorAll("[data-chip-remove]").forEach(btn=>{
     btn.addEventListener("click", e=>{ e.stopPropagation(); toggleChip(btn.dataset.chipRemove); });
   });
@@ -1217,7 +1238,7 @@ function bindEvents(stats){
   });
 
   app.querySelectorAll("[data-copy-table]").forEach(btn=>{
-    btn.addEventListener("click", ()=> copyCompareTsv(stats));
+    btn.addEventListener("click", ()=> copyCompareTsv());
   });
 }
 
