@@ -594,18 +594,12 @@ async function loadAll(){
   if(finalScores) state.finalScores = finalScores;
   if(finalPoints) state.finalPoints = finalPoints;
   if(recordPlayers) state.recordPlayers = recordPlayers;
-  // resume where the user left off
-  if(state.records.length){
-    const last = state.records[state.records.length-1];
-    state.current.date = last.date || todayStr();
-    const pos = nextPositionFromRecord(last);
-    state.current.hanchanNo = pos.hanchanNo;
-    state.current.kyoku = pos.kyoku;
-    state.current.honba = pos.honba;
-  }else{
-    state.current.date = todayStr();
-    state.current.honba = 0;
-  }
+  // 対局日付は常に「今日」を自動セットし、その日付内での続き（半荘No・局・積み場）から再開する
+  state.current.date = todayStr();
+  const pos = resumePositionForDate(state.current.date);
+  state.current.hanchanNo = pos.hanchanNo;
+  state.current.kyoku = pos.kyoku;
+  state.current.honba = pos.honba;
   state.loaded = true;
   render();
 }

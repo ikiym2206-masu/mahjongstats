@@ -529,7 +529,7 @@ function validateAgariHoujuuConsistency(){
 
 // GitHub連携（Contents API）の既定リポジトリ。設定タブで各自変更可能。
 const DEFAULT_GITHUB_OWNER = "ikiym2206-masu";
-const DEFAULT_GITHUB_REPO = "masu-mahjongstats";
+const DEFAULT_GITHUB_REPO = "mahjongstats";
 const DEFAULT_GITHUB_PATH = "backup.json";
 
 let state = {
@@ -613,18 +613,12 @@ async function loadAll(){
   if(finalScores) state.finalScores = finalScores;
   if(finalPoints) state.finalPoints = finalPoints;
   if(recordPlayers) state.recordPlayers = recordPlayers;
-  // resume where the user left off
-  if(state.records.length){
-    const last = state.records[state.records.length-1];
-    state.current.date = last.date || todayStr();
-    const pos = nextPositionFromRecord(last);
-    state.current.hanchanNo = pos.hanchanNo;
-    state.current.kyoku = pos.kyoku;
-    state.current.honba = pos.honba;
-  }else{
-    state.current.date = todayStr();
-    state.current.honba = 0;
-  }
+  // 対局日付は常に「今日」を自動セットし、その日付内での続き（半荘No・局・積み場）から再開する
+  state.current.date = todayStr();
+  const pos = resumePositionForDate(state.current.date);
+  state.current.hanchanNo = pos.hanchanNo;
+  state.current.kyoku = pos.kyoku;
+  state.current.honba = pos.honba;
   state.loaded = true;
   render();
 }
@@ -797,17 +791,14 @@ function persistMergedStateLocally(){
   localSet("mj-record-players", state.recordPlayers);
 }
 
-// 入力再開位置（日付・半荘No・局・本場）を、現在のrecordsの末尾から再計算する。
+// 入力再開位置（半荘No・局・本場）を、現在のrecordsから再計算する。対局日付は常に「今日」を維持する。
 // 編集中の入力を壊さないよう、アプリ起動直後（まだ何も入力していない状態）でのみ呼ぶ。
 function recomputeCurrentPosition(){
-  if(state.records.length){
-    const last = state.records[state.records.length-1];
-    state.current.date = last.date || todayStr();
-    const pos = nextPositionFromRecord(last);
-    state.current.hanchanNo = pos.hanchanNo;
-    state.current.kyoku = pos.kyoku;
-    state.current.honba = pos.honba;
-  }
+  state.current.date = todayStr();
+  const pos = resumePositionForDate(state.current.date);
+  state.current.hanchanNo = pos.hanchanNo;
+  state.current.kyoku = pos.kyoku;
+  state.current.honba = pos.honba;
 }
 
 // GitHub上の最新backup.jsonを取得してローカルへマージする。
