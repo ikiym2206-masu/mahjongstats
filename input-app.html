@@ -40,7 +40,10 @@
     --bronze:#A9673A;
     --slate:#5B6470;
     --radius:14px;
+    --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--ink);
@@ -50,19 +53,20 @@
 
   header.topbar{
     position:sticky; top:0; z-index:20;
-    background:var(--bg); padding:14px 16px 8px; display:flex; align-items:center; gap:8px;
+    background:var(--bg); padding:calc(14px + var(--safe-top)) calc(16px + var(--safe-right)) 8px calc(16px + var(--safe-left));
+    display:flex; align-items:center; gap:8px;
     border-bottom:1px solid var(--line);
   }
   header.topbar .tile{font-size:22px; line-height:1;}
   header.topbar h1{font-size:16px; font-weight:800; letter-spacing:.02em; margin:0; flex:1;}
   header.topbar .sub{font-size:11px; color:var(--muted);}
 
-  main{flex:1; padding:14px 14px calc(88px + var(--safe-bottom)); }
+  main{flex:1; padding:14px calc(14px + var(--safe-right)) calc(88px + var(--safe-bottom)) calc(14px + var(--safe-left)); }
 
   nav.tabbar{
     position:fixed; left:0; right:0; bottom:0; z-index:30;
     background:var(--surface); border-top:1px solid var(--line);
-    display:flex; padding-bottom:var(--safe-bottom);
+    display:flex; padding-bottom:var(--safe-bottom); padding-left:var(--safe-left); padding-right:var(--safe-right);
     max-width:520px; margin:0 auto;
   }
   nav.tabbar button{
@@ -198,8 +202,6 @@
   .chip{padding:5px 10px; border-radius:999px; background:var(--bg); border:1px solid var(--line);
     font-size:11px; color:var(--muted); font-weight:600;}
   .tab-ranking .chip{font-size:13px; padding:7px 12px;}
-  .chip.active{background:var(--primary); border-color:var(--primary); color:#fff;}
-  .weekday-filter-row{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
 
   /* hanchan sheet */
   .stat-mini-table{width:100%; border-collapse:collapse; font-size:14px; margin-top:6px;}
@@ -293,6 +295,132 @@
     font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:40;
   }
   .toast.show{opacity:1;}
+
+  /* ===================== 局入力タブ：モード切替・麻雀卓UI ===================== */
+  .mode-switch{display:flex; background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:3px; margin-bottom:12px;}
+  .mode-switch button{flex:1; border:none; background:transparent; padding:10px 0; border-radius:999px;
+    font-size:13px; font-weight:800; color:var(--muted); font-family:inherit;}
+  .mode-switch button.active{background:var(--primary); color:#fff;}
+
+  .header-summary{display:flex; align-items:center; justify-content:space-between; padding:0 2px 10px; cursor:pointer; user-select:none;}
+  .header-summary .txt{font-size:13px; font-weight:800; color:var(--ink); letter-spacing:.01em;}
+  .header-summary .chev{font-size:10px; color:var(--muted); font-weight:800; background:var(--bg); border-radius:999px; padding:4px 8px;}
+
+  /* 卓のミニマップ：中央に卓情報、四方に自家・下家・対面・上家を配置する */
+  .table-wrap{
+    background:radial-gradient(circle at 50% 40%, #2A8564 0%, #175943 62%, #113F31 100%);
+    border:1px solid #0D3325; border-radius:20px; padding:14px; margin:2px 0 14px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.08);
+  }
+  .table-grid{
+    display:grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    grid-template-areas:
+      ".        toimen   ."
+      "kamicha  center   shimocha"
+      ".        jika     .";
+    gap:8px; align-items:stretch;
+  }
+  .seat-card{
+    background:rgba(255,255,255,.95); border-radius:12px; padding:8px 6px 9px;
+    display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0;
+  }
+  .seat-jika{grid-area:jika;}
+  .seat-shimocha{grid-area:shimocha;}
+  .seat-toimen{grid-area:toimen;}
+  .seat-kamicha{grid-area:kamicha;}
+  .seat-card.is-dealer{box-shadow:0 0 0 2px var(--riichi);}
+  .seat-card-pos{font-size:9px; color:var(--muted); font-weight:800; letter-spacing:.04em; margin-bottom:-2px;}
+  .seat-card-name{font-size:12.5px; font-weight:800; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .seat-card-name .dealer-badge{margin-left:4px; padding:1px 5px; font-size:9px;}
+  .seat-card-toggles{display:flex; gap:5px; width:100%;}
+  .toggle-btn.mini{padding:9px 2px; font-size:11px; border-radius:8px; flex:1; white-space:nowrap;}
+  .table-center{
+    grid-area:center; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#fff; text-align:center; padding:6px 2px; border-radius:12px;
+    background:rgba(0,0,0,.18); cursor:pointer;
+  }
+  .table-center .k{font-size:17px; font-weight:800; letter-spacing:.02em;}
+  .table-center .h{font-size:10.5px; font-weight:700; opacity:.85; margin-top:2px;}
+  .table-center .chev{font-size:9px; opacity:.75; margin-top:4px;}
+
+  .action-bar{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px;}
+  .action-btn{
+    padding:16px 0 14px; border:none; border-radius:14px; color:#fff; font-size:14px; font-weight:800;
+    line-height:1.5; letter-spacing:.02em;
+  }
+  .action-btn:active{filter:brightness(.9); transform:scale(.98);}
+  .action-tsumo{background:linear-gradient(180deg,var(--agari),var(--primary-dark));}
+  .action-ron{background:linear-gradient(180deg,var(--ron),#204D77);}
+  .action-ryuukyoku{background:linear-gradient(180deg,var(--slate),#40474F);}
+  .chombo-link{
+    display:block; width:100%; text-align:center; background:none; border:none; padding:6px 0 2px;
+    color:var(--chombo); font-size:12px; font-weight:800;
+  }
+
+  /* 和了者／放銃者／流局／チョンボ選択オーバーレイ */
+  .overlay-backdrop{
+    position:fixed; inset:0; background:rgba(15,20,18,.5); z-index:50;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .overlay-sheet{
+    width:100%; max-width:520px; background:var(--surface); border-radius:20px 20px 0 0;
+    padding:18px 16px calc(18px + var(--safe-bottom)); animation:sheetUp .16s ease-out;
+  }
+  @keyframes sheetUp{ from{transform:translateY(16px); opacity:0;} to{transform:translateY(0); opacity:1;} }
+  .overlay-title{font-size:15px; font-weight:800; margin-bottom:2px;}
+  .overlay-sub{font-size:12px; color:var(--muted); font-weight:600; margin-bottom:14px;}
+  .overlay-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
+  .overlay-btn{
+    padding:16px 4px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface);
+    font-size:14px; font-weight:800; color:var(--ink); display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .overlay-btn:active{background:var(--bg);}
+  .overlay-btn .pos{font-size:10px; color:var(--muted); font-weight:700;}
+  .overlay-btn.selected{background:var(--primary-tint); border-color:var(--primary); color:var(--primary-dark);}
+  .overlay-cancel{
+    display:block; width:100%; text-align:center; margin-top:14px; padding:11px 0; border:none;
+    background:none; color:var(--muted); font-size:13px; font-weight:700;
+  }
+  .overlay-confirm{
+    width:100%; margin-top:14px; padding:13px 0; border:none; border-radius:12px;
+    background:var(--primary); color:#fff; font-size:14px; font-weight:800;
+  }
+  .overlay-confirm:disabled{opacity:.4;}
+
+  .btn-primary-lg{
+    width:100%; padding:18px 0; border:none; border-radius:14px; background:var(--primary); color:#fff;
+    font-size:15px; font-weight:800; margin-top:6px;
+  }
+  .btn-primary-lg:active{filter:brightness(.92);}
+
+  /* 横画面（幅は広いが高さが低いスマホ）：横幅を少し広く使い、上下の余白・ボタンの縦サイズを詰めて
+     1画面あたりの情報量を確保する。幅だけでなく高さも見て判定することで、タブレット等の縦長画面には影響しない。 */
+  @media (orientation:landscape) and (max-height:520px){
+    #app{max-width:720px;}
+    nav.tabbar{max-width:720px;}
+    header.topbar{padding-top:calc(8px + var(--safe-top)); padding-bottom:6px;}
+    main{padding-top:10px; padding-bottom:calc(72px + var(--safe-bottom));}
+    .card{padding:12px 14px; margin-bottom:10px;}
+    .toggle-btn{padding:11px 0;}
+    .kyoku-grid button{padding:8px 0;}
+    nav.tabbar button{padding:7px 4px 6px;}
+    nav.tabbar button .ic{font-size:16px;}
+    .btn-confirm-rank{padding:11px 0;}
+    .table-wrap{padding:10px;}
+    .seat-card{padding:6px 5px 7px;}
+    .toggle-btn.mini{padding:7px 1px; font-size:10px;}
+    .action-btn{padding:11px 0 9px;}
+  }
+
+  /* 縦画面・横画面のどちらでも、対局者トグル（リーチ／副露／ツモ／ロン／放銃）と着順チップは
+     横に並ぶボタン数が多いため、幅が特に狭い端末（横画面の分割表示や小型機種）でも指が押しやすいサイズを保つ。 */
+  @media (max-width:360px){
+    .toggle-btn{padding:13px 0; font-size:14px;}
+    .rank-chip{width:32px; height:32px;}
+    .toggle-btn.mini{font-size:10px; padding:8px 1px;}
+    .seat-card-name{font-size:11.5px;}
+  }
 </style>
 </head>
 <body>
@@ -409,7 +537,7 @@ let state = {
   dealers: {},       // `${date}_${hanchanNo}` -> 起家のプレイヤー index (0-3)。座席は半荘ごとに変わる想定。
   recordPlayers: {}, // `${date}_${hanchanNo}` -> [名前0,名前1,名前2,名前3]（その半荘の最初の入力時点のプレイヤー名を固定保存。
                       //   設定タブで後からプレイヤー名リスト・対局メンバーを変更しても、過去に記録済みの半荘の表示名は変わらない）
-  rankingRange: { from: "", to: "", weekday: "all" }, // ランキングタブの期間フィルタ（weekdayは"all"|"weekday"|"weekend"）
+  rankingRange: { from: "", to: "" }, // ランキングタブの期間フィルタ
   current: { date: todayStr(), hanchanNo: 1, kyoku: 0, honba: 0, toggles: emptyToggles() },
   editingId: null,
   editBackup: null,
@@ -418,23 +546,15 @@ let state = {
   storageOk: true,
   hanchanCollapsed: {}, // `${date}_${hanchanNo}` -> false で明示的に展開。未設定（デフォルト）は最小化表示（画面上のUI状態のみ、保存はしない）
   hanchanMonthFilter: "", // 半荘集計タブの年月絞り込み（"YYYY-MM"。空文字なら全期間を表示。画面表示用の一時状態のみ、保存はしない）
-  hanchanWeekdayFilter: "all", // 半荘集計タブの曜日絞り込み（"all"|"weekday"|"weekend"。画面表示用の一時状態のみ、保存はしない）
+  inputMode: "detail", // 局入力タブの入力モード："detail"（一局ごと入力・麻雀卓UI）｜"simple"（半荘終了時にスコアのみ入力）。settingsに保存する。
+  tableHeaderCollapsed: true, // 麻雀卓UI上部の日付・半荘No・座席・局・積み場コントロールの折りたたみ状態（画面上のUI状態のみ、保存はしない）
+  overlay: null, // 和了者／放銃者／流局／チョンボの選択オーバーレイの状態（画面上のUI状態のみ、保存はしない）
 };
 
-// 日付文字列("YYYY-MM-DD")が土日かどうかを判定する（曜日フィルタの共通ロジック）。
-function isWeekendDate(dateStr){
-  if(!dateStr) return false;
-  const d = new Date(dateStr + "T00:00:00");
-  const day = d.getDay(); // 0=日, 6=土
-  return day === 0 || day === 6;
-}
-// 曜日フィルタ（"all"|"weekday"|"weekend"）に日付が合致するかどうかを判定する共通ロジック。
-// 半荘集計タブ・ランキングタブ・(viewer側)全セクションで共通利用する。
-function matchesWeekdayFilter(dateStr, weekdayFilter){
-  if(!weekdayFilter || weekdayFilter === "all") return true;
-  const weekend = isWeekendDate(dateStr);
-  return weekdayFilter === "weekend" ? weekend : !weekend;
-}
+// 編集中は常に詳細入力モード（麻雀卓UI）を使う（結果のみ入力の半荘は編集対象にならないため）
+function effectiveInputMode(){ return state.editingId ? "detail" : state.inputMode; }
+const POS_LABELS = ["自家","下家","対面","上家"]; // プレイヤー配列順で固定（P1=自家、以下時計回り）
+const POS_CLASSES = ["seat-jika","seat-shimocha","seat-toimen","seat-kamicha"];
 
 // ---------- persistence ----------
 // このアプリはブラウザの localStorage に端末内保存する（クラウド保存は利用しない）。
@@ -464,6 +584,7 @@ async function loadAll(){
   if(settings){
     state.players = settings.players && settings.players.length===4 ? settings.players : DEFAULT_PLAYERS.slice();
     state.playerRoster = settings.playerRoster || settings.usedNames || [];
+    state.inputMode = settings.inputMode === "simple" ? "simple" : "detail";
   }
   if(!state.playerRoster.length) state.playerRoster = DEFAULT_PLAYERS.slice(); // 初回起動時は既定名をリストの初期値にする
   if(records) state.records = records;
@@ -489,7 +610,7 @@ async function loadAll(){
   render();
 }
 
-function saveSettings(){ storageSet("mj-settings", {players: state.players, playerRoster: state.playerRoster}); }
+function saveSettings(){ storageSet("mj-settings", {players: state.players, playerRoster: state.playerRoster, inputMode: state.inputMode}); }
 function saveRecords(){ storageSet("mj-records", state.records); }
 function saveRanks(){ storageSet("mj-ranks", state.ranks); }
 function saveDealers(){ storageSet("mj-dealers", state.dealers); }
@@ -797,7 +918,7 @@ function computeHanchanChomboPt(date, hanchanNo){
 // これにより、設定タブで対局メンバーの割り当てを変えても、過去の記録は記録当時の名前（recordPlayersのスナップショット）に
 // 正しく紐づいたまま集計され、同じ人物が異なるセッション・異なる座席indexで対局していても正しく合算される。
 function computeOverallStats(range){
-  const inRange = (date)=> !range || ((!range.from || date>=range.from) && (!range.to || date<=range.to) && matchesWeekdayFilter(date, range.weekday));
+  const inRange = (date)=> !range || ((!range.from || date>=range.from) && (!range.to || date<=range.to));
   const byName = new Map();
   function ensure(name){
     const key = name || "";
@@ -916,11 +1037,6 @@ function renderRankingTab(){
         <span class="n-sub">〜</span>
         <input type="date" id="rankingTo" value="${range.to}">
       </div>
-      <div class="weekday-filter-row" id="rankingWeekdayFilter">
-        <button type="button" class="chip ${range.weekday==="all"||!range.weekday?"active":""}" data-ranking-weekday="all">すべて</button>
-        <button type="button" class="chip ${range.weekday==="weekday"?"active":""}" data-ranking-weekday="weekday">平日</button>
-        <button type="button" class="chip ${range.weekday==="weekend"?"active":""}" data-ranking-weekday="weekend">週末</button>
-      </div>
       ${body}
     </div>`;
 }
@@ -964,39 +1080,19 @@ function renderTab(){
   if(state.tab==="settings") return renderSettings();
 }
 
-function renderInput(){
-  const cur = state.current;
-  const seatOrder = getSeatOrder(cur.date, cur.hanchanNo); // [東家idx, 南家idx, 西家idx, 北家idx]
-  const dealerIndex = seatOrder[cur.kyoku % 4]; // その局の親のプレイヤーindex
-  const seatFields = SEAT_LABELS.map((label,seatI)=>{
-    const opts = state.players.map((name,pi)=>
-      `<option value="${pi}" ${seatOrder[seatI]===pi?'selected':''}>${escapeHtml(name||"P"+(pi+1))}</option>`).join("");
-    return `<div class="seat-field"><label>${label}</label><select data-seat="${seatI}">${opts}</select></div>`;
-  }).join("");
-  const kyokuBtns = KYOKU_LIST.map((k,i)=>
-    `<button data-kyoku="${i}" class="${i===cur.kyoku?'active':''}">${k}</button>`).join("");
-  const playerRows = state.players.map((name,i)=>{
-    const t = cur.toggles[i]; // [riichi, fuuro, tsumo, ron, houjuu, chombo]
-    const badge = i===dealerIndex ? '<span class="dealer-badge">親</span>' : '';
-    return `
-      <div class="player-row">
-        <div class="player-name">${escapeHtml(name || "プレイヤー"+(i+1))}${badge}</div>
-        <div class="toggle-grid toggle-grid-2">
-          <button class="toggle-btn riichi ${t[K_RIICHI]?'on':''}" data-p="${i}" data-k="${K_RIICHI}">リーチ</button>
-          <button class="toggle-btn fuuro ${t[K_FUURO]?'on':''}" data-p="${i}" data-k="${K_FUURO}">副露</button>
-        </div>
-        <div class="toggle-grid toggle-grid-3" style="margin-top:6px;">
-          <button class="toggle-btn tsumo ${t[K_TSUMO]?'on':''}" data-p="${i}" data-k="${K_TSUMO}">ツモ</button>
-          <button class="toggle-btn ron ${t[K_RON]?'on':''}" data-p="${i}" data-k="${K_RON}">ロン</button>
-          <button class="toggle-btn houjuu ${t[K_HOUJUU]?'on':''}" data-p="${i}" data-k="${K_HOUJUU}">放銃</button>
-        </div>
-        <label class="chombo-check">
-          <input type="checkbox" data-p-chombo="${i}" ${t[K_CHOMBO]?'checked':''}> チョンボ
-        </label>
-      </div>`;
-  }).join("");
+// モード切替（簡易入力／詳細入力）のセグメントコントロール。編集中は詳細固定のため非表示にする。
+function renderModeSwitch(){
+  if(state.editingId) return "";
+  return `
+    <div class="mode-switch">
+      <button type="button" data-mode="simple" class="${state.inputMode==='simple'?'active':''}">簡易入力</button>
+      <button type="button" data-mode="detail" class="${state.inputMode==='detail'?'active':''}">詳細入力</button>
+    </div>`;
+}
 
-  const recent = state.records.slice(-5).reverse().map(r=>{
+// 直近の入力リスト（簡易・詳細どちらのモードでも共通で使う）
+function renderRecentList(){
+  return state.records.slice(-5).reverse().map(r=>{
     if(r.resultType === "resultonly"){
       const honbaTag = r.honba ? `${r.honba}本場` : "";
       const tag = `${fmtShortDate(r.date)} 半荘${r.hanchanNo}${honbaTag?"・"+honbaTag:""}・結果のみ`;
@@ -1021,23 +1117,73 @@ function renderInput(){
       <button class="del" data-del="${r.id}">×</button>
     </div>`;
   }).join("") || `<div class="empty">まだ入力がありません</div>`;
+}
 
-  const dealerAgari = cur.toggles[dealerIndex][K_TSUMO]===1 || cur.toggles[dealerIndex][K_RON]===1;
-  const nonDealerAgari = cur.toggles.some((t,i)=> i!==dealerIndex && (t[K_TSUMO]===1 || t[K_RON]===1));
-  const anyAgari = dealerAgari || nonDealerAgari;
-  const renchanDisabled = nonDealerAgari; // 子のアガリが発生している局は連荘にできない
-  const nextDisabled = dealerAgari;       // 親のアガリが発生している局は「次の局へ」にできない（連荘を選ぶ）
-  const nextResultType = anyAgari ? "next" : "ryuukyoku"; // 子のアガリが無ければ、この局は「流局」として扱う
-  const nextSmallLabel = anyAgari ? "子のアガリ" : "";
-  const anyChombo = cur.toggles.some(t=>t[K_CHOMBO]===1); // チョンボが誰も発生していない場合はチョンボボタンを選択できない
+function renderInput(){
+  return effectiveInputMode()==="simple" ? renderSimpleInput() : renderDetailInput();
+}
 
+// ---------- 簡易入力モード：半荘終了時に最終持ち点のみ入力する ----------
+function renderSimpleInput(){
+  const cur = state.current;
   return `
-    ${state.editingId ? `
-    <div class="edit-banner">
-      <span>✎ 編集中：${fmtShortDate(cur.date)} ${cur.hanchanNo}-${KYOKU_LIST[cur.kyoku]}${cur.honba?'・'+cur.honba+'本場':''}</span>
-      <button type="button" id="cancelEditBtn">キャンセル</button>
-    </div>` : ``}
+    ${renderModeSwitch()}
     <div class="card">
+      <div class="row-between">
+        <h2>日付</h2>
+        <div class="date-stepper">
+          <button type="button" data-day="-1">−</button>
+          <input type="date" id="dateInput" value="${cur.date}">
+          <button type="button" data-day="1">＋</button>
+        </div>
+      </div>
+      <div class="row-between" style="margin-top:14px">
+        <h2>半荘 <span class="n">No.</span></h2>
+        <div class="hanchan-stepper">
+          <button data-hanchan="-1">−</button>
+          <div class="num">${cur.hanchanNo}</div>
+          <button data-hanchan="1">＋</button>
+        </div>
+      </div>
+      <button type="button" class="btn-primary-lg" id="resultOnlyBtn">📋 半荘の結果を記録する</button>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>直近の入力</h2>
+      ${renderRecentList()}
+    </div>
+  `;
+}
+
+// ---------- 詳細入力モード：直感麻雀卓UI（一局ごと入力） ----------
+function renderDetailInput(){
+  const cur = state.current;
+  const seatOrder = getSeatOrder(cur.date, cur.hanchanNo); // [東家idx, 南家idx, 西家idx, 北家idx]
+  const dealerIndex = seatOrder[cur.kyoku % 4]; // その局の親のプレイヤーindex
+
+  const seatFields = SEAT_LABELS.map((label,seatI)=>{
+    const opts = state.players.map((name,pi)=>
+      `<option value="${pi}" ${seatOrder[seatI]===pi?'selected':''}>${escapeHtml(name||"P"+(pi+1))}</option>`).join("");
+    return `<div class="seat-field"><label>${label}</label><select data-seat="${seatI}">${opts}</select></div>`;
+  }).join("");
+  const kyokuBtns = KYOKU_LIST.map((k,i)=>
+    `<button data-kyoku="${i}" class="${i===cur.kyoku?'active':''}">${k}</button>`).join("");
+
+  const seatCards = state.players.map((name,i)=>{
+    const t = cur.toggles[i]; // [riichi, fuuro, tsumo, ron, houjuu, chombo]
+    const badge = i===dealerIndex ? '<span class="dealer-badge">親</span>' : '';
+    return `
+      <div class="seat-card ${POS_CLASSES[i]} ${i===dealerIndex?'is-dealer':''}">
+        <div class="seat-card-pos">${POS_LABELS[i]}</div>
+        <div class="seat-card-name">${escapeHtml(name || "プレイヤー"+(i+1))}${badge}</div>
+        <div class="seat-card-toggles">
+          <button class="toggle-btn mini riichi ${t[K_RIICHI]?'on':''}" data-p="${i}" data-k="${K_RIICHI}">リーチ</button>
+          <button class="toggle-btn mini fuuro ${t[K_FUURO]?'on':''}" data-p="${i}" data-k="${K_FUURO}">鳴き</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  const headerDetails = state.tableHeaderCollapsed ? "" : `
+    <div class="card" id="headerDetailsCard">
       <div class="row-between">
         <h2>日付</h2>
         <div class="date-stepper">
@@ -1069,29 +1215,162 @@ function renderInput(){
           <button data-honba="1">＋</button>
         </div>
       </div>
-      ${state.editingId ? "" : `
-      <button type="button" class="btn-ghost" id="resultOnlyBtn" style="margin-top:12px;">📋 結果のみ入力する（局の詳細は省略）</button>
-      `}
-    </div>
+    </div>`;
 
-    <div class="card">
-      <h2>対局者</h2>
-      ${playerRows}
-    </div>
+  return `
+    ${state.editingId ? `
+    <div class="edit-banner">
+      <span>✎ 編集中：${fmtShortDate(cur.date)} ${cur.hanchanNo}-${KYOKU_LIST[cur.kyoku]}${cur.honba?'・'+cur.honba+'本場':''}</span>
+      <button type="button" id="cancelEditBtn">キャンセル</button>
+    </div>` : ``}
+    ${renderModeSwitch()}
 
-    <div class="save-bar">
-      <div class="save-grid">
-        <button class="btn-save btn-save-renchan" data-result="renchan" ${renchanDisabled?'disabled':''}>${state.editingId?'更新：':''}連荘</button>
-        <button class="btn-save btn-save-next" data-result="${nextResultType}" ${nextDisabled?'disabled':''}>${state.editingId?'更新：':''}次の局へ${nextSmallLabel?`<small>${nextSmallLabel}</small>`:''}</button>
+    <div class="header-summary" id="headerSummaryToggle">
+      <span class="txt">📅 ${fmtShortDate(cur.date)}　半荘${cur.hanchanNo}　${KYOKU_LIST[cur.kyoku]}${cur.honba?'・'+cur.honba+'本場':''}</span>
+      <span class="chev">${state.tableHeaderCollapsed ? '詳細設定 ▾' : '閉じる ▴'}</span>
+    </div>
+    ${headerDetails}
+
+    <div class="table-wrap">
+      <div class="table-grid">
+        ${seatCards}
+        <div class="table-center" id="tableCenterToggle">
+          <div class="k">${KYOKU_LIST[cur.kyoku]}</div>
+          <div class="h">${cur.honba}本場</div>
+        </div>
       </div>
-      <button class="btn-save-chombo-small" data-result="chombo" ${anyChombo?'':'disabled'}>${state.editingId?'更新：':''}チョンボ</button>
     </div>
+
+    <div class="action-bar">
+      <button type="button" class="action-btn action-tsumo" id="actTsumo">🁘<br>ツモ</button>
+      <button type="button" class="action-btn action-ron" id="actRon">🀄<br>ロン</button>
+      <button type="button" class="action-btn action-ryuukyoku" id="actRyuukyoku">🚫<br>流局</button>
+    </div>
+    <button type="button" class="chombo-link" id="actChombo">⚠️ チョンボを記録</button>
 
     <div class="card" style="margin-top:14px">
       <h2>直近の入力</h2>
-      ${recent}
+      ${renderRecentList()}
     </div>
+    ${state.overlay ? renderOverlay() : ""}
   `;
+}
+
+// プレイヤーindex(0-3)から座席ラベル（東家/南家/西家/北家）を求める
+function seatLabelForPlayer(seatOrder, playerIdx){
+  const pos = seatOrder.indexOf(playerIdx);
+  return pos===-1 ? "-" : SEAT_LABELS[pos];
+}
+
+// ---------- 和了者／放銃者／流局／チョンボ選択オーバーレイ ----------
+function renderOverlay(){
+  const ov = state.overlay;
+  if(!ov) return "";
+  if(ov.type === "winner"){
+    const title = ov.action === "tsumo" ? "誰がツモりましたか？" : "誰がロンしましたか？";
+    const btns = state.players.map((name,i)=>
+      `<button type="button" class="overlay-btn" data-pick-winner="${i}">
+        <span>${escapeHtml(name||"プレイヤー"+(i+1))}</span><span class="pos">${POS_LABELS[i]}</span>
+      </button>`).join("");
+    return overlaySheet(title, "和了したプレイヤーを選んでください", `<div class="overlay-grid">${btns}</div>`);
+  }
+  if(ov.type === "loser"){
+    const winnerName = state.players[ov.winner] || "プレイヤー"+(ov.winner+1);
+    const btns = state.players.map((name,i)=>{
+      if(i===ov.winner) return "";
+      return `<button type="button" class="overlay-btn" data-pick-loser="${i}">
+        <span>${escapeHtml(name||"プレイヤー"+(i+1))}</span><span class="pos">${POS_LABELS[i]}</span>
+      </button>`;
+    }).join("");
+    return overlaySheet(`誰の放銃ですか？`, `${escapeHtml(winnerName)}さんのロン・放銃者を選んでください`, `<div class="overlay-grid">${btns}</div>`);
+  }
+  if(ov.type === "ryuukyoku"){
+    const btns = `
+      <button type="button" class="overlay-btn" data-pick-ryuukyoku="oya">聴牌<span class="pos">親は連荘</span></button>
+      <button type="button" class="overlay-btn" data-pick-ryuukyoku="noten">ノーテン<span class="pos">次の局へ</span></button>`;
+    return overlaySheet("流局", "親のテンパイ有無を選んでください", `<div class="overlay-grid">${btns}</div>`);
+  }
+  if(ov.type === "chombo"){
+    const sel = ov.selected;
+    const btns = state.players.map((name,i)=>
+      `<button type="button" class="overlay-btn ${sel[i]?'selected':''}" data-pick-chombo="${i}">
+        <span>${escapeHtml(name||"プレイヤー"+(i+1))}</span><span class="pos">${POS_LABELS[i]}</span>
+      </button>`).join("");
+    const any = sel.some(Boolean);
+    return overlaySheet("チョンボ", "チョンボしたプレイヤーを選んでください（複数選択可）",
+      `<div class="overlay-grid">${btns}</div>
+       <button type="button" class="overlay-confirm" id="confirmChomboBtn" ${any?'':'disabled'}>この内容でチョンボを記録</button>`);
+  }
+  return "";
+}
+function overlaySheet(title, sub, body){
+  return `
+    <div class="overlay-backdrop" id="overlayBackdrop">
+      <div class="overlay-sheet">
+        <div class="overlay-title">${title}</div>
+        <div class="overlay-sub">${sub}</div>
+        ${body}
+        <button type="button" class="overlay-cancel" id="overlayCancelBtn">キャンセル</button>
+      </div>
+    </div>`;
+}
+
+// ---- 麻雀卓UIのアクション（ツモ・ロン・流局・チョンボ）フロー ----
+function openTsumoFlow(){ state.overlay = {type:"winner", action:"tsumo"}; render(); }
+function openRonFlow(){ state.overlay = {type:"winner", action:"ron"}; render(); }
+function openRyuukyokuFlow(){ state.overlay = {type:"ryuukyoku"}; render(); }
+function openChomboFlow(){
+  state.overlay = {type:"chombo", selected: state.current.toggles.map(t=>t[K_CHOMBO]?1:0)};
+  render();
+}
+// オーバーレイを取り消す：フロー途中で仮に付いたツモ／ロン／放銃フラグ（リーチ・副露は対象外）を消してから閉じる
+function closeOverlay(){
+  state.current.toggles.forEach(t=>{ t[K_TSUMO]=0; t[K_RON]=0; t[K_HOUJUU]=0; });
+  state.overlay = null;
+  render();
+}
+
+function pickWinner(idx){
+  const action = state.overlay.action;
+  toggleStat(idx, action==="tsumo" ? K_TSUMO : K_RON);
+  if(action==="tsumo"){
+    finalizeAgari(idx);
+  }else{
+    state.overlay = {type:"loser", winner: idx};
+    render();
+  }
+}
+function pickLoser(idx){
+  toggleStat(idx, K_HOUJUU);
+  finalizeAgari(state.overlay.winner);
+}
+function finalizeAgari(winnerIdx){
+  const cur = state.current;
+  const seatOrder = getSeatOrder(cur.date, cur.hanchanNo);
+  const dealerIndex = seatOrder[cur.kyoku % 4];
+  const resultType = winnerIdx === dealerIndex ? "renchan" : "next";
+  if(!validateAgariHoujuuConsistency()){ return; } // ロンで放銃者未選択のまま呼ばれることは無いはずだが念のため
+  state.overlay = null;
+  if(state.editingId) commitEdit(resultType); else onSave(resultType);
+}
+function pickRyuukyokuOutcome(oyaTenpai){
+  const resultType = oyaTenpai ? "renchan" : "ryuukyoku";
+  state.overlay = null;
+  if(state.editingId) commitEdit(resultType); else onSave(resultType);
+}
+function toggleChomboSelect(idx){
+  state.overlay.selected[idx] = state.overlay.selected[idx] ? 0 : 1;
+  render();
+}
+function confirmChombo(){
+  const sel = state.overlay.selected;
+  if(!sel.some(Boolean)){ toast("チョンボしたプレイヤーを選んでください"); return; }
+  sel.forEach((v,i)=>{
+    const desired = v ? 1 : 0;
+    if(state.current.toggles[i][K_CHOMBO] !== desired) toggleStat(i, K_CHOMBO);
+  });
+  state.overlay = null;
+  if(state.editingId) commitEdit("chombo"); else onSave("chombo");
 }
 
 // プレイヤーindex(0-3)から座席ラベル（東家/南家/西家/北家）を求める
@@ -1104,10 +1383,7 @@ function renderHanchanTab(){
   const allGroups = hanchanGroups();
   if(!allGroups.length) return `<div class="card"><div class="empty">局入力タブでデータを入力すると、ここに半荘ごとの集計が表示されます。</div></div>`;
   const filter = state.hanchanMonthFilter;
-  const weekdayFilter = state.hanchanWeekdayFilter || "all";
-  const groups = allGroups
-    .filter(g=> !filter || g.date.slice(0,7)===filter)
-    .filter(g=> matchesWeekdayFilter(g.date, weekdayFilter));
+  const groups = filter ? allGroups.filter(g=>g.date.slice(0,7)===filter) : allGroups;
   const filterBar = `
     <div class="card" style="padding:12px 14px;">
       <div class="graph-range" style="margin-bottom:0;">
@@ -1115,17 +1391,9 @@ function renderHanchanTab(){
         <input type="month" id="hanchanMonthFilter" value="${filter}">
         ${filter ? `<button type="button" class="chip" id="hanchanMonthClear">すべて表示</button>` : ""}
       </div>
-      <div class="weekday-filter-row" id="hanchanWeekdayFilter">
-        <button type="button" class="chip ${weekdayFilter==="all"?"active":""}" data-hanchan-weekday="all">すべて</button>
-        <button type="button" class="chip ${weekdayFilter==="weekday"?"active":""}" data-hanchan-weekday="weekday">平日</button>
-        <button type="button" class="chip ${weekdayFilter==="weekend"?"active":""}" data-hanchan-weekday="weekend">週末</button>
-      </div>
     </div>`;
-  if(!groups.length){
-    const emptyMsg = filter
-      ? `${filter.slice(0,4)}年${filter.slice(5,7)}月に該当する半荘がありません`
-      : "該当する半荘がありません";
-    return filterBar + `<div class="card"><div class="empty">${emptyMsg}</div></div>`;
+  if(filter && !groups.length){
+    return filterBar + `<div class="card"><div class="empty">${filter.slice(0,4)}年${filter.slice(5,7)}月に該当する半荘がありません</div></div>`;
   }
   return filterBar + groups.map(({date,hanchanNo})=>{
     const key = `${date}_${hanchanNo}`;
@@ -1330,7 +1598,7 @@ function escapeAttr(s){ return escapeHtml(s); }
 
 // ---------- events ----------
 function bindEvents(){
-  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; render(); });
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.overlay=null; render(); });
 
   if(state.tab==="input"){
     const dateInput = document.getElementById("dateInput");
@@ -1405,19 +1673,43 @@ function bindEvents(){
       toggleStat(Number(b.dataset.p), Number(b.dataset.k));
       render();
     });
-    document.querySelectorAll("[data-p-chombo]").forEach(cb=>{
-      cb.onchange = ()=>{
-        toggleStat(Number(cb.dataset.pChombo), K_CHOMBO);
-        render();
-      };
+    document.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{
+      const mode = b.dataset.mode;
+      if(mode === state.inputMode) return;
+      state.inputMode = mode;
+      state.overlay = null;
+      saveSettings();
+      render();
     });
-    document.querySelectorAll("[data-result]").forEach(b=>b.onclick=()=>{
-      const resultType = b.dataset.result;
-      if(resultType!=="chombo" && !validateAgariHoujuuConsistency()) return; // ロン成立時は放銃1名の入力を必須にする
-      if(state.editingId) commitEdit(resultType); else onSave(resultType);
-    });
+    const headerSummaryToggle = document.getElementById("headerSummaryToggle");
+    if(headerSummaryToggle) headerSummaryToggle.onclick = ()=>{ state.tableHeaderCollapsed = !state.tableHeaderCollapsed; render(); };
+    const tableCenterToggle = document.getElementById("tableCenterToggle");
+    if(tableCenterToggle) tableCenterToggle.onclick = ()=>{ state.tableHeaderCollapsed = !state.tableHeaderCollapsed; render(); };
     const resultOnlyBtn = document.getElementById("resultOnlyBtn");
     if(resultOnlyBtn) resultOnlyBtn.onclick = onSaveResultOnly;
+
+    // ツモ／ロン／流局／チョンボ：大型アクションボタン（和了者・放銃者の選択オーバーレイを開く）
+    const actTsumo = document.getElementById("actTsumo");
+    if(actTsumo) actTsumo.onclick = openTsumoFlow;
+    const actRon = document.getElementById("actRon");
+    if(actRon) actRon.onclick = openRonFlow;
+    const actRyuukyoku = document.getElementById("actRyuukyoku");
+    if(actRyuukyoku) actRyuukyoku.onclick = openRyuukyokuFlow;
+    const actChombo = document.getElementById("actChombo");
+    if(actChombo) actChombo.onclick = openChomboFlow;
+
+    // 選択オーバーレイ（和了者・放銃者・流局・チョンボ）
+    const overlayBackdrop = document.getElementById("overlayBackdrop");
+    if(overlayBackdrop) overlayBackdrop.onclick = (e)=>{ if(e.target === overlayBackdrop) closeOverlay(); };
+    const overlayCancelBtn = document.getElementById("overlayCancelBtn");
+    if(overlayCancelBtn) overlayCancelBtn.onclick = closeOverlay;
+    document.querySelectorAll("[data-pick-winner]").forEach(b=>b.onclick=()=>pickWinner(Number(b.dataset.pickWinner)));
+    document.querySelectorAll("[data-pick-loser]").forEach(b=>b.onclick=()=>pickLoser(Number(b.dataset.pickLoser)));
+    document.querySelectorAll("[data-pick-ryuukyoku]").forEach(b=>b.onclick=()=>pickRyuukyokuOutcome(b.dataset.pickRyuukyoku==="oya"));
+    document.querySelectorAll("[data-pick-chombo]").forEach(b=>b.onclick=()=>toggleChomboSelect(Number(b.dataset.pickChombo)));
+    const confirmChomboBtn = document.getElementById("confirmChomboBtn");
+    if(confirmChomboBtn) confirmChomboBtn.onclick = confirmChombo;
+
     document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
     const cancelEditBtn = document.getElementById("cancelEditBtn");
     if(cancelEditBtn) cancelEditBtn.onclick = cancelEdit;
@@ -1432,9 +1724,6 @@ function bindEvents(){
     if(monthFilter) monthFilter.onchange = ()=>{ state.hanchanMonthFilter = monthFilter.value; render(); };
     const monthClear = document.getElementById("hanchanMonthClear");
     if(monthClear) monthClear.onclick = ()=>{ state.hanchanMonthFilter = ""; render(); };
-    document.querySelectorAll("[data-hanchan-weekday]").forEach(b=>b.onclick=()=>{
-      state.hanchanWeekdayFilter = b.dataset.hanchanWeekday; render();
-    });
     document.querySelectorAll("[data-toggle-hanchan-collapse]").forEach(el=>el.onclick=()=>{
       const key = el.dataset.toggleHanchanCollapse;
       const wasCollapsed = state.hanchanCollapsed[key] !== false;
@@ -1495,9 +1784,6 @@ function bindEvents(){
     if(rankingFrom) rankingFrom.onchange = ()=>{ state.rankingRange.from = rankingFrom.value; render(); };
     const rankingTo = document.getElementById("rankingTo");
     if(rankingTo) rankingTo.onchange = ()=>{ state.rankingRange.to = rankingTo.value; render(); };
-    document.querySelectorAll("[data-ranking-weekday]").forEach(b=>b.onclick=()=>{
-      state.rankingRange.weekday = b.dataset.rankingWeekday; render();
-    });
   }
   if(state.tab==="settings"){
     const exp = document.getElementById("exportBtn");
@@ -1616,7 +1902,7 @@ function onSaveResultOnly(){
   cur.toggles = emptyToggles();
 
   state.tab = "hanchan";
-  state.hanchanMonthFilter = ""; state.hanchanWeekdayFilter = "all"; // 遷移先の半荘が確実に見えるよう、月・曜日フィルタは解除する
+  state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月フィルタは解除する
   state.scrollToHanchanKey = `${rec.date}_${rec.hanchanNo}`;
   render();
   toast("結果のみ入力で記録しました。順位を入力しましょう");
@@ -1650,7 +1936,7 @@ function onSave(resultType){
 
   if(hanchanEnded){
     state.tab = "hanchan";
-    state.hanchanMonthFilter = ""; state.hanchanWeekdayFilter = "all"; // 遷移先の半荘が確実に見えるよう、月・曜日フィルタは解除する
+    state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月フィルタは解除する
     state.scrollToHanchanKey = `${rec.date}_${rec.hanchanNo}`;
     render();
     toast("半荘が終了しました。順位を入力しましょう");
