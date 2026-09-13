@@ -1729,6 +1729,20 @@ function bindEvents(stats){
   });
 }
 
+// input-appの「Viewerを開く」から遷移した場合、localStorage経由で引き継がれたバックアップデータを
+// 1回だけ自動的に読み込む（同一オリジンのlocalStorageを利用した端末内引き継ぎ。サーバー通信は行わない）。
+// 読み込み後は必ずキーを削除し、通常のリロード時は従来どおり手動読み込みに戻す。
+(function tryAutoLoadFromHandoff(){
+  const KEY = "mj-viewer-handoff";
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){
+      localStorage.removeItem(KEY);
+      processBackupText(raw);
+    }
+  }catch(e){ /* 読み込み失敗時は通常のローダー画面にフォールバック */ }
+})();
+
 render();
 </script>
 </body>

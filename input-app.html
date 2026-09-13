@@ -655,6 +655,14 @@ function exportBackup(){
   URL.revokeObjectURL(url);
   toast("バックアップを保存しました");
 }
+// Viewer遷移時に、この端末の記録データをlocalStorage経由で1回だけ引き継ぐための書き込み。
+// （同一オリジンのためlocalStorageを共有できる。Viewer側は読み込み後すぐにこのキーを削除する）
+const VIEWER_HANDOFF_KEY = "mj-viewer-handoff";
+function handoffToViewer(){
+  try{
+    localStorage.setItem(VIEWER_HANDOFF_KEY, JSON.stringify(buildBackupPayload()));
+  }catch(e){ /* 書き込み失敗時はViewer側で手動読み込みにフォールバックされる */ }
+}
 function importBackupFile(file){
   const reader = new FileReader();
   reader.onload = ()=>{ processBackupText(reader.result); };
@@ -1568,7 +1576,7 @@ function renderSettings(){
     <div class="card">
       <h2>Viewerで見る</h2>
       <div class="empty" style="text-align:left; padding:0 0 10px;">対局記録の集計・分析はViewer（PC向け）で確認できます。</div>
-      <a class="btn-ghost" href="viewer-app.html" style="display:block; text-align:center; box-sizing:border-box; text-decoration:none;">📊 Viewerを開く</a>
+      <a class="btn-ghost" href="viewer-app.html" id="openViewerBtn" style="display:block; text-align:center; box-sizing:border-box; text-decoration:none;">📊 Viewerを開く</a>
     </div>
     <div class="card">
       <h2>データ管理</h2>
@@ -1828,6 +1836,8 @@ function bindEvents(){
       if(importBackupInput.files && importBackupInput.files[0]) importBackupFile(importBackupInput.files[0]);
       importBackupInput.value = "";
     };
+    const openViewerBtn = document.getElementById("openViewerBtn");
+    if(openViewerBtn) openViewerBtn.addEventListener("click", handoffToViewer);
     const importBackupUrlBtn = document.getElementById("importBackupUrlBtn");
     if(importBackupUrlBtn) importBackupUrlBtn.onclick = importBackupFromServer;
     const resetAllDataBtn = document.getElementById("resetAllDataBtn");
