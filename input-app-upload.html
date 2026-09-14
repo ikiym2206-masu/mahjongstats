@@ -443,6 +443,11 @@ function todayStr(){
   const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), day = String(d.getDate()).padStart(2,"0");
   return `${y}-${m}-${day}`;
 }
+// 曜日判定（土・日を週末とする）。半荘集計タブ・ランキングタブの曜日フィルタで共通利用。
+function isWeekendDate(dateStr){
+  const dow = new Date(dateStr+"T00:00:00").getDay(); // 0=日,6=土
+  return dow===0 || dow===6;
+}
 function fmtDate(dstr){
   if(!dstr) return "";
   const [y,m,d] = dstr.split("-");
@@ -548,7 +553,7 @@ let state = {
   dealers: {},       // `${date}_${hanchanNo}` -> 起家のプレイヤー index (0-3)。座席は半荘ごとに変わる想定。
   recordPlayers: {}, // `${date}_${hanchanNo}` -> [名前0,名前1,名前2,名前3]（その半荘の最初の入力時点のプレイヤー名を固定保存。
                       //   設定タブで後からプレイヤー名リスト・対局メンバーを変更しても、過去に記録済みの半荘の表示名は変わらない）
-  rankingRange: { from: "", to: "" }, // ランキングタブの期間フィルタ
+  rankingRange: { from: "", to: "", weekday: "all" }, // ランキングタブの期間フィルタ・曜日フィルタ（all/weekday/weekend）
   current: { date: todayStr(), hanchanNo: 1, kyoku: 0, honba: 0, toggles: emptyToggles() },
   editingId: null,
   editBackup: null,
@@ -557,6 +562,7 @@ let state = {
   storageOk: true,
   hanchanCollapsed: {}, // `${date}_${hanchanNo}` -> false で明示的に展開。未設定（デフォルト）は最小化表示（画面上のUI状態のみ、保存はしない）
   hanchanMonthFilter: "", // 半荘集計タブの年月絞り込み（"YYYY-MM"。空文字なら全期間を表示。画面表示用の一時状態のみ、保存はしない）
+  hanchanWeekdayFilter: "all", // 半荘集計タブの曜日絞り込み（"all"|"weekday"|"weekend"。画面表示用の一時状態のみ、保存はしない）
   inputMode: "detail", // 局入力タブの入力モード："detail"（一局ごと入力・麻雀卓UI）｜"simple"（半荘終了時にスコアのみ入力）。settingsに保存する。
   tableHeaderCollapsed: true, // 麻雀卓UI上部の日付・半荘No・座席・局・積み場コントロールの折りたたみ状態（画面上のUI状態のみ、保存はしない）
   overlay: null, // 和了者／放銃者／流局／チョンボの選択オーバーレイの状態（画面上のUI状態のみ、保存はしない）
@@ -1178,7 +1184,12 @@ function computeHanchanChomboPt(date, hanchanNo){
 // これにより、設定タブで対局メンバーの割り当てを変えても、過去の記録は記録当時の名前（recordPlayersのスナップショット）に
 // 正しく紐づいたまま集計され、同じ人物が異なるセッション・異なる座席indexで対局していても正しく合算される。
 function computeOverallStats(range){
-  const inRange = (date)=> !range || ((!range.from || date>=range.from) && (!range.to || date<=range.to));
+  // 曜日フィルタ：半荘集計タブと共通のisWeekendDate()で土日を「週末」、それ以外を「平日」とする
+  const weekdayOk = (date)=>{
+    if(!range || !range.weekday || range.weekday === "all") return true;
+    return range.weekday === "weekend" ? isWeekendDate(date) : !isWeekendDate(date);
+  };
+  const inRange = (date)=> !range || (((!range.from || date>=range.from) && (!range.to || date<=range.to)) && weekdayOk(date));
   const byName = new Map();
   function ensure(name){
     const key = name || "";
@@ -1292,6 +1303,11 @@ function renderRankingTab(){
   return `
     <div class="card">
       <h2>通算ランキング <span class="n-sub">累計得点pt順</span></h2>
+      <div class="mode-switch weekday-switch">
+        <button type="button" data-weekday="all" class="${range.weekday==='all'?'active':''}">すべて</button>
+        <button type="button" data-weekday="weekday" class="${range.weekday==='weekday'?'active':''}">平日</button>
+        <button type="button" data-weekday="weekend" class="${range.weekday==='weekend'?'active':''}">週末</button>
+      </div>
       <div class="graph-range">
         <input type="date" id="rankingFrom" value="${range.from}">
         <span class="n-sub">〜</span>
@@ -1643,7 +1659,11 @@ function renderHanchanTab(){
   const allGroups = hanchanGroups();
   if(!allGroups.length) return `<div class="card"><div class="empty">局入力タブでデータを入力すると、ここに半荘ごとの集計が表示されます。</div></div>`;
   const filter = state.hanchanMonthFilter;
-  const groups = filter ? allGroups.filter(g=>g.date.slice(0,7)===filter) : allGroups;
+  const weekdayFilter = state.hanchanWeekdayFilter;
+  let groups = filter ? allGroups.filter(g=>g.date.slice(0,7)===filter) : allGroups;
+  if(weekdayFilter && weekdayFilter !== "all"){
+    groups = groups.filter(g => weekdayFilter==="weekend" ? isWeekendDate(g.date) : !isWeekendDate(g.date));
+  }
   const filterBar = `
     <div class="card" style="padding:12px 14px;">
       <div class="graph-range" style="margin-bottom:0;">
@@ -1651,9 +1671,15 @@ function renderHanchanTab(){
         <input type="month" id="hanchanMonthFilter" value="${filter}">
         ${filter ? `<button type="button" class="chip" id="hanchanMonthClear">すべて表示</button>` : ""}
       </div>
+      <div class="mode-switch weekday-switch" style="margin-top:10px; margin-bottom:0;">
+        <button type="button" data-hanchan-weekday="all" class="${weekdayFilter==='all'?'active':''}">すべて</button>
+        <button type="button" data-hanchan-weekday="weekday" class="${weekdayFilter==='weekday'?'active':''}">平日</button>
+        <button type="button" data-hanchan-weekday="weekend" class="${weekdayFilter==='weekend'?'active':''}">週末</button>
+      </div>
     </div>`;
-  if(filter && !groups.length){
-    return filterBar + `<div class="card"><div class="empty">${filter.slice(0,4)}年${filter.slice(5,7)}月に該当する半荘がありません</div></div>`;
+  if(!groups.length){
+    const msg = filter ? `${filter.slice(0,4)}年${filter.slice(5,7)}月に該当する半荘がありません` : `該当する半荘がありません`;
+    return filterBar + `<div class="card"><div class="empty">${msg}</div></div>`;
   }
   return filterBar + groups.map(({date,hanchanNo})=>{
     const key = `${date}_${hanchanNo}`;
@@ -2018,6 +2044,9 @@ function bindEvents(){
     if(monthFilter) monthFilter.onchange = ()=>{ state.hanchanMonthFilter = monthFilter.value; render(); };
     const monthClear = document.getElementById("hanchanMonthClear");
     if(monthClear) monthClear.onclick = ()=>{ state.hanchanMonthFilter = ""; render(); };
+    document.querySelectorAll("[data-hanchan-weekday]").forEach(b=>b.onclick=()=>{
+      state.hanchanWeekdayFilter = b.dataset.hanchanWeekday; render();
+    });
     document.querySelectorAll("[data-toggle-hanchan-collapse]").forEach(el=>el.onclick=()=>{
       const key = el.dataset.toggleHanchanCollapse;
       const wasCollapsed = state.hanchanCollapsed[key] !== false;
@@ -2078,6 +2107,9 @@ function bindEvents(){
     if(rankingFrom) rankingFrom.onchange = ()=>{ state.rankingRange.from = rankingFrom.value; render(); };
     const rankingTo = document.getElementById("rankingTo");
     if(rankingTo) rankingTo.onchange = ()=>{ state.rankingRange.to = rankingTo.value; render(); };
+    document.querySelectorAll("[data-weekday]").forEach(b=>b.onclick=()=>{
+      state.rankingRange.weekday = b.dataset.weekday; render();
+    });
   }
   if(state.tab==="settings"){
     const exp = document.getElementById("exportBtn");
@@ -2222,7 +2254,8 @@ function onSaveResultOnly(){
   cur.toggles = emptyToggles();
 
   state.tab = "hanchan";
-  state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月フィルタは解除する
+  state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月・曜日フィルタは解除する
+  state.hanchanWeekdayFilter = "all";
   state.scrollToHanchanKey = `${rec.date}_${rec.hanchanNo}`;
   render();
   toast("結果のみ入力で記録しました。順位を入力しましょう");
@@ -2256,7 +2289,8 @@ function onSave(resultType){
 
   if(hanchanEnded){
     state.tab = "hanchan";
-    state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月フィルタは解除する
+    state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月・曜日フィルタは解除する
+    state.hanchanWeekdayFilter = "all";
     state.scrollToHanchanKey = `${rec.date}_${rec.hanchanNo}`;
     render();
     toast("半荘が終了しました。順位を入力しましょう");
