@@ -1,12 +1,12 @@
 {
   "app": "mahjong-stats-backup",
   "version": 3,
-  "exportedAt": "2026-09-15T16:12:32.324Z",
+  "exportedAt": "2026-09-15T16:14:27.306Z",
   "players": [
-    "光岡",
     "一平",
     "本郷",
-    "増本"
+    "松枝",
+    "星野"
   ],
   "playerRoster": [
     "星野",
