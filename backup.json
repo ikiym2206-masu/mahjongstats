@@ -1,7 +1,7 @@
 {
   "app": "mahjong-stats-backup",
   "version": 3,
-  "exportedAt": "2026-09-15T11:46:08.227Z",
+  "exportedAt": "2026-09-15T11:46:25.623Z",
   "players": [
     "光岡",
     "一平",
@@ -25224,6 +25224,48 @@
     },
     {
       "id": "mu2lttz4p9co",
+      "date": "2026-09-15",
+      "hanchanNo": 1,
+      "kyoku": "-",
+      "honba": 0,
+      "resultType": "resultonly",
+      "stats": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "mu2lw0gq8j3r",
       "date": "2026-09-15",
       "hanchanNo": 1,
       "kyoku": "-",
