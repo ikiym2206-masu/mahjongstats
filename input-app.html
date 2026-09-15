@@ -548,6 +548,7 @@ let state = {
   editBackup: null,
   scrollToHanchanKey: null,
   loaded: false,
+  showWelcomeBackupPrompt: false, // 起動のたびに「サイト上のbackup.jsonを読み込むか」を尋ねるモーダルの表示状態（画面上のUI状態のみ、保存はしない）
   storageOk: true,
   hanchanCollapsed: {}, // `${date}_${hanchanNo}` -> false で明示的に展開。未設定（デフォルト）は最小化表示（画面上のUI状態のみ、保存はしない）
   hanchanMonthFilter: "", // 半荘集計タブの年月絞り込み（"YYYY-MM"。空文字なら全期間を表示。画面表示用の一時状態のみ、保存はしない）
@@ -607,6 +608,7 @@ async function loadAll(){
   state.current.kyoku = pos.kyoku;
   state.current.honba = pos.honba;
   state.loaded = true;
+  state.showWelcomeBackupPrompt = true; // 起動のたびに毎回、サイト上のbackup.jsonを読み込むか選択させる
   render();
 }
 
@@ -668,12 +670,15 @@ function importBackupFile(file){
   reader.onload = ()=>{ processBackupText(reader.result); };
   reader.readAsText(file, "utf-8");
 }
-// バックアップJSONのテキストそのものを受け取って復元する共通処理（ファイル選択・サーバー読み込みの両方から呼ばれる）。
-function processBackupText(rawText){
+// バックアップJSONのテキストをパースして検証する（形式不正ならnull）。
+function parseBackupJson(rawText){
   let data;
-  try{ data = JSON.parse(rawText); }catch(e){ toast("ファイルを読み込めませんでした"); return; }
-  if(!data || !Array.isArray(data.records)){ toast("バックアップ形式が正しくありません"); return; }
-  if(!confirm("現在の端末のデータを、このバックアップの内容で上書きします。よろしいですか？")) return;
+  try{ data = JSON.parse(rawText); }catch(e){ return null; }
+  if(!data || !Array.isArray(data.records)) return null;
+  return data;
+}
+// 検証済みのバックアップデータを現在の状態に適用して保存する（確認ダイアログは呼び出し側の責任）。
+function applyBackupData(data){
   state.players = (data.players && data.players.length===4) ? data.players : state.players;
   state.playerRoster = data.playerRoster || data.usedNames || state.playerRoster;
   state.records = data.records || [];
@@ -685,20 +690,19 @@ function processBackupText(rawText){
   state.recordPlayers = data.recordPlayers || {};
   saveSettings(); saveRecords(); saveRanks(); saveDealers(); saveHanchanConfirmed();
   saveFinalScores(); saveFinalPoints(); saveRecordPlayers();
+}
+// バックアップJSONのテキストそのものを受け取って復元する共通処理（ファイル選択・サーバー読み込みの両方から呼ばれる）。
+// 既存データがある状態からの上書きなので、実行前に確認ダイアログを出す。
+function processBackupText(rawText){
+  const data = parseBackupJson(rawText);
+  if(!data){ toast("ファイルを読み込めませんでした、またはバックアップ形式が正しくありません"); return; }
+  if(!confirm("現在の端末のデータを、このバックアップの内容で上書きします。よろしいですか？")) return;
+  applyBackupData(data);
   render();
   toast("バックアップを復元しました");
 }
-// サイト上のデータ（hanchan.csv／backup.json）を読み込む前にパスワードを確認する共通処理。
-// キャンセル時は何も表示せず、不一致時のみエラーを通知する。
-function checkSitePassword(){
-  const pw = window.prompt("サイト上のデータを読み込みます。パスワードを入力してください");
-  if(pw === null) return false;
-  if(pw !== "masu"){ toast("パスワードが違います"); return false; }
-  return true;
-}
 // サイト上（同じNetlifyサイトのルート）に置かれているbackup.jsonをfetchで取得して復元する。
 async function importBackupFromServer(){
-  if(!checkSitePassword()) return;
   try{
     const res = await fetch("./backup.json", { cache: "no-store" });
     if(!res.ok){ toast(`サーバーのバックアップを取得できませんでした（${res.status}）`); return; }
@@ -707,6 +711,28 @@ async function importBackupFromServer(){
   }catch(e){
     toast("サーバーのバックアップを取得できませんでした（通信エラー）");
   }
+}
+// 起動時の選択モーダルから呼ばれる読み込み処理。モーダルの「読み込む」ボタン自体が明示的な選択・確認であるため、
+// processBackupTextと違い追加の上書き確認ダイアログは出さずそのまま適用する。
+async function loadWelcomeBackup(){
+  state.showWelcomeBackupPrompt = false;
+  try{
+    const res = await fetch("./backup.json", { cache: "no-store" });
+    if(!res.ok){ toast(`サーバーのバックアップを取得できませんでした（${res.status}）`); render(); return; }
+    const text = await res.text();
+    const data = parseBackupJson(text);
+    if(!data){ toast("サーバーのバックアップ形式が正しくありません"); render(); return; }
+    applyBackupData(data);
+    render();
+    toast("サイト上のバックアップを読み込みました");
+  }catch(e){
+    toast("サーバーのバックアップを取得できませんでした（通信エラー）");
+    render();
+  }
+}
+function skipWelcomeBackup(){
+  state.showWelcomeBackupPrompt = false;
+  render();
 }
 
 // この端末（ブラウザ）に保存されている、このアプリのデータ（mj-stats:接頭辞のキー）をすべて削除する。
@@ -794,6 +820,11 @@ function resumePositionForDateHanchan(date, hanchanNo){
 }
 
 // distinct date+hanchanNo groups, sorted chronologically
+// 指定した半荘（date_hanchanNo）にすでに1局でも記録があるかどうか
+function hanchanHasRecords(date, hanchanNo){
+  return state.records.some(r=>r.date===date && r.hanchanNo===hanchanNo);
+}
+
 function hanchanGroups(){
   const map = new Map();
   state.records.forEach(r=>{
@@ -1060,9 +1091,24 @@ function renderRankingTab(){
 }
 
 // ---------- render ----------
+// 詳細入力モードで、まだ1局も記録が無い新しい半荘を表示しようとしている場合、
+// 座席（対局メンバー・起家）を決める準備オーバーレイを自動で開く。
+// すでに座席が決まっている（dealersにキーがある）半荘や、記録済みデータがある半荘（旧データ等）では開かない。
+function maybeOpenHanchanSetup(){
+  if(state.tab !== "input") return;
+  if(effectiveInputMode() !== "detail") return;
+  if(state.overlay || state.editingId) return;
+  const cur = state.current;
+  const key = `${cur.date}_${cur.hanchanNo}`;
+  if(state.dealers[key]) return;
+  if(hanchanHasRecords(cur.date, cur.hanchanNo)) return;
+  state.overlay = { type:"hanchanSetup", players: state.players.slice(), starter: 0 };
+}
+
 function render(){
   const app = document.getElementById("app");
   if(!state.loaded){ app.innerHTML = `<div class="empty">読み込み中...</div>`; return; }
+  maybeOpenHanchanSetup();
   app.innerHTML = `
     <header class="topbar">
       <span class="tile">🀄</span>
@@ -1075,6 +1121,7 @@ function render(){
       ${tabBtn("ranking","🏆","ランキング")}
       ${tabBtn("settings","⚙️","設定")}
     </nav>
+    ${state.showWelcomeBackupPrompt ? renderWelcomeBackupPrompt() : ""}
   `;
   bindEvents();
   if(state.tab==="hanchan" && state.scrollToHanchanKey){
@@ -1319,8 +1366,47 @@ function renderOverlay(){
       `<div class="overlay-grid">${btns}</div>
        <button type="button" class="overlay-confirm" id="confirmChomboBtn" ${any?'':'disabled'}>この内容でチョンボを記録</button>`);
   }
+  if(ov.type === "hanchanSetup"){
+    return renderHanchanSetupOverlay(ov);
+  }
   return "";
 }
+
+// ---------- 半荘開始時：対局メンバー（自分／下家／対面／上家）＋起家を決める準備オーバーレイ ----------
+function renderHanchanSetupOverlay(ov){
+  const roster = state.playerRoster;
+  const fields = POS_LABELS.map((label,i)=>{
+    const name = ov.players[i] || "";
+    const opts = [`<option value="">未選択</option>`].concat(
+      roster.map(n=>`<option value="${escapeAttr(n)}" ${name===n?'selected':''}>${escapeHtml(n)}</option>`)
+    ).join("");
+    return `
+    <div class="field" style="margin-bottom:8px;">
+      <label>${label}${i===0?'（自分）':''}</label>
+      <select data-setup-player="${i}" style="width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:15px; background:var(--surface); color:var(--ink); font-weight:700; font-family:inherit;">
+        ${opts}
+      </select>
+    </div>`;
+  }).join("");
+  const starterBtns = POS_LABELS.map((label,i)=>{
+    const name = ov.players[i] || "未選択";
+    return `<button type="button" class="overlay-btn ${ov.starter===i?'selected':''}" data-setup-starter="${i}">
+      <span>${escapeHtml(name)}</span><span class="pos">${label}</span>
+    </button>`;
+  }).join("");
+  return `
+    <div class="overlay-backdrop" id="hanchanSetupBackdrop">
+      <div class="overlay-sheet">
+        <div class="overlay-title">🀄 半荘${state.current.hanchanNo}の準備</div>
+        <div class="overlay-sub">対局メンバーと起家（東家）を確認してください</div>
+        ${fields}
+        <div style="font-size:12px; font-weight:800; color:var(--muted); margin:10px 0 6px;">起家（東家）はどなたですか？</div>
+        <div class="overlay-grid">${starterBtns}</div>
+        <button type="button" class="overlay-confirm" id="confirmHanchanSetupBtn" style="margin-top:14px;">この内容で半荘を始める</button>
+      </div>
+    </div>`;
+}
+
 function overlaySheet(title, sub, body){
   return `
     <div class="overlay-backdrop" id="overlayBackdrop">
@@ -1329,6 +1415,19 @@ function overlaySheet(title, sub, body){
         <div class="overlay-sub">${sub}</div>
         ${body}
         <button type="button" class="overlay-cancel" id="overlayCancelBtn">キャンセル</button>
+      </div>
+    </div>`;
+}
+
+// ---------- 初回起動時：サイト上のbackup.jsonを読み込むか選ぶモーダル ----------
+function renderWelcomeBackupPrompt(){
+  return `
+    <div class="overlay-backdrop" id="welcomeBackdrop">
+      <div class="overlay-sheet">
+        <div class="overlay-title">🌐 データの読み込み</div>
+        <div class="overlay-sub">サイトに保存されている最新のバックアップ（backup.json）を読み込みますか？（この端末のデータは上書きされます）</div>
+        <button type="button" class="overlay-confirm" id="welcomeLoadBtn">🌐 サイト上のbackup.jsonを読み込む</button>
+        <button type="button" class="overlay-cancel" id="welcomeSkipBtn">このまま端末のデータを使う</button>
       </div>
     </div>`;
 }
@@ -1389,6 +1488,22 @@ function confirmChombo(){
   });
   state.overlay = null;
   if(state.editingId) commitEdit("chombo"); else onSave("chombo");
+}
+
+// 半荘開始準備オーバーレイの「この内容で半荘を始める」：対局メンバー（players）を確定保存し、
+// 選んだ起家（自分/下家/対面/上家のいずれか）を起点に、物理的な座席順（自分→下家→対面→上家）
+// のまま東家〜北家を機械的に割り当てる（麻雀の手番順は物理的な着席順と一致するため）。
+function confirmHanchanSetup(){
+  const ov = state.overlay;
+  if(ov.players.some(n=>!n)){ toast("4人分のメンバーを選んでください"); return; }
+  if(new Set(ov.players).size < 4){ toast("同じ名前が重複しています"); return; }
+  state.players = ov.players.slice();
+  saveSettings();
+  const order = [0,1,2,3].map(i=>(ov.starter+i)%4); // [東家idx, 南家idx, 西家idx, 北家idx]
+  setSeatOrder(state.current.date, state.current.hanchanNo, order);
+  state.overlay = null;
+  render();
+  toast("半荘の準備が完了しました");
 }
 
 // プレイヤーindex(0-3)から座席ラベル（東家/南家/西家/北家）を求める
@@ -1633,6 +1748,11 @@ function escapeAttr(s){ return escapeHtml(s); }
 function bindEvents(){
   document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.overlay=null; render(); });
 
+  const welcomeLoadBtn = document.getElementById("welcomeLoadBtn");
+  if(welcomeLoadBtn) welcomeLoadBtn.onclick = loadWelcomeBackup;
+  const welcomeSkipBtn = document.getElementById("welcomeSkipBtn");
+  if(welcomeSkipBtn) welcomeSkipBtn.onclick = skipWelcomeBackup;
+
   if(state.tab==="input"){
     const dateInput = document.getElementById("dateInput");
     if(dateInput) dateInput.onchange = ()=>{
@@ -1742,6 +1862,19 @@ function bindEvents(){
     document.querySelectorAll("[data-pick-chombo]").forEach(b=>b.onclick=()=>toggleChomboSelect(Number(b.dataset.pickChombo)));
     const confirmChomboBtn = document.getElementById("confirmChomboBtn");
     if(confirmChomboBtn) confirmChomboBtn.onclick = confirmChombo;
+
+    // 半荘開始準備オーバーレイ（対局メンバー＋起家）
+    document.querySelectorAll("[data-setup-player]").forEach(sel=>{
+      sel.onchange = ()=>{
+        state.overlay.players[Number(sel.dataset.setupPlayer)] = sel.value;
+        render();
+      };
+    });
+    document.querySelectorAll("[data-setup-starter]").forEach(b=>{
+      b.onclick = ()=>{ state.overlay.starter = Number(b.dataset.setupStarter); render(); };
+    });
+    const confirmHanchanSetupBtn = document.getElementById("confirmHanchanSetupBtn");
+    if(confirmHanchanSetupBtn) confirmHanchanSetupBtn.onclick = confirmHanchanSetup;
 
     document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
     const cancelEditBtn = document.getElementById("cancelEditBtn");
@@ -2054,7 +2187,6 @@ function processCsvText(rawText){
 // サイト上（同じNetlifyサイトのルート）に置かれているhanchan.csvをfetchで取得して取り込む。
 // input-app.htmlとhanchan.csvが同じオリジンに配置されている前提（index.htmlからの相対パスと同じ）。
 async function importCsvFromServer(){
-  if(!checkSitePassword()) return;
   try{
     const res = await fetch("./hanchan.csv", { cache: "no-store" });
     if(!res.ok){ toast(`サーバーのCSVを取得できませんでした（${res.status}）`); return; }
