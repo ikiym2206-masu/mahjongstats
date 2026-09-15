@@ -591,9 +591,9 @@ function localSet(key, value){
   }catch(e){ return false; }
 }
 async function storageGet(key){ return localGet(key); }
-// 通常保存（端末内localStorage）に加えて、GitHub設定が揃っていれば自動でGitHubへの同期もスケジュールする。
-// （mj-github-settings自体の保存時にも呼ばれるが、githubConfigured()側で未設定なら何もしないので無害）
-async function storageSet(key, value){ if(!localSet(key, value)) state.storageOk = false; scheduleGithubSync(); }
+// 通常保存（端末内localStorage）のみ行う。GitHubへの送信は自動では行わず、
+// 設定タブの「⬆️ 今すぐGitHubへ送信」ボタンを押した時だけ行う（手動同期）。
+async function storageSet(key, value){ if(!localSet(key, value)) state.storageOk = false; }
 
 async function loadAll(){
   const [settings, records, ranks, dealers, hanchanConfirmed, finalScores, finalPoints, recordPlayers, githubSettings] = await Promise.all([
@@ -689,21 +689,11 @@ function githubConfigured(){
   return !!(g.token && g.owner && g.repo && g.path);
 }
 
-let githubSyncTimer = null;
 let githubSyncInFlight = false;
-let githubSyncPending = false;
-
-// ローカル保存のたびに毎回GitHubへ書き込みに行くと、連続操作時に無駄なAPI呼び出しや
-// 書き込み競合が増えるため、操作が1.2秒止まってから1回だけ同期する（デバウンス）。
-function scheduleGithubSync(){
-  if(!githubConfigured()) return;
-  clearTimeout(githubSyncTimer);
-  githubSyncTimer = setTimeout(runGithubSync, 1200);
-}
 
 async function runGithubSync(){
   if(!githubConfigured()) return;
-  if(githubSyncInFlight){ githubSyncPending = true; return; } // 同期中に次の変更が来たら、完了後にもう一度実行する
+  if(githubSyncInFlight) return; // 同期中に重ねて押された場合は何もしない（手動操作なので再試行は行わない）
   githubSyncInFlight = true;
   state.github.syncing = true;
   updateGithubStatusUi();
@@ -718,7 +708,6 @@ async function runGithubSync(){
     githubSyncInFlight = false;
     state.github.syncing = false;
     updateGithubStatusUi();
-    if(githubSyncPending){ githubSyncPending = false; scheduleGithubSync(); }
   }
 }
 
@@ -849,7 +838,7 @@ async function pullLatestFromGithub(opts){
   if(opts.initial) recomputeCurrentPosition();
   if(remoteHasNew || localOnlyAdded) render();
   if(remoteHasNew) toast("GitHubの最新データを取り込みました");
-  if(localOnlyAdded) scheduleGithubSync(); // ローカルにしかなかった分をGitHubへ送信する
+  // ローカルにしかない分がある場合も自動送信はしない（手動同期）。必要なら「⬆️ 今すぐGitHubへ送信」を押してもらう。
   return { remoteHasNew, localOnlyAdded };
 }
 
@@ -1989,9 +1978,9 @@ function renderSettings(){
       <a class="btn-ghost" href="viewer-app.html" id="openViewerBtn" style="display:block; text-align:center; box-sizing:border-box; text-decoration:none;">📊 Viewerを開く</a>
     </div>
     <div class="card">
-      <h2>GitHub連携（自動アップロード）</h2>
+      <h2>GitHub連携（手動同期）</h2>
       <div class="empty" style="text-align:left; padding:0 0 10px;">
-        入力・保存すると、自動でGitHubリポジトリ上のbackup.jsonが更新されます。他のメンバーのViewerにもそのまま反映されます。初回のみ、GitHub Personal Access Token（Fine-grained・対象リポジトリのContents: Read and write権限）の設定が必要です。
+        「⬇️ 最新をGitHubから取得」「⬆️ 今すぐGitHubへ送信」のボタンを押した時だけ、GitHubリポジトリ上のbackup.jsonと同期します（自動同期は行いません）。他のメンバーのViewerに反映するには、送信後に相手側で取得しなおしてもらう必要があります。初回のみ、GitHub Personal Access Token（Fine-grained・対象リポジトリのContents: Read and write権限）の設定が必要です。
       </div>
       <div class="field">
         <label>Personal Access Token</label>
@@ -2014,7 +2003,7 @@ function renderSettings(){
       <button class="btn-ghost" id="saveGithubSettingsBtn">GitHub設定を保存</button>
       <button class="btn-ghost" id="githubPullNowBtn" style="margin-top:8px;">⬇️ 最新をGitHubから取得</button>
       <button class="btn-ghost" id="githubSyncNowBtn" style="margin-top:8px;">⬆️ 今すぐGitHubへ送信</button>
-      <div class="empty" style="text-align:left; padding:10px 0 0;">アプリを開いたとき・バックグラウンドから復帰したときは自動で最新データを取得し、保存時にも送信直前に最新を取り込んでからコミットします（記録は半荘ごとのid単位でマージされるため、別々の半荘を別端末で入力した分は基本的に両方残ります）。</div>
+      <div class="empty" style="text-align:left; padding:10px 0 0;">「⬆️ 今すぐGitHubへ送信」を押すと、送信直前にGitHub側の最新内容を取り込んでからコミットします（記録は半荘ごとのid単位でマージされるため、別々の半荘を別端末で入力した分は基本的に両方残ります）。</div>
       <div class="empty" id="githubStatusText" style="text-align:left; padding:10px 0 0; font-size:12px;">${githubStatusLabel()}</div>
     </div>
     <div class="card">
@@ -2329,7 +2318,6 @@ function bindEvents(){
     const githubSyncNowBtn = document.getElementById("githubSyncNowBtn");
     if(githubSyncNowBtn) githubSyncNowBtn.onclick = ()=>{
       if(!githubConfigured()){ toast("先にトークン・owner・repoを保存してください"); return; }
-      clearTimeout(githubSyncTimer);
       runGithubSync();
     };
     const githubPullNowBtn = document.getElementById("githubPullNowBtn");
@@ -2712,10 +2700,7 @@ function importLegacyHanchanResultsCsv(lines, header){
   toast(`${validGroups.length}件の半荘結果を取り込みました`);
 }
 
-loadAll().then(()=>{ pullLatestFromGithub({ initial: true }); });
-document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState === "visible") pullLatestFromGithub({ silent: true });
-});
+loadAll();
 </script>
 </body>
 </html>
