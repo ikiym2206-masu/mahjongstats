@@ -1,7 +1,7 @@
 {
   "app": "mahjong-stats-backup",
   "version": 3,
-  "exportedAt": "2026-09-15T15:22:57.298Z",
+  "exportedAt": "2026-09-15T15:23:43.526Z",
   "players": [
     "光岡",
     "一平",
@@ -27391,6 +27391,12 @@
       0,
       2,
       1
+    ],
+    "2026-09-16_1": [
+      0,
+      1,
+      2,
+      3
     ]
   },
   "hanchanConfirmed": {
