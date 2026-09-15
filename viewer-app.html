@@ -1004,19 +1004,10 @@ function processBackupText(rawText, errEl){
   state.rankGradeView = "rank";
   render();
 }
-// サイト上のデータ（backup.json）を読み込む前にパスワードを確認する共通処理。
-// キャンセル時は何も表示せず、不一致時のみエラーを通知する。
-function checkSitePassword(errEl){
-  const pw = window.prompt("サイト上のデータを読み込みます。パスワードを入力してください");
-  if(pw === null) return false;
-  if(pw !== "masu"){ if(errEl) errEl.textContent = "パスワードが違います。"; return false; }
-  return true;
-}
 // サイト上（同じNetlifyサイトのルート）に置かれているbackup.jsonをfetchで取得して読み込む。
 async function loadFromServer(){
   const errEl = document.getElementById("loader-error");
   if(errEl) errEl.textContent = "";
-  if(!checkSitePassword(errEl)) return;
   try{
     const res = await fetch("./backup.json", { cache: "no-store" });
     if(!res.ok){
@@ -1061,7 +1052,6 @@ function renderSidebar(stats){
   return `
     <div class="sidebar-summary">
       <div class="app-title">🀄 麻雀スタッツ<br>PC分析ビューア</div>
-      <div class="summary-line">書き出し日時：${escapeHtml(fmtDateTime(raw.exportedAt))}</div>
       <div class="summary-line">半荘：${confirmedCount}／${totalHanchan}件（確定済み／全体）</div>
       ${anyFilterActive ? `<div class="summary-line">絞込後：${inRangeConfirmedCount}件（確定済み）</div>` : ""}
       <div class="summary-line">分析対象プレイヤー：${stats.length}名<span style="font-weight:400;">（対局・半荘のいずれかの実績あり）</span></div>

@@ -34686,19 +34686,10 @@ function processBackupText(rawText, errEl){
   state.rankGradeView = "rank";
   render();
 }
-// サイト上のデータ（backup.json）を読み込む前にパスワードを確認する共通処理。
-// キャンセル時は何も表示せず、不一致時のみエラーを通知する。
-function checkSitePassword(errEl){
-  const pw = window.prompt("サイト上のデータを読み込みます。パスワードを入力してください");
-  if(pw === null) return false;
-  if(pw !== "masu"){ if(errEl) errEl.textContent = "パスワードが違います。"; return false; }
-  return true;
-}
 // サイト上（同じNetlifyサイトのルート）に置かれているbackup.jsonをfetchで取得して読み込む。
 async function loadFromServer(){
   const errEl = document.getElementById("loader-error");
   if(errEl) errEl.textContent = "";
-  if(!checkSitePassword(errEl)) return;
   try{
     const res = await fetch("./backup.json", { cache: "no-store" });
     if(!res.ok){

@@ -130,40 +130,20 @@
   <div class="section-title">アプリ</div>
 
   <div class="card-row">
-    <a class="card" href="./input-app.html">
+    <a class="card" href="./input-app-upload.html">
       <div class="card-title">📱 入力アプリ <span class="badge">スマホ</span></div>
       <div class="card-desc">半荘ごとの局入力・素点集計。ホーム画面に追加して使用。</div>
-    </a>
-    <a class="card-dl" href="./input-app.html" download title="ファイルをダウンロード">⬇</a>
-  </div>
-
-  <div class="card-row">
-    <a class="card" href="./input-app-upload.html">
-      <div class="card-title">📱 入力アプリ（GitHub連携版） <span class="badge">スマホ</span></div>
-      <div class="card-desc">保存すると自動でGitHub上のbackup.jsonを更新。JSONファイルの受け渡し不要でメンバー間共有が可能。</div>
     </a>
     <a class="card-dl" href="./input-app-upload.html" download title="ファイルをダウンロード">⬇</a>
   </div>
 
   <div class="card-row">
-    <a class="card" href="./viewer-app.html">
+    <a class="card" href="./viewer-app-upload.html">
       <div class="card-title">📊 分析ビューア <span class="badge">PC</span></div>
       <div class="card-desc">統計・ランキング・レーダーチャートなどの分析表示。</div>
     </a>
-    <a class="card-dl" href="./viewer-app.html" download title="ファイルをダウンロード">⬇</a>
+    <a class="card-dl" href="./viewer-app-upload.html" download title="ファイルをダウンロード">⬇</a>
   </div>
-
-  <div class="section-title">データ</div>
-
-  <a class="card" href="./hanchan.csv" download onclick="return guardDownload(event)">
-    <div class="card-title">📄 半荘結果CSV <span class="badge">DL</span></div>
-    <div class="card-desc">半荘ごとの素点・得点pt・順位データ。インポート用フォーマット。</div>
-  </a>
-
-  <a class="card" href="./backup.json" download onclick="return guardDownload(event)">
-    <div class="card-title">🗂 バックアップJSON <span class="badge">DL</span></div>
-    <div class="card-desc">全データのフルバックアップ。復元用。</div>
-  </a>
 
   <div class="section-title">説明書／仕様書</div>
 
@@ -183,21 +163,6 @@
   </a>
 
   <div class="updated">最終更新: 2026-08-06</div>
-
-<script>
-// CSV／JSONデータのダウンロード前にパスワードを確認する。
-// 不一致・キャンセル時はダウンロードをキャンセルする（クリックイベントを打ち消す）。
-function guardDownload(e){
-  const pw = window.prompt("パスワードを入力してください");
-  if(pw === null){ e.preventDefault(); return false; }
-  if(pw !== "masu"){
-    alert("パスワードが違います");
-    e.preventDefault();
-    return false;
-  }
-  return true;
-}
-</script>
 
 </body>
 </html>
