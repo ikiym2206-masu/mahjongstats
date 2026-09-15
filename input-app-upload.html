@@ -1355,12 +1355,14 @@ function renderRankingTab(){
 function maybeOpenHanchanSetup(){
   if(state.tab !== "input") return;
   if(effectiveInputMode() !== "detail") return;
+  if(state.showWelcomeBackupPrompt) return; // サイト上backup.json読み込み選択モーダルと同時に開かない（閉じてから判定する）
   if(state.overlay || state.editingId) return;
   const cur = state.current;
   const key = `${cur.date}_${cur.hanchanNo}`;
   if(state.dealers[key]) return;
   if(hanchanHasRecords(cur.date, cur.hanchanNo)) return;
-  state.overlay = { type:"hanchanSetup", players: state.players.slice(), starter: 0 };
+  const initPlayers = state.players.slice();
+  state.overlay = { type:"hanchanSetup", players: initPlayers, starter: 0, otherMode: [false,false,false,false] };
 }
 
 function render(){
@@ -1633,17 +1635,26 @@ function renderOverlay(){
 // ---------- 半荘開始時：対局メンバー（自分／下家／対面／上家）＋起家を決める準備オーバーレイ ----------
 function renderHanchanSetupOverlay(ov){
   const roster = state.playerRoster;
+  const members = state.players; // 対局メンバー（4人）
+  const selectStyle = "width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:15px; background:var(--surface); color:var(--ink); font-weight:700; font-family:inherit;";
   const fields = POS_LABELS.map((label,i)=>{
     const name = ov.players[i] || "";
-    const opts = [`<option value="">未選択</option>`].concat(
-      roster.map(n=>`<option value="${escapeAttr(n)}" ${name===n?'selected':''}>${escapeHtml(n)}</option>`)
-    ).join("");
+    const isOther = !!ov.otherMode[i];
+    const mainOpts = [`<option value="">未選択</option>`]
+      .concat(members.map(n=>`<option value="${escapeAttr(n)}" ${(!isOther && name===n)?'selected':''}>${escapeHtml(n||"(未設定)")}</option>`))
+      .concat([`<option value="__other__" ${isOther?'selected':''}>✏️ その他（プレイヤーリストから選ぶ）</option>`])
+      .join("");
+    const otherSelect = isOther ? `
+      <select data-setup-other="${i}" style="${selectStyle} margin-top:6px;">
+        ${[`<option value="">未選択</option>`].concat(roster.map(n=>`<option value="${escapeAttr(n)}" ${name===n?'selected':''}>${escapeHtml(n)}</option>`)).join("")}
+      </select>` : "";
     return `
     <div class="field" style="margin-bottom:8px;">
       <label>${label}${i===0?'（自分）':''}</label>
-      <select data-setup-player="${i}" style="width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:15px; background:var(--surface); color:var(--ink); font-weight:700; font-family:inherit;">
-        ${opts}
+      <select data-setup-player="${i}" style="${selectStyle}">
+        ${mainOpts}
       </select>
+      ${otherSelect}
     </div>`;
   }).join("");
   const starterBtns = POS_LABELS.map((label,i)=>{
@@ -2153,9 +2164,19 @@ function bindEvents(){
     // 半荘開始準備オーバーレイ（対局メンバー＋起家）
     document.querySelectorAll("[data-setup-player]").forEach(sel=>{
       sel.onchange = ()=>{
-        state.overlay.players[Number(sel.dataset.setupPlayer)] = sel.value;
+        const i = Number(sel.dataset.setupPlayer);
+        if(sel.value === "__other__"){
+          state.overlay.otherMode[i] = true;
+          state.overlay.players[i] = "";
+        }else{
+          state.overlay.otherMode[i] = false;
+          state.overlay.players[i] = sel.value;
+        }
         render();
       };
+    });
+    document.querySelectorAll("[data-setup-other]").forEach(sel=>{
+      sel.onchange = ()=>{ state.overlay.players[Number(sel.dataset.setupOther)] = sel.value; render(); };
     });
     document.querySelectorAll("[data-setup-starter]").forEach(b=>{
       b.onclick = ()=>{ state.overlay.starter = Number(b.dataset.setupStarter); render(); };
