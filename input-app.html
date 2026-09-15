@@ -303,8 +303,8 @@
   .mode-switch button.active{background:var(--primary); color:#fff;}
 
   .header-summary{display:flex; align-items:center; justify-content:space-between; padding:0 2px 10px; cursor:pointer; user-select:none;}
-  .header-summary .txt{font-size:13px; font-weight:800; color:var(--ink); letter-spacing:.01em;}
-  .header-summary .chev{font-size:10px; color:var(--muted); font-weight:800; background:var(--bg); border-radius:999px; padding:4px 8px;}
+  .header-summary .txt{font-size:17px; font-weight:800; color:var(--ink); letter-spacing:.01em;}
+  .header-summary .chev{font-size:13px; color:var(--muted); font-weight:800; background:var(--bg); border-radius:999px; padding:5px 10px;}
 
   /* 卓のミニマップ：中央に卓情報、四方に自家・下家・対面・上家を配置する */
   .table-wrap{
@@ -714,24 +714,30 @@ async function importBackupFromServer(){
 }
 // 起動時の選択モーダルから呼ばれる読み込み処理。モーダルの「読み込む」ボタン自体が明示的な選択・確認であるため、
 // processBackupTextと違い追加の上書き確認ダイアログは出さずそのまま適用する。
+// ウェルカム（起動時のbackup.json読み込み選択）を閉じたら、続けて半荘開始準備オーバーレイの判定を行う。
+// render()自身もmaybeOpenHanchanSetupを呼ぶため二重呼び出しになるが、
+// 「ウェルカムを閉じる→準備オーバーレイを判定する」の順序をここで明示しておく（2つ目の呼び出しは早期returnで何もしない）。
 async function loadWelcomeBackup(){
   state.showWelcomeBackupPrompt = false;
   try{
     const res = await fetch("./backup.json", { cache: "no-store" });
-    if(!res.ok){ toast(`サーバーのバックアップを取得できませんでした（${res.status}）`); render(); return; }
+    if(!res.ok){ toast(`サーバーのバックアップを取得できませんでした（${res.status}）`); maybeOpenHanchanSetup(); render(); return; }
     const text = await res.text();
     const data = parseBackupJson(text);
-    if(!data){ toast("サーバーのバックアップ形式が正しくありません"); render(); return; }
+    if(!data){ toast("サーバーのバックアップ形式が正しくありません"); maybeOpenHanchanSetup(); render(); return; }
     applyBackupData(data);
+    maybeOpenHanchanSetup();
     render();
     toast("サイト上のバックアップを読み込みました");
   }catch(e){
     toast("サーバーのバックアップを取得できませんでした（通信エラー）");
+    maybeOpenHanchanSetup();
     render();
   }
 }
 function skipWelcomeBackup(){
   state.showWelcomeBackupPrompt = false;
+  maybeOpenHanchanSetup();
   render();
 }
 
