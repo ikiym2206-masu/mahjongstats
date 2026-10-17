@@ -44674,6 +44674,7 @@ const state = {
   statsCollapsed: {}, // 統計タブ：プレイヤー名（または"__avg__"）→ false で明示的に展開。未設定（デフォルト）は折りたたみ表示
   rankGradeTargets: null, // ④成績5段階評価：しきい値の基準・カード表示の対象プレイヤー名（着順系・打ち筋系で共有、nullなら未初期化）
   rankGradeView: "rank", // ④内の切替タブ："rank"（着順系）| "style"（打ち筋系）
+  houjuuMatrixTargets: null, // ⑤放銃マトリクスの対象プレイヤー名（nullなら未初期化）
 };
 
 // ---------- format helpers ----------
@@ -45404,6 +45405,7 @@ function processBackupText(rawText, errEl){
   state.statsCollapsed = {};
   state.rankGradeTargets = null;
   state.rankGradeView = "rank";
+  state.houjuuMatrixTargets = null;
   render();
 }
 // サイト上（同じNetlifyサイトのルート）に置かれているbackup.jsonをfetchで取得して読み込む。
@@ -45473,6 +45475,7 @@ function renderSidebar(stats){
       ${navBtn("graph","②","スコア推移")}
       ${navBtn("compatradar","③","相性レーダーチャート")}
       ${navBtn("rankgrade","④","成績5段階評価（相対評価）")}
+      ${navBtn("houjuumatrix","⑤","放銃マトリクス")}
     </nav>
     <button class="reload-btn" data-reload>📂 別のファイルを読み込む</button>
   `;
@@ -45495,6 +45498,8 @@ function renderSectionWrap(stats){
     body = renderGraphSection();
   }else if(state.section==="rankgrade"){
     body = stats.length>=2 ? renderRankGradeSection(stats) : renderNeedMorePlayers("④成績5段階評価（相対評価）");
+  }else if(state.section==="houjuumatrix"){
+    body = stats.length>=2 ? renderHoujuuMatrixSection(stats) : renderNeedMorePlayers("⑤放銃マトリクス");
   }else{
     body = renderCompatRadarGridSection(stats);
   }
@@ -46000,6 +46005,98 @@ function renderRankGradeCard(s, grades, total, totalMax, rank, targetCount, colo
     </div>`;
 }
 
+// ---------- render: ⑤放銃マトリクス ----------
+// 行＝放銃したプレイヤー、列＝その放銃でロン和了したプレイヤー。値＝回数。
+// 対象はサイドバー共通の期間・曜日フィルタ内の局（チョンボ・結果のみ入力の局は除く）。複数ロンの場合は和了者それぞれに1回ずつ数える。
+const HOUJUU_MATRIX_DEFAULT_TARGET_COUNT = 6;
+const HOUJUU_MATRIX_OTHER = "その他";
+function computeHoujuuMatrix(){
+  const m = new Map(); // "放銃者\t和了者" -> 回数
+  (state.raw.records||[]).forEach(r=>{
+    if(!passesFilters(r.date)) return;
+    if(r.resultType==="chombo" || r.resultType==="resultonly") return;
+    const names = namesForHanchan(r.date, r.hanchanNo);
+    const ronIdx = [];
+    for(let j=0;j<4;j++){ if(r.stats[j] && r.stats[j][K_RON]===1) ronIdx.push(j); }
+    if(!ronIdx.length) return;
+    r.stats.forEach((s,i)=>{
+      if(!s || s[K_HOUJUU]!==1) return;
+      const from = names[i] || `P${i+1}`;
+      ronIdx.forEach(w=>{
+        if(w===i) return;
+        const to = names[w] || `P${w+1}`;
+        const key = from+"\t"+to;
+        m.set(key, (m.get(key)||0)+1);
+      });
+    });
+  });
+  return m;
+}
+function renderHoujuuMatrixSection(allStats){
+  const allNames = allStats.map(s=>s.name);
+  if(state.houjuuMatrixTargets === null){
+    state.houjuuMatrixTargets = allNames.length<=HOUJUU_MATRIX_DEFAULT_TARGET_COUNT ? allNames.slice()
+      : allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).slice(0,HOUJUU_MATRIX_DEFAULT_TARGET_COUNT).map(s=>s.name);
+  }else{
+    state.houjuuMatrixTargets = state.houjuuMatrixTargets.filter(n=>allNames.includes(n));
+  }
+  const targets = state.houjuuMatrixTargets;
+  const targetChips = allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).map(s=>{
+    const on = targets.includes(s.name);
+    return `<label class="chip roster-chip target-chip ${on?'on':''}">
+      <input type="checkbox" data-houjuumatrix-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}（${s.hanchanRankedCount}半荘）</label>`;
+  }).join("");
+  const head = `
+    <div class="section-head">
+      <h2>⑤ 放銃マトリクス<span class="n-sub">誰が誰に何回放銃したか（行＝放銃者、列＝和了者）</span></h2>
+    </div>
+    <div class="target-select">
+      <span class="chip-bar-label">対象プレイヤー（初期表示は目安${HOUJUU_MATRIX_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます。対象外の相手への放銃・からの和了は「${HOUJUU_MATRIX_OTHER}」列・行にまとめます）</span>
+      <div class="chip-row">${targetChips}</div>
+    </div>`;
+  if(targets.length < 2){
+    return `<div class="card">${head}<div class="empty">対象プレイヤーを2人以上選択してください。</div></div>`;
+  }
+  const m = computeHoujuuMatrix();
+  const get = (a,b)=> m.get(a+"\t"+b)||0;
+  const targetSet = new Set(targets);
+  // 対象外プレイヤーとの放銃・和了は「その他」に合算する（行・列の合計が実際の回数と一致するようにする）
+  const otherCol = name => { let n=0; m.forEach((v,k)=>{ const [a,b]=k.split("\t"); if(a===name && !targetSet.has(b)) n+=v; }); return n; };
+  const otherRow = name => { let n=0; m.forEach((v,k)=>{ const [a,b]=k.split("\t"); if(b===name && !targetSet.has(a)) n+=v; }); return n; };
+  const otherCols = targets.map(otherCol), otherRows = targets.map(otherRow);
+  const showOther = otherCols.some(v=>v>0) || otherRows.some(v=>v>0);
+  const inner = [];
+  targets.forEach(a=>targets.forEach(b=>{ if(a!==b) inner.push(get(a,b)); }));
+  const maxCell = Math.max(1, ...inner);
+  const heat = v => v>0 ? `background:rgba(178,58,46,${(0.08 + 0.42*v/maxCell).toFixed(3)});` : "";
+  const colTotals = targets.map((b,j)=> targets.reduce((a,x)=>a+(x===b?0:get(x,b)),0) + otherRows[j]);
+  const headerCells = targets.map(n=>`<th>${escapeHtml(n)}</th>`).join("")
+    + (showOther ? `<th>${HOUJUU_MATRIX_OTHER}</th>` : "") + `<th>放銃計</th>`;
+  const bodyRows = targets.map((a,i)=>{
+    const cells = targets.map(b=>{
+      if(a===b) return `<td style="color:var(--muted);">－</td>`;
+      const v = get(a,b);
+      return `<td style="${heat(v)}">${v}</td>`;
+    }).join("");
+    const rowTotal = targets.reduce((t,b)=>t+(a===b?0:get(a,b)),0) + otherCols[i];
+    return `<tr><td class="col-name">${escapeHtml(a)}</td>${cells}${showOther?`<td style="color:var(--muted);">${otherCols[i]}</td>`:""}<td style="font-weight:900;">${rowTotal}</td></tr>`;
+  }).join("");
+  const otherBodyRow = showOther
+    ? `<tr><td class="col-name" style="color:var(--muted);">${HOUJUU_MATRIX_OTHER}</td>${otherRows.map(v=>`<td style="color:var(--muted);">${v}</td>`).join("")}<td></td><td></td></tr>` : "";
+  const totalRow = `<tr><td class="col-name">ロン和了計</td>${colTotals.map(v=>`<td style="font-weight:900;">${v}</td>`).join("")}${showOther?"<td></td>":""}<td></td></tr>`;
+  return `
+    <div class="card">
+      ${head}
+      <div class="table-scroll">
+        <table class="stat-mini-table" id="houjuu-matrix-table">
+          <tr><th class="col-name">放銃者＼和了者</th>${headerCells}</tr>
+          ${bodyRows}${otherBodyRow}${totalRow}
+        </table>
+      </div>
+      <div class="n-sub" style="display:block; margin-top:8px;">※セルの色が濃いほど回数が多い（対象プレイヤー同士のセルの最大値を基準）。サイドバーの期間・曜日フィルタ内の局が対象（チョンボ・結果のみ入力の局は除く）。ダブロンの場合は和了者それぞれに1回ずつ数える。</div>
+    </div>`;
+}
+
 // ---------- 選択チップの共通操作 ----------
 function toggleChip(name){
   const idx = state.chips.indexOf(name);
@@ -46110,6 +46207,14 @@ function bindEvents(stats){
       const name = cb.dataset.rankgradeToggle;
       const idx = state.rankGradeTargets.indexOf(name);
       if(idx>=0) state.rankGradeTargets.splice(idx,1); else state.rankGradeTargets.push(name);
+      render();
+    });
+  });
+  app.querySelectorAll("[data-houjuumatrix-toggle]").forEach(cb=>{
+    cb.addEventListener("change", ()=>{
+      const name = cb.dataset.houjuumatrixToggle;
+      const idx = state.houjuuMatrixTargets.indexOf(name);
+      if(idx>=0) state.houjuuMatrixTargets.splice(idx,1); else state.houjuuMatrixTargets.push(name);
       render();
     });
   });
