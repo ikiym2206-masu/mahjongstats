@@ -44523,12 +44523,15 @@ const COMPARE_METRIC_GROUPS = [
   {key:"rank", label:"着順系"},
   {key:"score", label:"打ち筋系"},
   {key:"breakdown", label:"和了/放銃　内訳"},
+  {key:"oyako", label:"親番／子番"},
 ];
 // ①比較表：サブグループ見出し（リーチ後／副露後／和了内訳／放銃内訳／放銃相手内訳）に添える1行説明
 const COMPARE_SUBGROUP_DESC = {
   "和了内訳": "プレイヤーの和了形",
   "放銃内訳": "放銃時の自分の手の状態",
   "放銃相手内訳": "放銃した相手の和了形",
+  "親番": "自分が親の局のみ",
+  "子番": "自分が子の局のみ",
 };
 const COMPARE_METRICS = [
   {key:"kyokuCount", label:"総局数", fmt:fmtCount, group:"score"},
@@ -44570,6 +44573,23 @@ const COMPARE_METRICS = [
   {key:"houjuuOpponentFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳"},
   {key:"houjuuOpponentOther", label:"ダマテン数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳"},
   {key:"houjuuOpponentOtherRate", label:"ダマテン率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳"},
+  // 親番／子番：座席（dealers）が記録されている半荘の局のみが対象
+  {key:"oyaKyoku", label:"局数", fmt:fmtCount, group:"oyako", subgroup:"親番"},
+  {key:"oyaAgariRate", label:"和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
+  {key:"oyaHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
+  {key:"oyaRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
+  {key:"oyaFuuroRate", label:"副露率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
+  {key:"oyaRiichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
+  {key:"oyaRenchan", label:"連荘数", fmt:fmtCount, group:"oyako", subgroup:"親番"},
+  {key:"oyaRenchanRate", label:"連荘率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
+  {key:"oyaKaburi", label:"親被り数", fmt:fmtCount, group:"oyako", subgroup:"親番"},
+  {key:"koKyoku", label:"局数", fmt:fmtCount, group:"oyako", subgroup:"子番"},
+  {key:"koAgariRate", label:"和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
+  {key:"koHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
+  {key:"koRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
+  {key:"koFuuroRate", label:"副露率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
+  {key:"koRiichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
+  {key:"koHoujuuToOya", label:"親への放銃数", fmt:fmtCount, group:"oyako", subgroup:"子番"},
 ];
 
 
@@ -44625,7 +44645,7 @@ const RANKGRADE_DEFAULT_TARGET_COUNT = 8; // ④成績5段階評価：初期表�
 // 統計タブ：プレイヤーごとの「着順別（1着〜4着）打ち筋スタッツ」テーブルの行定義。
 // ①比較表（COMPARE_METRICS）の「打ち筋系」「内訳」グループをそのまま再利用することで、
 // 比較表の項目変更に自動追随し内容が乖離しないようにする（「着順系」グループは1着〜4着で自明なため除外）。
-const RANKSPLIT_METRICS = COMPARE_METRICS.filter(m=>m.group!=="rank");
+const RANKSPLIT_METRICS = COMPARE_METRICS.filter(m=>m.group!=="rank" && m.group!=="oyako"); // 親番／子番は①比較表のみで表示
 const COMPARE_DEFAULT_TARGET_COUNT = 6; // ①比較表：初期表示の目安人数（チップで自由に増減できる）
 const COMPARE_AVERAGE_NAME = "平均"; // ①比較表：対象プレイヤー全員（allStats）の単純平均を仮想的な1列として追加選択できる
 
@@ -44771,7 +44791,9 @@ function computeOverallStats(){
         agariRiichi:0, agariFuuro:0, agariOther:0, houjuuRiichi:0, houjuuFuuro:0, houjuuOther:0,
         houjuuOpponentRiichi:0, houjuuOpponentFuuro:0, houjuuOpponentOther:0, houjuuOpponentTotal:0,
         chombo:0, chomboPt:0, kyokuCount:0, ranks:[], totalPt:0, scores:[],
-        ryuukyoku:0, dailyPts:new Map()
+        ryuukyoku:0, dailyPts:new Map(),
+        oya:{k:0,ri:0,fu:0,agari:0,ho:0,riAgari:0,renchan:0,kaburi:0},
+        ko:{k:0,ri:0,fu:0,agari:0,ho:0,riAgari:0,hoToOya:0}
       });
     }
     return byName.get(key);
@@ -44788,6 +44810,9 @@ function computeOverallStats(){
     // 放銃相手内訳：その局でロン和了したプレイヤー（複数ロンの場合は全員）の、リーチ／副露フラグを控えておく
     const ronWinners = [];
     for(let j=0;j<4;j++){ if(r.stats[j][K_RON]===1) ronWinners.push({idx:j, ri:r.stats[j][K_RIICHI], fu:r.stats[j][K_FUURO]||0}); }
+    // 親番／子番：dealers[半荘キー]は東家から順に並んだプレイヤー番号（recordPlayersのindex）。東n・南n局の親は dealers[n-1]
+    const dealerIdx = dealerIndexForRecord(r);
+    const tsumoWinnerIdx = r.stats.findIndex(ps=>ps[K_TSUMO]===1);
     r.stats.forEach((s,i)=>{
       const name = names[i] || `P${i+1}`;
       const p = ensure(name);
@@ -44821,6 +44846,19 @@ function computeOverallStats(){
       if(!isChomboResult && !isResultOnly){
         p.kyokuCount += 1;
         if(isRyuukyokuKyoku) p.ryuukyoku += 1;
+        if(dealerIdx !== null){
+          const isOya = i===dealerIdx;
+          const b = isOya ? p.oya : p.ko;
+          b.k += 1; b.ri += ri; b.fu += fu; b.ho += ho;
+          if(tsu || ron) b.agari += 1;
+          if(ri && (tsu || ron)) b.riAgari += 1;
+          if(isOya){
+            if(r.resultType==="renchan") b.renchan += 1;
+            if(tsumoWinnerIdx!==-1 && tsumoWinnerIdx!==i) b.kaburi += 1;
+          }else if(ho && ronWinners.some(w=>w.idx===dealerIdx)){
+            b.hoToOya += 1;
+          }
+        }
       }
       if(s[K_CHOMBO]){
         p.chombo += 1;
@@ -44894,8 +44932,34 @@ function computeOverallStats(){
       houjuuOpponentRiichiRate: p.houjuuOpponentTotal ? p.houjuuOpponentRiichi/p.houjuuOpponentTotal : 0,
       houjuuOpponentFuuroRate: p.houjuuOpponentTotal ? p.houjuuOpponentFuuro/p.houjuuOpponentTotal : 0,
       houjuuOpponentOtherRate: p.houjuuOpponentTotal ? p.houjuuOpponentOther/p.houjuuOpponentTotal : 0,
+      // 親番／子番
+      oyaKyoku: p.oya.k,
+      oyaAgariRate: p.oya.k ? p.oya.agari/p.oya.k : 0,
+      oyaHoujuuRate: p.oya.k ? p.oya.ho/p.oya.k : 0,
+      oyaRiichiRate: p.oya.k ? p.oya.ri/p.oya.k : 0,
+      oyaFuuroRate: p.oya.k ? p.oya.fu/p.oya.k : 0,
+      oyaRiichiAgariRate: p.oya.ri ? p.oya.riAgari/p.oya.ri : 0,
+      oyaRenchan: p.oya.renchan,
+      oyaRenchanRate: p.oya.k ? p.oya.renchan/p.oya.k : 0,
+      oyaKaburi: p.oya.kaburi,
+      koKyoku: p.ko.k,
+      koAgariRate: p.ko.k ? p.ko.agari/p.ko.k : 0,
+      koHoujuuRate: p.ko.k ? p.ko.ho/p.ko.k : 0,
+      koRiichiRate: p.ko.k ? p.ko.ri/p.ko.k : 0,
+      koFuuroRate: p.ko.k ? p.ko.fu/p.ko.k : 0,
+      koRiichiAgariRate: p.ko.ri ? p.ko.riAgari/p.ko.ri : 0,
+      koHoujuuToOya: p.ko.hoToOya,
     };
   });
+}
+// 親番／子番：その局の親のプレイヤー番号（recordPlayersのindex）を返す。座席未記録・局名が東n/南n以外ならnull
+function dealerIndexForRecord(r){
+  const seats = state.raw.dealers && state.raw.dealers[`${r.date}_${r.hanchanNo}`];
+  if(!seats || seats.length!==4) return null;
+  const m = /^[東南西北]([1-4])$/.exec(r.kyoku||"");
+  if(!m) return null;
+  const idx = seats[Number(m[1])-1];
+  return (typeof idx==="number" && idx>=0 && idx<4) ? idx : null;
 }
 // 仕様書6.1：①②③の対象は「対局実績（総局数＞0）または半荘実績があるプレイヤー全員」
 function computeActiveStats(){ return computeOverallStats().filter(s=>s.kyokuCount>0 || s.hanchanRankedCount>0); }
@@ -45039,7 +45103,7 @@ function renderRankSplitTableFromData(data){
     `<th>${rk}着<span style="display:block; font-weight:600; color:var(--muted); font-size:10px;">(${fmtCount(data[rk].hanchanCount)}半荘)</span></th>`
   ).join("");
   // ①比較表と同じグループ定義・同じ折りたたみ状態（state.compareGroupCollapsed）を共有するアコーディオン形式で表示する
-  const groupBlocks = COMPARE_METRIC_GROUPS.filter(g=>g.key!=="rank").map(grp=>{
+  const groupBlocks = COMPARE_METRIC_GROUPS.filter(g=>g.key!=="rank" && g.key!=="oyako").map(grp=>{
     const collapsed = state.compareGroupCollapsed[grp.key] === true; // デフォルトは展開
     const groupHeaderRow = `<tr class="compare-group-row" data-toggle-compare-group="${grp.key}">
       <td class="col-name compare-group-cell" colspan="5">
@@ -45547,6 +45611,7 @@ function renderCompareSection(allStats){
       </div>
       ${targets.length ? `<div class="n-sub" style="display:block; margin-bottom:8px;">※行内の<span style="color:var(--primary); font-weight:900;">最大値</span>・<span style="color:var(--houjuu); font-weight:900;">最小値</span>を色分け表示（「${escapeHtml(COMPARE_AVERAGE_NAME)}」列は比較対象から除く）</div>` : ""}
       ${tableHtml}
+      ${targets.length ? `<div class="n-sub" style="display:block; margin-top:8px;">※「親番／子番」は座席が記録されている半荘の局のみで集計（連荘数は聴牌連荘を含む／親被り数＝自分が親の局で他家がツモ和了した回数）</div>` : ""}
     </div>`;
 }
 
