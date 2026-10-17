@@ -44530,6 +44530,7 @@ const COMPARE_SUBGROUP_DESC = {
   "和了内訳": "プレイヤーの和了形",
   "放銃内訳": "放銃時の自分の手の状態",
   "放銃相手内訳": "放銃した相手の和了形",
+  "座席別平均順位": "半荘開始時の座席ごと（座席記録のある半荘のみ）",
   "親番": "自分が親の局のみ",
   "子番": "自分が子の局のみ",
 };
@@ -44541,6 +44542,10 @@ const COMPARE_METRICS = [
   {key:"second", label:"2着率", fmt:fmtPct, group:"rank"},
   {key:"third", label:"3着率", fmt:fmtPct, group:"rank"},
   {key:"last", label:"ラス率", fmt:fmtPct, group:"rank"},
+  {key:"seatAvgRank0", label:"東家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位"},
+  {key:"seatAvgRank1", label:"南家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位"},
+  {key:"seatAvgRank2", label:"西家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位"},
+  {key:"seatAvgRank3", label:"北家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位"},
   {key:"agari", label:"和了数", fmt:fmtCount, group:"score"},
   {key:"agariRate", label:"和了率", fmt:fmtPct0, group:"score"},
   {key:"houjuu", label:"放銃数", fmt:fmtCount, group:"score"},
@@ -44679,6 +44684,8 @@ function fmtPct0(n){ return isFinite(n) ? Math.round(n*100)+"%" : "0%"; }
 // 「平均」列（端数を含む単純平均値）を各プレイヤーと同じ桁数（整数）に揃えるために使う。
 function fmtCount(n){ return isFinite(n) ? Math.round(n) : 0; }
 function fmtAvg(n){ return isFinite(n) ? n.toFixed(2) : "0.00"; }
+// 該当半荘が無い場合（null）は「－」表示（座席別平均順位など）
+function fmtAvgOrDash(n){ return (typeof n==="number" && isFinite(n)) ? n.toFixed(2) : "－"; }
 function fmtPt(n){
   if(n===null || n===undefined || isNaN(n)) return "-";
   const v = Math.round(n*10)/10;
@@ -44791,7 +44798,7 @@ function computeOverallStats(){
         agariRiichi:0, agariFuuro:0, agariOther:0, houjuuRiichi:0, houjuuFuuro:0, houjuuOther:0,
         houjuuOpponentRiichi:0, houjuuOpponentFuuro:0, houjuuOpponentOther:0, houjuuOpponentTotal:0,
         chombo:0, chomboPt:0, kyokuCount:0, ranks:[], totalPt:0, scores:[],
-        ryuukyoku:0, dailyPts:new Map(),
+        ryuukyoku:0, dailyPts:new Map(), seatRanks:[[],[],[],[]],
         oya:{k:0,ri:0,fu:0,agari:0,ho:0,riAgari:0,renchan:0,kaburi:0},
         ko:{k:0,ri:0,fu:0,agari:0,ho:0,riAgari:0,hoToOya:0}
       });
@@ -44876,10 +44883,14 @@ function computeOverallStats(){
     const names = namesForHanchan(date, hanchanNo);
     const pts = state.raw.finalPoints[key];
     const scores = state.raw.finalScores[key];
+    // 座席別平均順位：dealers[key]は東家から順に並んだプレイヤー番号。indexOfで各プレイヤーの開始時の座席（0=東家〜3=北家）を求める
+    const seats = state.raw.dealers && state.raw.dealers[key];
+    const hasSeats = Array.isArray(seats) && seats.length===4;
     arr.forEach((rk,i)=>{
       if(!rk) return;
       const p = ensure(names[i] || `P${i+1}`);
       p.ranks.push(rk);
+      if(hasSeats){ const seat = seats.indexOf(i); if(seat>=0) p.seatRanks[seat].push(rk); }
       if(pts) p.totalPt += (pts[i]||0);
       if(pts && pts[i]!==undefined && pts[i]!==null && !isNaN(pts[i])){
         p.dailyPts.set(date, (p.dailyPts.get(date)||0) + pts[i]);
@@ -44932,6 +44943,10 @@ function computeOverallStats(){
       houjuuOpponentRiichiRate: p.houjuuOpponentTotal ? p.houjuuOpponentRiichi/p.houjuuOpponentTotal : 0,
       houjuuOpponentFuuroRate: p.houjuuOpponentTotal ? p.houjuuOpponentFuuro/p.houjuuOpponentTotal : 0,
       houjuuOpponentOtherRate: p.houjuuOpponentTotal ? p.houjuuOpponentOther/p.houjuuOpponentTotal : 0,
+      seatAvgRank0: seatAvg(p.seatRanks[0]), seatAvgRank1: seatAvg(p.seatRanks[1]),
+      seatAvgRank2: seatAvg(p.seatRanks[2]), seatAvgRank3: seatAvg(p.seatRanks[3]),
+      seatCount0: p.seatRanks[0].length, seatCount1: p.seatRanks[1].length,
+      seatCount2: p.seatRanks[2].length, seatCount3: p.seatRanks[3].length,
       // 親番／子番
       oyaKyoku: p.oya.k,
       oyaAgariRate: p.oya.k ? p.oya.agari/p.oya.k : 0,
@@ -44952,6 +44967,7 @@ function computeOverallStats(){
     };
   });
 }
+function seatAvg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
 // 親番／子番：その局の親のプレイヤー番号（recordPlayersのindex）を返す。座席未記録・局名が東n/南n以外ならnull
 function dealerIndexForRecord(r){
   const seats = state.raw.dealers && state.raw.dealers[`${r.date}_${r.hanchanNo}`];
@@ -45509,7 +45525,8 @@ function computeCompareAverageStat(allStats){
   const n = allStats.length;
   const obj = {name: COMPARE_AVERAGE_NAME};
   COMPARE_METRICS.forEach(m=>{
-    obj[m.key] = allStats.reduce((a,p)=>a+(p[m.key]||0),0)/n;
+    const vals = allStats.map(p=>p[m.key]).filter(v=>v!==null && v!==undefined);
+    obj[m.key] = vals.length ? vals.reduce((a,v)=>a+(v||0),0)/vals.length : null;
   });
   return obj;
 }
@@ -45583,7 +45600,9 @@ function renderCompareSection(allStats){
           const color = colorForChip(s.name);
           const style = selected ? `background:${color}14;` : isAvg ? `background:var(--bg);` : "";
           const extraStyle = isAvg ? "" : extremeCellStyle(s[m.key], maxVal, minVal, hasSpread);
-          return `<td style="${style}${extraStyle}">${m.fmt(s[m.key])}</td>`;
+          const seatM = /^seatAvgRank(\d)$/.exec(m.key);
+          const seatN = (seatM && !isAvg) ? `<span style="display:block; font-size:10px; font-weight:600; color:var(--muted);">${fmtCount(s["seatCount"+seatM[1]])}半荘</span>` : "";
+          return `<td style="${style}${extraStyle}">${m.fmt(s[m.key])}${seatN}</td>`;
         }).join("");
         const labelCellClass = m.subgroup ? "col-name compare-metric-indent" : "col-name";
         return subHeaderRow + `<tr><td class="${labelCellClass}">${escapeHtml(m.label)}</td>${cells}</tr>`;
