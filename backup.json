@@ -1,12 +1,12 @@
 {
   "app": "mahjong-stats-backup",
   "version": 3,
-  "exportedAt": "2026-10-17T13:26:38.234Z",
+  "exportedAt": "2026-10-27T22:58:48.000Z",
   "players": [
-    "増本",
+    "一平",
+    "松枝",
     "本郷",
-    "坂口",
-    "一平"
+    "三輪"
   ],
   "playerRoster": [
     "星野",
@@ -21,6 +21,11 @@
     "光岡",
     "松枝"
   ],
+  "rankingRange": {
+    "from": "2026-08-01",
+    "to": "",
+    "weekday": "weekday"
+  },
   "records": [
     {
       "id": "mt1gy26t0b4m",

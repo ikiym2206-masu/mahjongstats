@@ -113,17 +113,11 @@
   }
   .kyoku-grid button.active{background:var(--primary); border-color:var(--primary); color:#fff;}
 
-  .seat-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px;}
-  .seat-field{background:var(--bg); border:1.5px solid var(--line); border-radius:10px; padding:7px 10px;}
-  .seat-field label{display:block; font-size:10px; color:var(--muted); font-weight:800; margin-bottom:2px; letter-spacing:.02em;}
-  .seat-field select{
-    width:100%; border:none; background:transparent; padding:0; margin:0;
-    font-size:14px; font-weight:800; color:var(--ink); font-family:inherit;
-  }
-  .shuffle-btn{
+  .seat-fix-btn{
     border:1px solid var(--line); background:var(--surface); color:var(--primary);
-    font-size:11px; font-weight:800; border-radius:999px; padding:5px 10px;
+    font-size:12px; font-weight:800; border-radius:999px; padding:7px 12px; font-family:inherit;
   }
+  .seat-summary{font-size:12px; color:var(--muted); font-weight:700; margin-top:6px; line-height:1.6;}
 
   .hanchan-stepper .num.-honba{min-width:60px; font-size:15px;}
 
@@ -264,35 +258,11 @@
   .ranking-table-lg td{padding:13px 6px;}
   .ranking-table-lg .rank-cell .rank-chip{width:30px; height:30px; font-size:14px; border-radius:8px;}
 
-  /* 分析タブ：セクション切替ナビ（麻雀スタッツ分析ビューアのサイドナビをモバイル向けに横並びで踏襲） */
-  .analysis-nav{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
-  .analysis-nav button{
-    flex:1; min-width:88px; display:flex; align-items:center; justify-content:center; gap:6px;
-    padding:11px 6px; border-radius:12px; border:1.5px solid var(--line); background:var(--surface);
-    font-size:12px; font-weight:800; color:var(--muted); font-family:inherit;
-  }
-  .analysis-nav button.active{background:var(--primary); border-color:var(--primary); color:#fff;}
-  .analysis-nav .nav-num{
-    display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:6px;
-    background:var(--bg); color:var(--muted); font-size:10px; font-weight:800; flex:0 0 auto;
-  }
-  .analysis-nav button.active .nav-num{background:rgba(255,255,255,.25); color:#fff;}
-
-  /* 分析タブ・レーダーチャート系：プレイヤーごとにグリッド状に並べて表示 */
-  .radar-grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:10px;}
-  .radar-grid-card{border:1px solid var(--line); border-radius:12px; padding:14px;}
-  .radar-grid-card-head{margin-bottom:4px;}
-  .radar-grid-card-head h3{font-size:14px; font-weight:800; margin:0;}
-  .compat-legend-row{display:flex; justify-content:space-between; padding:3px 0; font-size:12px; color:var(--muted); font-weight:700;}
-  .radar-target-select{margin-bottom:12px;}
-  .radar-target-select .chip-bar-label{display:block; font-size:11px; font-weight:800; color:var(--muted); margin-bottom:6px;}
-  .radar-target-chip.on{background:var(--primary-tint); border-color:var(--primary); color:var(--primary);}
-
   .empty{color:var(--muted); font-size:12px; text-align:center; padding:20px 0;}
   .toast{
     position:fixed; left:50%; transform:translateX(-50%); bottom:calc(96px + var(--safe-bottom));
     background:var(--primary-dark); color:#fff; padding:9px 16px; border-radius:999px; font-size:12px;
-    font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:40;
+    font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:60;
   }
   .toast.show{opacity:1;}
 
@@ -304,7 +274,10 @@
 
   .header-summary{display:flex; align-items:center; justify-content:space-between; padding:0 2px 10px; cursor:pointer; user-select:none;}
   .header-summary .txt{font-size:17px; font-weight:800; color:var(--ink); letter-spacing:.01em;}
-  .header-summary .chev{font-size:13px; color:var(--muted); font-weight:800; background:var(--bg); border-radius:999px; padding:5px 10px;}
+  .header-summary .chev{font-size:13px; color:var(--muted); font-weight:800; background:var(--bg); border-radius:999px; padding:5px 10px; white-space:nowrap;}
+  .header-summary{flex-wrap:wrap; gap:8px;}
+  .header-summary .hs-actions{display:flex; align-items:center; gap:6px; margin-left:auto;}
+  .header-summary .seat-fix-btn{white-space:nowrap; cursor:pointer; font-size:12px; padding:5px 10px;}
 
   /* 卓のミニマップ：中央に卓情報、四方に自家・下家・対面・上家を配置する */
   .table-wrap{
@@ -343,6 +316,31 @@
   .table-center .k{font-size:17px; font-weight:800; letter-spacing:.02em;}
   .table-center .h{font-size:10.5px; font-weight:700; opacity:.85; margin-top:2px;}
   .table-center .chev{font-size:9px; opacity:.75; margin-top:4px;}
+  .table-center.static{cursor:default; font-size:11px; font-weight:800; line-height:1.5;}
+
+  /* 半荘準備・席の修正オーバーレイ内の卓：各席をタップできるボタンとして並べる */
+  .table-wrap.compact{padding:10px; margin:4px 0 10px;}
+  .seat-pick{
+    background:rgba(255,255,255,.95); border:none; border-radius:12px; padding:12px 4px;
+    display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0; font-family:inherit;
+  }
+  .seat-pick .pos{font-size:9.5px; color:var(--muted); font-weight:800;}
+  .seat-pick .nm{font-size:14px; font-weight:800; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .seat-pick .wind{font-size:10px; font-weight:800; color:var(--riichi); min-height:13px;}
+  .seat-pick:active{transform:scale(.97);}
+  .seat-pick.selected{box-shadow:0 0 0 3px var(--riichi);}
+  .seat-pick.moved .nm{color:var(--primary);}
+  .link-btn{
+    display:block; width:100%; text-align:center; background:none; border:none; padding:8px 0;
+    color:var(--primary); font-size:12.5px; font-weight:800; font-family:inherit;
+  }
+  .starter-row{display:grid; grid-template-columns:repeat(4,1fr); gap:6px;}
+  .starter-row button{
+    padding:9px 2px; border:1.5px solid var(--line); border-radius:10px; background:var(--surface);
+    font-size:12px; font-weight:800; color:var(--ink); font-family:inherit; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .starter-row button.selected{background:var(--riichi-tint); border-color:var(--riichi); color:var(--riichi);}
+  .overlay-label{font-size:12px; font-weight:800; color:var(--muted); margin:10px 0 6px;}
 
   .action-bar{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px;}
   .action-btn{
@@ -366,6 +364,7 @@
   .overlay-sheet{
     width:100%; max-width:520px; background:var(--surface); border-radius:20px 20px 0 0;
     padding:18px 16px calc(18px + var(--safe-bottom)); animation:sheetUp .16s ease-out;
+    max-height:92vh; overflow-y:auto;
   }
   @keyframes sheetUp{ from{transform:translateY(16px); opacity:0;} to{transform:translateY(0); opacity:1;} }
   .overlay-title{font-size:15px; font-weight:800; margin-bottom:2px;}
@@ -411,6 +410,7 @@
     .seat-card{padding:6px 5px 7px;}
     .toggle-btn.mini{padding:7px 1px; font-size:10px;}
     .action-btn{padding:11px 0 9px;}
+    .seat-pick{padding:8px 4px;}
   }
 
   /* 縦画面・横画面のどちらでも、対局者トグル（リーチ／副露／ツモ／ロン／放銃）と着順チップは
@@ -420,6 +420,7 @@
     .rank-chip{width:32px; height:32px;}
     .toggle-btn.mini{font-size:10px; padding:8px 1px;}
     .seat-card-name{font-size:11.5px;}
+    .seat-pick .nm{font-size:12.5px;}
   }
 </style>
 </head>
@@ -430,7 +431,7 @@
 <script>
 const KYOKU_LIST = ["東1","東2","東3","東4","南1","南2","南3","南4"];
 const SEAT_LABELS = ["東家","南家","西家","北家"];
-const CHART_PALETTE = ["#1F6F54","#2E6DA4","#C98A2B","#B23A2E","#6B4FA0","#3B8C6E","#8B94A0","#A9673A"];
+const WIND_SHORT = ["東","南","西","北"];
 const DEFAULT_PLAYERS = ["プレイヤー1","プレイヤー2","プレイヤー3","プレイヤー4"];
 
 const RESULT_LABEL = {next:"次の局へ", renchan:"連荘", ryuukyoku:"流局", chombo:"チョンボ", resultonly:"結果のみ入力"};
@@ -532,16 +533,16 @@ function validateAgariHoujuuConsistency(){
 
 let state = {
   tab: "input",
-  players: DEFAULT_PLAYERS.slice(),
+  players: DEFAULT_PLAYERS.slice(), // 既定メンバー：次に始める半荘の準備オーバーレイの初期値としてのみ使う（進行中・記録済みの半荘の表示には使わない）
   playerRoster: [],  // 事前登録されたプレイヤー名リスト（対局者4人はこの中から選択する）
   records: [],      // {id, date, hanchanNo, kyoku, honba, resultType, stats:[[riichi,fuuro,tsumo,ron,houjuu,chombo]x4]}
   ranks: {},        // `${date}_${hanchanNo}` -> [r1,r2,r3,r4]（同点は同着＝同じ順位番号。null = unset）
   finalScores: {},  // `${date}_${hanchanNo}` -> [s1,s2,s3,s4] (最終持ち点＝素点。整数・マイナス可、null=未入力)
   finalPoints: {},  // `${date}_${hanchanNo}` -> [pt1,pt2,pt3,pt4]（配給原点・オカ・ウマを反映した最終スコア pt。順位確定時に自動算出）
   hanchanConfirmed: {}, // `${date}_${hanchanNo}` -> true になったら「確定」済み（順位入力を締めて集計表示に切り替える）
-  dealers: {},       // `${date}_${hanchanNo}` -> 起家のプレイヤー index (0-3)。座席は半荘ごとに変わる想定。
-  recordPlayers: {}, // `${date}_${hanchanNo}` -> [名前0,名前1,名前2,名前3]（その半荘の最初の入力時点のプレイヤー名を固定保存。
-                      //   設定タブで後からプレイヤー名リスト・対局メンバーを変更しても、過去に記録済みの半荘の表示名は変わらない）
+  dealers: {},       // `${date}_${hanchanNo}` -> [東家idx, 南家idx, 西家idx, 北家idx]（idx＝卓上の位置 0自家/1下家/2対面/3上家）
+  recordPlayers: {}, // `${date}_${hanchanNo}` -> [自家,下家,対面,上家の名前]。その半荘の名前の唯一の出どころ。
+                      //   半荘開始（準備オーバーレイ確定）時に作成し、変更は「席の修正」だけで行う。
   rankingRange: { from: "", to: "", weekday: "all" }, // ランキングタブの期間フィルタ・曜日フィルタ（all/weekday/weekend）
   current: { date: todayStr(), hanchanNo: 1, kyoku: 0, honba: 0, toggles: emptyToggles() },
   editingId: null,
@@ -554,13 +555,13 @@ let state = {
   hanchanMonthFilter: "", // 半荘集計タブの年月絞り込み（"YYYY-MM"。空文字なら全期間を表示。画面表示用の一時状態のみ、保存はしない）
   hanchanWeekdayFilter: "all", // 半荘集計タブの曜日絞り込み（"all"|"weekday"|"weekend"。画面表示用の一時状態のみ、保存はしない）
   inputMode: "detail", // 局入力タブの入力モード："detail"（一局ごと入力・麻雀卓UI）｜"simple"（半荘終了時にスコアのみ入力）。settingsに保存する。
-  tableHeaderCollapsed: true, // 麻雀卓UI上部の日付・半荘No・座席・局・積み場コントロールの折りたたみ状態（画面上のUI状態のみ、保存はしない）
-  overlay: null, // 和了者／放銃者／流局／チョンボの選択オーバーレイの状態（画面上のUI状態のみ、保存はしない）
+  tableHeaderCollapsed: true, // 麻雀卓UI上部の日付・半荘No・席・局・積み場コントロールの折りたたみ状態（画面上のUI状態のみ、保存はしない）
+  overlay: null, // 和了者／放銃者／流局／チョンボ／半荘準備／席の修正オーバーレイの状態（画面上のUI状態のみ、保存はしない）
 };
 
 // 編集中は常に詳細入力モード（麻雀卓UI）を使う（結果のみ入力の半荘は編集対象にならないため）
 function effectiveInputMode(){ return state.editingId ? "detail" : state.inputMode; }
-const POS_LABELS = ["自家","下家","対面","上家"]; // プレイヤー配列順で固定（P1=自家、以下時計回り）
+const POS_LABELS = ["自家","下家","対面","上家"]; // 卓上の位置で固定（0=自家、以下時計回り）
 const POS_CLASSES = ["seat-jika","seat-shimocha","seat-toimen","seat-kamicha"];
 
 // ---------- persistence ----------
@@ -621,13 +622,15 @@ function saveFinalScores(){ storageSet("mj-final-scores", state.finalScores); }
 function saveFinalPoints(){ storageSet("mj-final-points", state.finalPoints); }
 function saveRecordPlayers(){ storageSet("mj-record-players", state.recordPlayers); }
 
-// その半荘（date_hanchanNo）の対局者名を返す。記録時点のスナップショットがあればそれを優先し
-// （設定タブでの後からの名前変更の影響を受けない）、まだ無い場合（新規入力中など）は現在の対局メンバーを使う。
+// その半荘（date_hanchanNo）の対局者名を返す。画面表示・保存・集計のすべてがこの関数を経由する（名前の出どころを1か所に統一）。
+// スナップショットがまだ無い半荘（準備前・簡易入力の未記録など）だけは、既定メンバー（players）を使う。
 function namesForHanchan(date, hanchanNo){
   const key = `${date}_${hanchanNo}`;
   return state.recordPlayers[key] || state.players;
 }
-// レコードを保存する半荘にまだ名前スナップショットが無ければ、現在の対局メンバーで固定する。
+// 局入力タブで現在表示している半荘の対局者名
+function currentNames(){ return namesForHanchan(state.current.date, state.current.hanchanNo); }
+// レコードを保存する半荘にまだ名前スナップショットが無ければ、既定メンバーで固定する（簡易入力・旧データ用の保険）。
 function ensureRecordPlayersSnapshot(date, hanchanNo){
   const key = `${date}_${hanchanNo}`;
   if(!state.recordPlayers[key]){
@@ -715,8 +718,6 @@ async function importBackupFromServer(){
 // 起動時の選択モーダルから呼ばれる読み込み処理。モーダルの「読み込む」ボタン自体が明示的な選択・確認であるため、
 // processBackupTextと違い追加の上書き確認ダイアログは出さずそのまま適用する。
 // ウェルカム（起動時のbackup.json読み込み選択）を閉じたら、続けて半荘開始準備オーバーレイの判定を行う。
-// render()自身もmaybeOpenHanchanSetupを呼ぶため二重呼び出しになるが、
-// 「ウェルカムを閉じる→準備オーバーレイを判定する」の順序をここで明示しておく（2つ目の呼び出しは早期returnで何もしない）。
 async function loadWelcomeBackup(){
   state.showWelcomeBackupPrompt = false;
   try{
@@ -742,8 +743,6 @@ function skipWelcomeBackup(){
 }
 
 // この端末（ブラウザ）に保存されている、このアプリのデータ（mj-stats:接頭辞のキー）をすべて削除する。
-// 他サイトのlocalStorageには一切触れない。削除後はページをリロードし、まっさらな状態（このHTMLに
-// サンプルデータが埋め込まれている共有版であれば、そのサンプルが自動で入り直した状態）で再起動する。
 function resetAllData(){
   if(!confirm("この端末に保存されている記録・設定をすべて削除します。元に戻せません。\n（先に「バックアップをダウンロード」で保存することをおすすめします）\n\n本当に削除しますか？")) return;
   Object.keys(localStorage)
@@ -752,9 +751,8 @@ function resetAllData(){
   location.reload();
 }
 
-// 座席（東家→南家→西家→北家の順で、誰が座っているかのプレイヤーindex配列）は
-// 半荘ごとに全員入れ替わりうるため、半荘単位(date_hanchanNo)で個別に保持する。
-// dealers[key] は本来 [東家idx, 南家idx, 西家idx, 北家idx] の配列。
+// 座席（東家→南家→西家→北家の順で、どの位置（0自家/1下家/2対面/3上家）が該当するか）は半荘単位(date_hanchanNo)で保持する。
+// 東家が決まれば残りは手番順（自家→下家→対面→上家）で機械的に決まる。
 // （旧バージョンでは起家indexの数値のみを保持していたため、その場合は単純ローテーションへフォールバックする）
 function getSeatOrder(date, hanchanNo){
   const v = state.dealers[`${date}_${hanchanNo}`];
@@ -766,13 +764,15 @@ function setSeatOrder(date, hanchanNo, order){
   state.dealers[`${date}_${hanchanNo}`] = order;
   saveDealers();
 }
+// 起家（東家）の位置から、手番順に沿った座席順 [東家,南家,西家,北家] を作る
+function seatOrderFromStarter(starter){ return [0,1,2,3].map(i=>(starter+i)%4); }
 
 // ---------- helpers ----------
 function toast(msg){
   const t = document.getElementById("toast");
   t.textContent = msg; t.classList.add("show");
   clearTimeout(toast._t);
-  toast._t = setTimeout(()=>t.classList.remove("show"), 1400);
+  toast._t = setTimeout(()=>t.classList.remove("show"), 1800);
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function fmtPct(n){ return isFinite(n) ? (n*100).toFixed(1)+"%" : "0.0%"; }
@@ -825,7 +825,6 @@ function resumePositionForDateHanchan(date, hanchanNo){
   return {hanchanNo, kyoku: 7, honba: last.honba || 0};
 }
 
-// distinct date+hanchanNo groups, sorted chronologically
 // 指定した半荘（date_hanchanNo）にすでに1局でも記録があるかどうか
 function hanchanHasRecords(date, hanchanNo){
   return state.records.some(r=>r.date===date && r.hanchanNo===hanchanNo);
@@ -862,7 +861,7 @@ function computeHanchanTotals(date, hanchanNo){
 }
 
 // 総局数（その半荘で記録された局の数）と流局数（誰もアガらなかった＝ツモ・ロンが誰にも付いていない局の数）を数える。
-// 「連荘」ボタンは親の和了と親テンパイ流局の両方で使われるため、resultTypeではなく実際のツモ/ロンの有無で流局を判定する。
+// 「連荘」は親の和了と親テンパイ流局の両方で使われるため、resultTypeではなく実際のツモ/ロンの有無で流局を判定する。
 // チョンボは「その局のやり直し」であり完了した1局ではないため、総局数・流局数のどちらにも含めない。
 // 「結果のみ入力」は局の詳細を伴わない記録のため、こちらも総局数・流局数のどちらにも含めない。
 function computeHanchanKyokuStats(date, hanchanNo){
@@ -945,7 +944,6 @@ function tryConfirmHanchan(date, hanchanNo){
 }
 
 // チョンボの罰則（本人-15pt、他3名+5ptずつ・ゼロサム）を、指定した半荘の全記録から集計する。
-// 半荘集計タブでの最終スコア(得点pt)算出、および統計タブでの反則収支ptの両方から共通して使う。
 function computeHanchanChomboPt(date, hanchanNo){
   const pt = [0,0,0,0];
   state.records.filter(r=>r.date===date && r.hanchanNo===hanchanNo).forEach(r=>{
@@ -959,9 +957,7 @@ function computeHanchanChomboPt(date, hanchanNo){
   return pt;
 }
 
-// 統計は「現在のプレイヤーindex(0-3)」単位ではなく「プレイヤー名」単位で集計する。
-// これにより、設定タブで対局メンバーの割り当てを変えても、過去の記録は記録当時の名前（recordPlayersのスナップショット）に
-// 正しく紐づいたまま集計され、同じ人物が異なるセッション・異なる座席indexで対局していても正しく合算される。
+// 統計は「プレイヤーindex(0-3)」単位ではなく「プレイヤー名」単位で集計する（名前は半荘ごとのrecordPlayersから取得）。
 function computeOverallStats(range){
   // 曜日フィルタ：半荘集計タブと共通のisWeekendDate()で土日を「週末」、それ以外を「平日」とする
   const weekdayOk = (date)=>{
@@ -1055,9 +1051,6 @@ function computeOverallStats(range){
 }
 
 // ---- 通算ランキング（累計得点pt順・期間指定つき） ----
-// CSV取り込みによる「結果のみ」半荘も含め、確定済み半荘の順位・スコアがある全員を対象にする
-// （局入力の記録が無いプレイヤーでも、半荘結果CSVの取り込みだけでここに表示される）。
-// 期間指定（state.rankingRange）で絞り込んだ範囲の成績のみを集計する。
 function renderRankingTab(){
   const range = state.rankingRange;
   const rangedStats = computeOverallStats(range);
@@ -1097,9 +1090,9 @@ function renderRankingTab(){
 }
 
 // ---------- render ----------
-// 詳細入力モードで、まだ1局も記録が無い新しい半荘を表示しようとしている場合、
-// 座席（対局メンバー・起家）を決める準備オーバーレイを自動で開く。
+// 詳細入力モードで、まだ1局も記録が無い新しい半荘を表示しようとしている場合、半荘開始の準備オーバーレイを自動で開く。
 // すでに座席が決まっている（dealersにキーがある）半荘や、記録済みデータがある半荘（旧データ等）では開かない。
+// 初期値は既定メンバー（＝直前の半荘で使った並び）。起家をタップするだけで開始でき、メンバーが変わるときだけ編集欄を開く。
 function maybeOpenHanchanSetup(){
   if(state.tab !== "input") return;
   if(effectiveInputMode() !== "detail") return;
@@ -1110,7 +1103,8 @@ function maybeOpenHanchanSetup(){
   if(state.dealers[key]) return;
   if(hanchanHasRecords(cur.date, cur.hanchanNo)) return;
   const initPlayers = state.players.slice();
-  state.overlay = { type:"hanchanSetup", players: initPlayers, starter: 0, otherMode: [false,false,false,false] };
+  const invalid = initPlayers.some(n=>!n) || new Set(initPlayers).size < 4;
+  state.overlay = { type:"hanchanSetup", players: initPlayers, otherMode: [false,false,false,false], editMembers: invalid };
 }
 
 function render(){
@@ -1230,18 +1224,14 @@ function renderSimpleInput(){
 // ---------- 詳細入力モード：直感麻雀卓UI（一局ごと入力） ----------
 function renderDetailInput(){
   const cur = state.current;
+  const names = currentNames(); // この半荘の固定名（画面・保存・集計で共通）
   const seatOrder = getSeatOrder(cur.date, cur.hanchanNo); // [東家idx, 南家idx, 西家idx, 北家idx]
-  const dealerIndex = seatOrder[cur.kyoku % 4]; // その局の親のプレイヤーindex
+  const dealerIndex = seatOrder[cur.kyoku % 4]; // その局の親の位置
 
-  const seatFields = SEAT_LABELS.map((label,seatI)=>{
-    const opts = state.players.map((name,pi)=>
-      `<option value="${pi}" ${seatOrder[seatI]===pi?'selected':''}>${escapeHtml(name||"P"+(pi+1))}</option>`).join("");
-    return `<div class="seat-field"><label>${label}</label><select data-seat="${seatI}">${opts}</select></div>`;
-  }).join("");
   const kyokuBtns = KYOKU_LIST.map((k,i)=>
     `<button data-kyoku="${i}" class="${i===cur.kyoku?'active':''}">${k}</button>`).join("");
 
-  const seatCards = state.players.map((name,i)=>{
+  const seatCards = names.map((name,i)=>{
     const t = cur.toggles[i]; // [riichi, fuuro, tsumo, ron, houjuu, chombo]
     const badge = i===dealerIndex ? '<span class="dealer-badge">親</span>' : '';
     return `
@@ -1254,6 +1244,9 @@ function renderDetailInput(){
         </div>
       </div>`;
   }).join("");
+
+  // 「席・起家を修正」ボタンは、詳細設定を開かなくても押せるよう要約バー（常時表示の共通部分）に置く。既存局の編集中は出さない。
+  const seatFixBtn = state.editingId ? "" : `<button type="button" class="seat-fix-btn" id="openSeatFixBtn">🔄 席・起家を変更</button>`;
 
   const headerDetails = state.tableHeaderCollapsed ? "" : `
     <div class="card" id="headerDetailsCard">
@@ -1273,11 +1266,6 @@ function renderDetailInput(){
           <button data-hanchan="1">＋</button>
         </div>
       </div>
-      <div class="row-between" style="margin-top:14px">
-        <h2>座席</h2>
-        <button type="button" class="shuffle-btn" id="shuffleSeats">🔀 シャッフル</button>
-      </div>
-      <div class="seat-grid">${seatFields}</div>
       <h2 style="margin-top:14px">局</h2>
       <div class="kyoku-grid">${kyokuBtns}</div>
       <div class="row-between" style="margin-top:14px">
@@ -1300,7 +1288,10 @@ function renderDetailInput(){
 
     <div class="header-summary" id="headerSummaryToggle">
       <span class="txt">📅 ${fmtShortDate(cur.date)}　半荘${cur.hanchanNo}　${KYOKU_LIST[cur.kyoku]}${cur.honba?'・'+cur.honba+'本場':''}</span>
-      <span class="chev">${state.tableHeaderCollapsed ? '詳細設定 ▾' : '閉じる ▴'}</span>
+      <span class="hs-actions">
+        ${seatFixBtn}
+        <span class="chev">${state.tableHeaderCollapsed ? '詳細設定 ▾' : '閉じる ▴'}</span>
+      </span>
     </div>
     ${headerDetails}
 
@@ -1335,27 +1326,28 @@ function seatLabelForPlayer(seatOrder, playerIdx){
   return pos===-1 ? "-" : SEAT_LABELS[pos];
 }
 
-// ---------- 和了者／放銃者／流局／チョンボ選択オーバーレイ ----------
+// ---------- 和了者／放銃者／流局／チョンボ／半荘準備／席の修正オーバーレイ ----------
 function renderOverlay(){
   const ov = state.overlay;
   if(!ov) return "";
+  const names = currentNames();
+  const nm = (i)=> escapeHtml(names[i] || "プレイヤー"+(i+1));
   if(ov.type === "winner"){
     const title = ov.action === "tsumo" ? "誰がツモりましたか？" : "誰がロンしましたか？";
-    const btns = state.players.map((name,i)=>
+    const btns = names.map((_,i)=>
       `<button type="button" class="overlay-btn" data-pick-winner="${i}">
-        <span>${escapeHtml(name||"プレイヤー"+(i+1))}</span><span class="pos">${POS_LABELS[i]}</span>
+        <span>${nm(i)}</span><span class="pos">${POS_LABELS[i]}</span>
       </button>`).join("");
     return overlaySheet(title, "和了したプレイヤーを選んでください", `<div class="overlay-grid">${btns}</div>`);
   }
   if(ov.type === "loser"){
-    const winnerName = state.players[ov.winner] || "プレイヤー"+(ov.winner+1);
-    const btns = state.players.map((name,i)=>{
+    const btns = names.map((_,i)=>{
       if(i===ov.winner) return "";
       return `<button type="button" class="overlay-btn" data-pick-loser="${i}">
-        <span>${escapeHtml(name||"プレイヤー"+(i+1))}</span><span class="pos">${POS_LABELS[i]}</span>
+        <span>${nm(i)}</span><span class="pos">${POS_LABELS[i]}</span>
       </button>`;
     }).join("");
-    return overlaySheet(`誰の放銃ですか？`, `${escapeHtml(winnerName)}さんのロン・放銃者を選んでください`, `<div class="overlay-grid">${btns}</div>`);
+    return overlaySheet(`誰の放銃ですか？`, `${nm(ov.winner)}さんのロン・放銃者を選んでください`, `<div class="overlay-grid">${btns}</div>`);
   }
   if(ov.type === "ryuukyoku"){
     const btns = `
@@ -1365,27 +1357,44 @@ function renderOverlay(){
   }
   if(ov.type === "chombo"){
     const sel = ov.selected;
-    const btns = state.players.map((name,i)=>
+    const btns = names.map((_,i)=>
       `<button type="button" class="overlay-btn ${sel[i]?'selected':''}" data-pick-chombo="${i}">
-        <span>${escapeHtml(name||"プレイヤー"+(i+1))}</span><span class="pos">${POS_LABELS[i]}</span>
+        <span>${nm(i)}</span><span class="pos">${POS_LABELS[i]}</span>
       </button>`).join("");
     const any = sel.some(Boolean);
     return overlaySheet("チョンボ", "チョンボしたプレイヤーを選んでください（複数選択可）",
       `<div class="overlay-grid">${btns}</div>
        <button type="button" class="overlay-confirm" id="confirmChomboBtn" ${any?'':'disabled'}>この内容でチョンボを記録</button>`);
   }
-  if(ov.type === "hanchanSetup"){
-    return renderHanchanSetupOverlay(ov);
-  }
+  if(ov.type === "hanchanSetup") return renderHanchanSetupOverlay(ov);
+  if(ov.type === "seatFix") return renderSeatFixOverlay(ov);
   return "";
 }
 
-// ---------- 半荘開始時：対局メンバー（自分／下家／対面／上家）＋起家を決める準備オーバーレイ ----------
+// 卓の形（上=対面、左=上家、右=下家、下=自家）に4つの席ボタンを並べる共通部品。
+// seatHtml(i) が各席の中身、dataAttr が各ボタンに付けるdata属性名。
+function renderPickTable(dataAttr, seatHtml, seatClass, centerHtml){
+  const seats = [0,1,2,3].map(i=>
+    `<button type="button" class="seat-pick ${POS_CLASSES[i]} ${seatClass(i)}" ${dataAttr}="${i}">${seatHtml(i)}</button>`).join("");
+  return `
+    <div class="table-wrap compact">
+      <div class="table-grid">
+        ${seats}
+        <div class="table-center static">${centerHtml}</div>
+      </div>
+    </div>`;
+}
+
+// ---------- 半荘開始時の準備：前の半荘と同じ並びを初期値に、起家をタップするだけで開始する ----------
 function renderHanchanSetupOverlay(ov){
   const roster = state.playerRoster;
-  const members = state.players; // 対局メンバー（4人）
+  const members = state.players; // 既定メンバー（4人）
   const selectStyle = "width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:15px; background:var(--surface); color:var(--ink); font-weight:700; font-family:inherit;";
-  const fields = POS_LABELS.map((label,i)=>{
+  const table = renderPickTable("data-setup-start",
+    (i)=>`<span class="pos">${POS_LABELS[i]}${i===0?'（自分）':''}</span><span class="nm">${escapeHtml(ov.players[i] || "未選択")}</span>`,
+    ()=>"",
+    "起家を<br>タップ");
+  const memberFields = !ov.editMembers ? "" : POS_LABELS.map((label,i)=>{
     const name = ov.players[i] || "";
     const isOther = !!ov.otherMode[i];
     const mainOpts = [`<option value="">未選択</option>`]
@@ -1405,23 +1414,33 @@ function renderHanchanSetupOverlay(ov){
       ${otherSelect}
     </div>`;
   }).join("");
-  const starterBtns = POS_LABELS.map((label,i)=>{
-    const name = ov.players[i] || "未選択";
-    return `<button type="button" class="overlay-btn ${ov.starter===i?'selected':''}" data-setup-starter="${i}">
-      <span>${escapeHtml(name)}</span><span class="pos">${label}</span>
-    </button>`;
-  }).join("");
   return `
     <div class="overlay-backdrop" id="hanchanSetupBackdrop">
       <div class="overlay-sheet">
         <div class="overlay-title">🀄 半荘${state.current.hanchanNo}の準備</div>
-        <div class="overlay-sub">対局メンバーと起家（東家）を確認してください</div>
-        ${fields}
-        <div style="font-size:12px; font-weight:800; color:var(--muted); margin:10px 0 6px;">起家（東家）はどなたですか？</div>
-        <div class="overlay-grid">${starterBtns}</div>
-        <button type="button" class="overlay-confirm" id="confirmHanchanSetupBtn" style="margin-top:14px;">この内容で半荘を始める</button>
+        <div class="overlay-sub">起家（東家）の席をタップすると開始します</div>
+        ${table}
+        <button type="button" class="link-btn" id="toggleSetupMembersBtn">${ov.editMembers ? '👥 メンバー・席の変更を閉じる ▴' : '👥 メンバー・席を変更 ▾'}</button>
+        ${memberFields}
       </div>
     </div>`;
+}
+
+// ---------- 席・起家の修正（半荘の途中で席の間違いに気付いたとき） ----------
+// 2つの席を続けてタップすると、その2人を入れ替える。記録済みの局は「人」に付いたまま一緒に移動する。
+function renderSeatFixOverlay(ov){
+  const origNames = currentNames();
+  const table = renderPickTable("data-fix-seat",
+    (i)=>`<span class="pos">${POS_LABELS[i]}</span><span class="nm">${escapeHtml(ov.names[i] || "-")}</span><span class="wind">${i===ov.starter?'起家':''}</span>`,
+    (i)=>`${ov.pick===i?'selected':''} ${ov.names[i]!==origNames[i]?'moved':''}`,
+    ov.pick===null ? "入れ替える<br>2人をタップ" : "相手を<br>タップ");
+  const starterBtns = POS_LABELS.map((label,i)=>
+    `<button type="button" class="${ov.starter===i?'selected':''}" data-fix-starter="${i}">${escapeHtml(ov.names[i] || label)}</button>`).join("");
+  return overlaySheet("🔄 席・起家の修正", "記録済みの局は、その人の成績として一緒に移動します",
+    `${table}
+     <div class="overlay-label">起家（東家）</div>
+     <div class="starter-row">${starterBtns}</div>
+     <button type="button" class="overlay-confirm" id="confirmSeatFixBtn">この内容で反映</button>`);
 }
 
 function overlaySheet(title, sub, body){
@@ -1507,26 +1526,79 @@ function confirmChombo(){
   if(state.editingId) commitEdit("chombo"); else onSave("chombo");
 }
 
-// 半荘開始準備オーバーレイの「この内容で半荘を始める」：対局メンバー（players）を確定保存し、
-// 選んだ起家（自分/下家/対面/上家のいずれか）を起点に、物理的な座席順（自分→下家→対面→上家）
-// のまま東家〜北家を機械的に割り当てる（麻雀の手番順は物理的な着席順と一致するため）。
-function confirmHanchanSetup(){
+// 半荘開始準備：タップした席を起家として、その半荘の名前（recordPlayers）と座席（dealers）を確定する。
+// 名前はこの時点で半荘ごとに固定し、以降の画面表示・保存・集計はすべてこの固定名を使う。
+// あわせて既定メンバー（players）も同じ並びに更新し、次の半荘の初期値にする。
+function startHanchanWithStarter(starter){
   const ov = state.overlay;
-  if(ov.players.some(n=>!n)){ toast("4人分のメンバーを選んでください"); return; }
-  if(new Set(ov.players).size < 4){ toast("同じ名前が重複しています"); return; }
+  if(ov.players.some(n=>!n)){ ov.editMembers = true; render(); toast("4人分のメンバーを選んでください"); return; }
+  if(new Set(ov.players).size < 4){ ov.editMembers = true; render(); toast("同じ名前が重複しています"); return; }
+  const cur = state.current;
+  const key = `${cur.date}_${cur.hanchanNo}`;
   state.players = ov.players.slice();
   saveSettings();
-  const order = [0,1,2,3].map(i=>(ov.starter+i)%4); // [東家idx, 南家idx, 西家idx, 北家idx]
-  setSeatOrder(state.current.date, state.current.hanchanNo, order);
+  state.recordPlayers[key] = ov.players.slice();
+  saveRecordPlayers();
+  setSeatOrder(cur.date, cur.hanchanNo, seatOrderFromStarter(starter));
   state.overlay = null;
   render();
-  toast("半荘の準備が完了しました");
+  toast(`半荘${cur.hanchanNo}開始（起家：${ov.players[starter]}）`);
 }
 
-// プレイヤーindex(0-3)から座席ラベル（東家/南家/西家/北家）を求める
-function seatLabelForPlayer(seatOrder, playerIdx){
-  const pos = seatOrder.indexOf(playerIdx);
-  return pos===-1 ? "-" : SEAT_LABELS[pos];
+// ---- 席・起家の修正 ----
+function openSeatFix(){
+  const cur = state.current;
+  const seatOrder = getSeatOrder(cur.date, cur.hanchanNo);
+  state.overlay = { type:"seatFix", names: currentNames().slice(), perm:[0,1,2,3], starter: seatOrder[0], pick:null };
+  render();
+}
+function tapFixSeat(i){
+  const ov = state.overlay;
+  if(ov.pick === null){ ov.pick = i; }
+  else if(ov.pick === i){ ov.pick = null; }
+  else{
+    const a = ov.pick, b = i;
+    [ov.names[a], ov.names[b]] = [ov.names[b], ov.names[a]];
+    [ov.perm[a], ov.perm[b]] = [ov.perm[b], ov.perm[a]];
+    ov.pick = null;
+  }
+  render();
+}
+// 配列を「新しい位置i ← 元の位置perm[i]」の対応で並べ替える
+function permuteArray(arr, perm){ return perm.map(old=>arr[old]); }
+// 席の修正を、その半荘に属するすべてのデータへ反映する。
+// 名前・各局のスタッツ・入力中のトグル・素点／順位／得点ptを同じ対応で並べ替えるため、「誰が何をしたか」は変わらない。
+// 起家は卓上の位置で指定し直す（座席順は手番順に沿って機械的に決まる）。
+function applySeatFix(date, hanchanNo, perm, starter){
+  const key = `${date}_${hanchanNo}`;
+  const identity = perm.every((v,i)=>v===i);
+  if(!identity){
+    const names = namesForHanchan(date, hanchanNo).slice();
+    state.recordPlayers[key] = permuteArray(names, perm);
+    state.records.forEach(r=>{
+      if(r.date===date && r.hanchanNo===hanchanNo) r.stats = permuteArray(r.stats, perm);
+    });
+    ["ranks","finalScores","finalPoints"].forEach(k=>{
+      if(Array.isArray(state[k][key])) state[k][key] = permuteArray(state[k][key], perm);
+    });
+    saveRecordPlayers(); saveRecords(); saveRanks(); saveFinalScores(); saveFinalPoints();
+  }
+  setSeatOrder(date, hanchanNo, seatOrderFromStarter(starter));
+}
+function confirmSeatFix(){
+  const ov = state.overlay;
+  const cur = state.current;
+  const seatOrder = getSeatOrder(cur.date, cur.hanchanNo);
+  const identity = ov.perm.every((v,i)=>v===i);
+  if(identity && ov.starter === seatOrder[0]){ state.overlay = null; render(); return; }
+  applySeatFix(cur.date, cur.hanchanNo, ov.perm, ov.starter);
+  cur.toggles = permuteArray(cur.toggles, ov.perm);
+  // 修正後の並びを既定メンバーにも反映し、次の半荘の初期値にする
+  state.players = currentNames().slice();
+  saveSettings();
+  state.overlay = null;
+  render();
+  toast("席・起家を修正しました");
 }
 
 function renderHanchanTab(){
@@ -1573,7 +1645,6 @@ function renderHanchanTab(){
 
     if(confirmed){
       // ---- 確定済み：順位の昇順（1着→4着、同着は同じ順位）に並べ替えて表示 ----
-      // 最小化⇔展開：最小化時はヘッダー情報（見出し）のみ表示し、展開時に集計テーブルを表示する。デフォルトは最小化。
       const collapsed = state.hanchanCollapsed[key] !== false;
       const order = [0,1,2,3].sort((a,b)=>(ranks[a]||9)-(ranks[b]||9) || a-b);
       const rows = order.map(i=>{
@@ -1664,8 +1735,7 @@ function renderHanchanTab(){
   }).join("");
 }
 
-// チョンボは発生することが稀なため、他の数値と同じ列で常に表示するのではなく、
-// 発生した場合のみ小さなマークとして選手名の隣に添える。
+// チョンボは発生することが稀なため、発生した場合のみ小さなマークとして選手名の隣に添える。
 function chomboMark(count){
   return count>0 ? ` <span class="chombo-mark">⚠️チョンボ×${count}</span>` : "";
 }
@@ -1693,6 +1763,16 @@ function renderHanchanRecordList(date, hanchanNo, names){
   }).join("");
   return `<div class="stat-section-label" style="margin-top:12px;">局ごとの記録（${recs.length}局）</div>${rows}`;
 }
+
+// 局入力タブで表示中の半荘が「開始済みで、まだ終わっていない」かどうか（既定メンバー変更時の案内に使う）
+function currentHanchanInProgress(){
+  const cur = state.current;
+  const key = `${cur.date}_${cur.hanchanNo}`;
+  if(!state.recordPlayers[key]) return false;
+  if(state.hanchanConfirmed[key]) return false;
+  return true;
+}
+
 function renderSettings(){
   const roster = state.playerRoster;
   const rosterChips = roster.length ? `
@@ -1705,7 +1785,7 @@ function renderSettings(){
     ).join("");
     return `
     <div class="field">
-      <label>プレイヤー${i+1}</label>
+      <label>${POS_LABELS[i]}${i===0?'（自分）':''}</label>
       <select data-player-select="${i}" style="width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px; font-size:15px; background:var(--surface); color:var(--ink); font-weight:700; font-family:inherit;">
         ${opts}
       </select>
@@ -1721,8 +1801,8 @@ function renderSettings(){
       ${rosterChips}
     </div>
     <div class="card">
-      <h2>対局メンバー（4人）</h2>
-      <div class="empty" style="text-align:left; padding:0 0 10px;">上のリストから、今回対局する4人を選んでください。ここでの変更は今後の入力にのみ適用され、<b style="color:var(--ink);">過去に記録した半荘の選手名（半荘集計・統計タブでの表示）は変わりません</b>（記録した時点のメンバーで固定されます）。</div>
+      <h2>既定メンバー（4人）</h2>
+      <div class="empty" style="text-align:left; padding:0 0 10px;">次に始める半荘の初期値です。<b style="color:var(--ink);">進行中・記録済みの半荘には反映されません</b>。対局中に席を直すときは、局入力画面上部の「🔄 席・起家を変更」を使ってください。</div>
       ${selects}
     </div>
     <div class="card">
@@ -1797,30 +1877,6 @@ function bindEvents(){
       state.current.toggles = emptyToggles();
       render();
     });
-    document.querySelectorAll("[data-seat]").forEach(sel=>{
-      sel.onchange = ()=>{
-        const seatI = Number(sel.dataset.seat);
-        const newPlayer = Number(sel.value);
-        const order = getSeatOrder(state.current.date, state.current.hanchanNo).slice();
-        const oldPlayer = order[seatI];
-        const conflictSeat = order.findIndex((p,i)=> i!==seatI && p===newPlayer);
-        if(conflictSeat !== -1) order[conflictSeat] = oldPlayer; // 入れ替え先の座席に元の人を移す
-        order[seatI] = newPlayer;
-        setSeatOrder(state.current.date, state.current.hanchanNo, order);
-        render();
-      };
-    });
-    const shuffleBtn = document.getElementById("shuffleSeats");
-    if(shuffleBtn) shuffleBtn.onclick = ()=>{
-      const order = [0,1,2,3];
-      for(let i=order.length-1;i>0;i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [order[i],order[j]] = [order[j],order[i]];
-      }
-      setSeatOrder(state.current.date, state.current.hanchanNo, order);
-      render();
-      toast("座席をシャッフルしました");
-    };
     document.querySelectorAll("[data-kyoku]").forEach(b=>b.onclick=()=>{
       // 局を手動で切り替えた場合は積み場を0から入力し直す（必要なら「積み場」の±で調整）
       state.current.kyoku = Number(b.dataset.kyoku);
@@ -1868,7 +1924,7 @@ function bindEvents(){
     const actChombo = document.getElementById("actChombo");
     if(actChombo) actChombo.onclick = openChomboFlow;
 
-    // 選択オーバーレイ（和了者・放銃者・流局・チョンボ）
+    // 選択オーバーレイ（和了者・放銃者・流局・チョンボ・席の修正）
     const overlayBackdrop = document.getElementById("overlayBackdrop");
     if(overlayBackdrop) overlayBackdrop.onclick = (e)=>{ if(e.target === overlayBackdrop) closeOverlay(); };
     const overlayCancelBtn = document.getElementById("overlayCancelBtn");
@@ -1880,7 +1936,12 @@ function bindEvents(){
     const confirmChomboBtn = document.getElementById("confirmChomboBtn");
     if(confirmChomboBtn) confirmChomboBtn.onclick = confirmChombo;
 
-    // 半荘開始準備オーバーレイ（対局メンバー＋起家）
+    // 半荘開始準備オーバーレイ（起家タップで開始／メンバー変更）
+    document.querySelectorAll("[data-setup-start]").forEach(b=>{
+      b.onclick = ()=> startHanchanWithStarter(Number(b.dataset.setupStart));
+    });
+    const toggleSetupMembersBtn = document.getElementById("toggleSetupMembersBtn");
+    if(toggleSetupMembersBtn) toggleSetupMembersBtn.onclick = ()=>{ state.overlay.editMembers = !state.overlay.editMembers; render(); };
     document.querySelectorAll("[data-setup-player]").forEach(sel=>{
       sel.onchange = ()=>{
         const i = Number(sel.dataset.setupPlayer);
@@ -1897,11 +1958,14 @@ function bindEvents(){
     document.querySelectorAll("[data-setup-other]").forEach(sel=>{
       sel.onchange = ()=>{ state.overlay.players[Number(sel.dataset.setupOther)] = sel.value; render(); };
     });
-    document.querySelectorAll("[data-setup-starter]").forEach(b=>{
-      b.onclick = ()=>{ state.overlay.starter = Number(b.dataset.setupStarter); render(); };
-    });
-    const confirmHanchanSetupBtn = document.getElementById("confirmHanchanSetupBtn");
-    if(confirmHanchanSetupBtn) confirmHanchanSetupBtn.onclick = confirmHanchanSetup;
+
+    // 席・起家の修正
+    const openSeatFixBtn = document.getElementById("openSeatFixBtn");
+    if(openSeatFixBtn) openSeatFixBtn.onclick = (e)=>{ e.stopPropagation(); openSeatFix(); };
+    document.querySelectorAll("[data-fix-seat]").forEach(b=>b.onclick=()=>tapFixSeat(Number(b.dataset.fixSeat)));
+    document.querySelectorAll("[data-fix-starter]").forEach(b=>b.onclick=()=>{ state.overlay.starter = Number(b.dataset.fixStarter); render(); });
+    const confirmSeatFixBtn = document.getElementById("confirmSeatFixBtn");
+    if(confirmSeatFixBtn) confirmSeatFixBtn.onclick = confirmSeatFix;
 
     document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
     const cancelEditBtn = document.getElementById("cancelEditBtn");
@@ -2012,7 +2076,8 @@ function bindEvents(){
       sel.onchange = ()=>{
         const i = Number(sel.dataset.playerSelect);
         state.players[i] = sel.value;
-        saveSettings(); render(); toast("保存しました");
+        saveSettings(); render();
+        toast(currentHanchanInProgress() ? "保存しました（進行中の半荘には反映されません）" : "保存しました");
       };
     });
     const exportBackupBtn = document.getElementById("exportBackupBtn");
@@ -2037,6 +2102,7 @@ function startEdit(id){
   if(!rec) return;
   state.editBackup = JSON.parse(JSON.stringify(state.current)); // 編集キャンセル時に戻すための退避
   state.editingId = id;
+  state.overlay = null;
   state.current.date = rec.date;
   state.current.hanchanNo = rec.hanchanNo;
   state.current.kyoku = KYOKU_LIST.indexOf(rec.kyoku);
@@ -2069,12 +2135,9 @@ function commitEdit(resultType){
   toast("更新しました");
 }
 
-// 「結果のみ入力する」：局の詳細（リーチ・副露・ツモ・ロン・放銃など）を記録せず、
-// この半荘そのものを「詳細なし」の1件のマーカーレコードとして記録し、即座に半荘集計タブへ遷移して
-// 最終持ち点・順位の入力を促す。このレコードは総局数・流局数・打点系スタッツのいずれの集計対象にも含めない（resultType==="resultonly"）。
-// 局を実際にプレイしていないため、座席（起家〜北家の割り当て）も意味を持たない。
-// 将来的にCSV出力後のデータ加工などで「座席と成績の相関」を扱う可能性があるため、
-// 紛らわしい座席データが残らないよう、この半荘の座席設定は明示的にクリアする
+// 「結果のみ入力する」：局の詳細を記録せず、この半荘そのものを「詳細なし」の1件のマーカーレコードとして記録し、
+// 即座に半荘集計タブへ遷移して最終持ち点・順位の入力を促す（resultType==="resultonly"）。
+// 局を実際にプレイしていないため、座席（起家〜北家の割り当て）は明示的にクリアする
 // （すでに他の局の記録がある半荘に対して押した場合は、その局の座席データを壊さないよう座席クリアは行わない）。
 function onSaveResultOnly(){
   const cur = state.current;
@@ -2111,16 +2174,12 @@ function onSaveResultOnly(){
 }
 
 
-// ・「次の局へ」ボタン＝子のアガリが発生していればその局は子のアガリ扱い　　→ 次局へ進行し、積み場は消滅（0にリセット）
-// 　　　　　　　　　　誰もアガっていなければ自動的に「流局」（親ノーテン想定）扱い　→ 次局へ進行するが、積み場は+1のまま維持
-// ・「連荘」ボタン＝親のアガリ、または親テンパイでの流局　→ 同一局のまま積み場+1（局・半荘Noは進めない）
-// ・小さな「チョンボ」ボタン＝反則によるその局のやり直し　→ 同一局・同一積み場のまま
-// ※子のアガリが発生している局は連荘を選べず、親のアガリが発生している局は「次の局へ」を選べないよう、ボタン側で制御する。
-// ※南4局で「次の局へ」が発生した場合（子のアガリ・流局のいずれも）は、その半荘の最終局のため半荘は終了。
+// 局を保存して次の局へ進める。結果種別（next/renchan/ryuukyoku/chombo）は和了者が親かどうか等から自動判定済み。
+// ※南4局で連荘・チョンボ以外の保存が発生した場合は、その半荘の最終局のため半荘は終了。
 //   次の半荘No.の東1・積み場0からとなり、半荘集計タブで順位を入力できるよう自動的に切り替える。
 function onSave(resultType){
   const cur = state.current;
-  ensureRecordPlayersSnapshot(cur.date, cur.hanchanNo); // この半荘の対局者名を、記録時点のメンバーで固定する
+  ensureRecordPlayersSnapshot(cur.date, cur.hanchanNo); // 通常は半荘開始時に作成済み（旧データ用の保険）
   const rec = {
     id: uid(), date: cur.date, hanchanNo: cur.hanchanNo, kyoku: KYOKU_LIST[cur.kyoku], honba: cur.honba,
     resultType: resultType,
@@ -2149,12 +2208,9 @@ function onSave(resultType){
   }
 }
 
-// 各行にその半荘の対局者名も含める（プレイヤー名リストは今後変わりうるため、行ごとに自己完結させる。
-// Excelなど外部ツールでの加工や、後日別セッションのCSVを取り込む際にも、記録当時の名前を正しく復元できる）。
-// CSVは「局データ（リーチ・副露などの詳細）」と「半荘の最終素点（順位確定に使う値）」を1行＝1局の
-// ワイド形式1種類に統一して書き出す。各プレイヤーの列は 名前/リーチ/副露/ツモ/ロン/放銃/チョンボ/素点 の8列で、
+// CSVは「局データ」と「半荘の最終素点」を1行＝1局のワイド形式1種類に統一して書き出す。
+// 各プレイヤーの列は 名前/リーチ/副露/ツモ/ロン/放銃/チョンボ/素点 の8列で、
 // 素点はその半荘が「確定済み」の場合のみ、同じ半荘の全行に同じ値を繰り返し記載する（未確定なら空欄）。
-// 局の詳細を持たない「結果のみ入力」の半荘も、局="-"・トグル全OFFの1行として同じ形式でそのまま書き出される。
 function exportCsv(){
   const header = ["日付","半荘No","局","本場","結果", ...[0,1,2,3].flatMap(i=>[`P${i+1}_名前`,`P${i+1}_リーチ`,`P${i+1}_副露`,`P${i+1}_ツモ`,`P${i+1}_ロン`,`P${i+1}_放銃`,`P${i+1}_チョンボ`,`P${i+1}_素点`])];
   const lines = [header.join(",")];
@@ -2171,16 +2227,13 @@ function exportCsv(){
     lines.push(row.join(","));
   });
   if(lines.length<2){ toast("書き出せるデータがありません"); return; }
-  const blob = new Blob(["\uFEFF"+lines.join("\n")], {type:"text/csv"});
+  const blob = new Blob(["﻿"+lines.join("\n")], {type:"text/csv"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = "hanchan.csv"; a.click();
   URL.revokeObjectURL(url);
 }
 
-// 「局データをCSVで書き出す」で出力した形式（日付,半荘No,局,本場,結果, 選手ごとに 名前/リーチ/副露/ツモ/ロン/放銃/チョンボ ×4人）のCSVを読み込み、
-// 既存の局データに追加する（上書きではなく追記。日付は "YYYY/MM/DD" 表記を "YYYY-MM-DD" に変換して取り込む）。
-// あわせて、CSV内の名前列からその半荘の名前スナップショット(recordPlayers)も復元する（既存のスナップショットがある場合は上書きしない）。
 function reverseResultLabel(label){
   const entry = Object.entries(RESULT_LABEL).find(([k,v])=>v===label);
   return entry ? entry[0] : "next";
@@ -2201,7 +2254,7 @@ function importCsvFile(file){
 }
 // CSVテキストそのものを受け取って取り込む共通処理（ファイル選択・サーバー読み込みの両方から呼ばれる）。
 function processCsvText(rawText){
-  const text = String(rawText||"").replace(/^\uFEFF/, "");
+  const text = String(rawText||"").replace(/^﻿/, "");
   const lines = text.split(/\r?\n/).filter(l=>l.trim()!=="");
   if(lines.length < 2){ toast("読み込めるデータがありません"); return; }
   const header = lines[0].split(",").map(h=>h.trim());
@@ -2212,7 +2265,6 @@ function processCsvText(rawText){
   }
 }
 // サイト上（同じNetlifyサイトのルート）に置かれているhanchan.csvをfetchで取得して取り込む。
-// input-app.htmlとhanchan.csvが同じオリジンに配置されている前提（index.htmlからの相対パスと同じ）。
 async function importCsvFromServer(){
   try{
     const res = await fetch("./hanchan.csv", { cache: "no-store" });
@@ -2225,15 +2277,13 @@ async function importCsvFromServer(){
 }
 
 // 局データの「重複」判定キー。日付・半荘No・局・本場・結果種別・各プレイヤーのスタッツが
-// すべて一致する場合のみ同一の局とみなす（チョンボ後のやり直しなど、同じ局・本場でも
-// 結果種別やスタッツが異なる正当なレコードは別物として扱う）。
+// すべて一致する場合のみ同一の局とみなす。
 function kyokuRecordSignature(r){
   return [r.date, r.hanchanNo, r.kyoku, r.honba, r.resultType, JSON.stringify(r.stats)].join("|");
 }
 
 // 標準形式（日付,半荘No,局,本場,結果, [名前,リーチ,副露,ツモ,ロン,放銃,チョンボ,素点]×4人）を読み込む。
 // 素点列が無い古い書き出し（名前あり／名前なし）も引き続き読み込める。
-// 既存データと内容が完全一致する局（同じ日付・半荘No・局・本場・結果・スタッツ）は重複として取り込まない。
 function importWideKyokuCsv(lines){
   const colsPerPlayerScore = 8; // 名前 + 6スタッツ + 素点（現行形式）
   const colsPerPlayerNew = 7;   // 名前 + 6スタッツ（素点列を追加する前の形式）
@@ -2318,12 +2368,6 @@ function importWideKyokuCsv(lines){
 }
 
 // ================= 半荘結果（順位・スコア）のみのロング形式CSV読み込み =================
-// 局の詳細（リーチ・副露など）を持たない「結果のみ」の半荘データを、ロング形式（1行=1半荘×1プレイヤー）で
-// 読み込む。過去大会の集計表（元データシート：半荘ID,年,月日,曜日,回,プレイヤー,素点,スコア,順位）
-// をそのまま読み込めるよう、半荘ID列（YYYYMMDD-NN形式）から日付と半荘Noを復元する。
-// スコア(pt)・順位は取り込み時にこのアプリのMリーグ公式ルール計算式で必ず再計算する（ファイル内の値は使わない）
-// ことで、ウマ・オカの計算方法をアプリ内の記録と完全に統一する。
-
 // 半荘ID（例："20240911-01"）から日付("2024-09-11")と半荘No(1)を復元する。形式が合わなければnull。
 function reverseHanchanIdToDateNo(id){
   const m = /^(\d{4})(\d{2})(\d{2})-(\d+)$/.exec((id||"").trim());
