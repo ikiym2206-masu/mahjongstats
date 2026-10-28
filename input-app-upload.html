@@ -232,6 +232,13 @@
     font-size:17px; font-weight:800; color:var(--ink); background:var(--bg); font-family:inherit;
   }
   .score-input:focus{outline:none; border-color:var(--primary);}
+  /* 素点の符号切替ボタン：スマホのテンキーにマイナスが無い機種向けに、タップでマイナスを付け外しする */
+  .score-sign-btn{
+    width:38px; height:38px; flex:none; border:1.5px solid var(--line); border-radius:10px; background:var(--surface);
+    font-size:18px; font-weight:800; color:var(--houjuu); font-family:inherit; padding:0;
+  }
+  .score-sign-btn:active{background:var(--houjuu-tint);}
+  @media (max-width:360px){ .score-input{width:84px;} .score-input-wrap{gap:6px;} }
   .score-cell{font-weight:800;}
   .score-cell.neg{color:var(--houjuu);}
 
@@ -46327,7 +46334,8 @@ function renderHanchanTab(){
         <div class="nm">${escapeHtml(names[i]||"P"+(i+1))} <span class="n-sub">${seatLabel(i)}</span></div>
         <div class="score-input-wrap">
           <span class="rank-chip rank-preview ${r?'on-'+r:''}">${r||"-"}</span>
-          <input type="number" inputmode="numeric" step="100" class="score-input" placeholder="0"
+          <button type="button" class="score-sign-btn" data-score-sign-key="${key}" data-score-sign-p="${i}">−</button>
+          <input type="text" inputmode="numeric" class="score-input" placeholder="0" autocomplete="off"
             data-score-key="${key}" data-score-p="${i}" value="${val}">
           <span class="n-sub" style="min-width:44px; text-align:right;">${ptPreview}</span>
         </div>
@@ -46489,6 +46497,21 @@ function renderSettings(){
   `;
 }
 
+// 素点の入力文字列を正規化する（全角数字・各種マイナス記号・カンマ・空白を吸収）
+function normalizeScoreText(raw){
+  return String(raw||"")
+    .replace(/[０-９]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+    .replace(/[−－‐‑–—ー▲]/g, "-")
+    .replace(/[,，\s]/g, "");
+}
+// 正規化した素点文字列を整数に変換する。空欄・「-」のみ・数値として不正な場合は null（未入力）。
+function parseScoreInput(raw){
+  const t = normalizeScoreText(raw);
+  if(t === "" || t === "-") return null;
+  const n = Number(t);
+  return isFinite(n) ? Math.trunc(n) : null;
+}
+
 function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function escapeAttr(s){ return escapeHtml(s); }
 
@@ -46645,10 +46668,32 @@ function bindEvents(){
       inp.onchange = ()=>{
         const key = inp.dataset.scoreKey, p = Number(inp.dataset.scoreP);
         if(!state.finalScores[key]) state.finalScores[key] = [null,null,null,null];
-        const raw = inp.value.trim();
-        state.finalScores[key][p] = raw==="" ? null : Math.trunc(Number(raw));
+        state.finalScores[key][p] = parseScoreInput(inp.value);
         saveFinalScores(); render();
       };
+    });
+    // 「−」ボタン：素点の符号を反転する。入力欄のフォーカスを外さないよう pointerdown で処理する
+    // （blur→change→再描画でボタン自体が消え、clickが届かなくなるのを防ぐ）。
+    document.querySelectorAll("[data-score-sign-key]").forEach(b=>{
+      const handle = (e)=>{
+        e.preventDefault();
+        const key = b.dataset.scoreSignKey, p = b.dataset.scoreSignP;
+        const inp = document.querySelector(`[data-score-key="${key}"][data-score-p="${p}"]`);
+        if(!inp) return;
+        const cur = normalizeScoreText(inp.value);
+        if(cur === "" || cur === "-"){
+          // 未入力なら先頭に「-」だけ置いて入力欄へ。続けて数字を打てばマイナスの素点になる
+          inp.value = cur === "-" ? "" : "-";
+          inp.focus();
+          return;
+        }
+        const v = parseScoreInput(cur);
+        if(v === null) return;
+        if(!state.finalScores[key]) state.finalScores[key] = [null,null,null,null];
+        state.finalScores[key][Number(p)] = v === 0 ? 0 : -v;
+        saveFinalScores(); render();
+      };
+      if(window.PointerEvent) b.onpointerdown = handle; else b.onclick = handle;
     });
     document.querySelectorAll("[data-confirm-hanchan]").forEach(b=>b.onclick=()=>{
       const key = b.dataset.confirmHanchan;
