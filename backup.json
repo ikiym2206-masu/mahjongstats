@@ -1,7 +1,7 @@
 {
   "app": "mahjong-stats-backup",
   "version": 3,
-  "exportedAt": "2026-11-06T23:14:28.902Z",
+  "exportedAt": "2026-11-06T23:15:47.981Z",
   "players": [
     "一平",
     "松枝",
@@ -22,9 +22,9 @@
     "松枝"
   ],
   "rankingRange": {
-    "from": "2026-08-01",
+    "from": "2026-11-01",
     "to": "",
-    "weekday": "weekday"
+    "weekday": "weekend"
   },
   "records": [
     {
