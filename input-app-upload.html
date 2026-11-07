@@ -46427,7 +46427,8 @@ function recordSavedAt(rec){
   return null;
 }
 // 終了時刻：記録済み（hanchanEndAt）を優先し、無ければ最後の局の保存時刻で代用する。
-// 所要時間：最初の局の保存時刻〜終了時刻（東1局の打牌時間は含まれないため「約」表記）。
+// 所要時間：最初の局の保存時刻〜終了時刻に、その半荘の1局あたり平均時間を足して東1局分を補う（推定値のため「約」表記）。
+//   1局あたり平均 ＝（最初の局の保存時刻〜終了時刻）÷（保存時刻のある局数−1）
 function hanchanTiming(date, hanchanNo){
   const key = `${date}_${hanchanNo}`;
   const times = state.records
@@ -46438,13 +46439,17 @@ function hanchanTiming(date, hanchanNo){
   if(!end && times.length) end = times[times.length-1];
   if(!end) return null;
   const start = times.length ? times[0] : null;
-  const minutes = (start && end - start >= 60000) ? Math.round((end - start)/60000) : null;
-  return { end, minutes };
+  const span = start ? end - start : 0;
+  const perKyoku = times.length >= 2 ? span / (times.length - 1) : 0; // 東1局分の推定時間
+  const minutes = (start && span >= 60000) ? Math.round((span + perKyoku)/60000) : null;
+  const perKyokuMin = (minutes !== null && perKyoku > 0) ? Math.round(perKyoku/6000)/10 : null; // 局平均時間（分、小数1桁）
+  return { end, minutes, perKyokuMin };
 }
 function fmtHanchanTiming(t){
   if(!t) return "";
   const hm = `${t.end.getHours()}:${String(t.end.getMinutes()).padStart(2,"0")}`;
-  return `⏱${hm}終了${t.minutes!==null ? `（約${t.minutes}分）` : ""}`;
+  const avg = t.perKyokuMin!==null ? `・局平均${t.perKyokuMin.toFixed(1)}分` : "";
+  return `⏱${hm}終了${t.minutes!==null ? `（約${t.minutes}分${avg}）` : ""}`;
 }
 
 // チョンボは発生することが稀なため、発生した場合のみ小さなマークとして選手名の隣に添える。
