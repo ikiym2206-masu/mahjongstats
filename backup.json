@@ -1,7 +1,7 @@
 {
   "app": "mahjong-stats-backup",
   "version": 3,
-  "exportedAt": "2026-11-07T00:21:27.925Z",
+  "exportedAt": "2026-11-07T00:37:58.649Z",
   "players": [
     "一平",
     "松枝",
@@ -42207,6 +42207,7 @@
       8.7
     ]
   },
+  "hanchanEndAt": {},
   "recordPlayers": {
     "2024-09-11_1": [
       "川島",
