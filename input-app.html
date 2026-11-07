@@ -61,7 +61,8 @@
   header.topbar h1{font-size:16px; font-weight:800; letter-spacing:.02em; margin:0; flex:1;}
   header.topbar .sub{font-size:11px; color:var(--muted);}
 
-  main{flex:1; padding:14px calc(14px + var(--safe-right)) calc(88px + var(--safe-bottom)) calc(14px + var(--safe-left)); }
+  /* 下部の余白はタブバーの高さ（約76px）＋余裕分。タブバーを大きくしたら合わせて調整する */
+  main{flex:1; padding:14px calc(14px + var(--safe-right)) calc(106px + var(--safe-bottom)) calc(14px + var(--safe-left)); }
 
   nav.tabbar{
     position:fixed; left:0; right:0; bottom:0; z-index:30;
@@ -69,12 +70,13 @@
     display:flex; padding-bottom:var(--safe-bottom); padding-left:var(--safe-left); padding-right:var(--safe-right);
     max-width:520px; margin:0 auto;
   }
+  /* 下部タブ：押しやすさ優先で大きめ（アイコン24px・文字13px・上下余白14/12px） */
   nav.tabbar button{
-    flex:1; border:none; background:transparent; padding:10px 4px 8px;
-    font-size:11px; color:var(--muted); font-weight:600; display:flex; flex-direction:column;
-    align-items:center; gap:3px; cursor:pointer;
+    flex:1; border:none; background:transparent; padding:14px 4px 12px;
+    font-size:13px; color:var(--muted); font-weight:700; display:flex; flex-direction:column;
+    align-items:center; gap:4px; cursor:pointer; font-family:inherit;
   }
-  nav.tabbar button .ic{font-size:19px;}
+  nav.tabbar button .ic{font-size:24px; line-height:1.15;}
   nav.tabbar button.active{color:var(--primary);}
 
   .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
@@ -281,7 +283,7 @@
 
   .empty{color:var(--muted); font-size:12px; text-align:center; padding:20px 0;}
   .toast{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(96px + var(--safe-bottom));
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(114px + var(--safe-bottom));
     background:var(--primary-dark); color:#fff; padding:9px 16px; border-radius:999px; font-size:12px;
     font-weight:700; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:60;
   }
@@ -449,12 +451,12 @@
     #app{max-width:720px;}
     nav.tabbar{max-width:720px;}
     header.topbar{padding-top:calc(8px + var(--safe-top)); padding-bottom:6px;}
-    main{padding-top:10px; padding-bottom:calc(72px + var(--safe-bottom));}
+    main{padding-top:10px; padding-bottom:calc(84px + var(--safe-bottom));}
     .card{padding:12px 14px; margin-bottom:10px;}
     .toggle-btn{padding:11px 0;}
     .kyoku-grid button{padding:8px 0;}
-    nav.tabbar button{padding:7px 4px 6px;}
-    nav.tabbar button .ic{font-size:16px;}
+    nav.tabbar button{padding:9px 4px 8px; font-size:12px;}
+    nav.tabbar button .ic{font-size:20px;}
     .btn-confirm-rank{padding:11px 0;}
     .table-wrap{padding:10px;}
     .seat-card{padding:6px 5px 7px;}
