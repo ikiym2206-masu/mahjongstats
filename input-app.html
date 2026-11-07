@@ -187,11 +187,13 @@
   /* settings */
   .field{margin-bottom:12px;}
   .field label{display:block; font-size:11px; color:var(--muted); font-weight:700; margin-bottom:4px;}
-  .field input[type=text]{
+  .field input[type=text], .field input[type=password]{
     width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px;
     font-size:15px; background:var(--surface); color:var(--ink); font-weight:700;
   }
-  .field input[type=text]:focus{outline:none; border-color:var(--primary);}
+  .field input[type=text]:focus, .field input[type=password]:focus{outline:none; border-color:var(--primary);}
+  .field-row{display:flex; gap:8px;}
+  .field-row .field{flex:1; margin-bottom:12px;}
   .chip-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
   .chip{padding:5px 10px; border-radius:999px; background:var(--bg); border:1px solid var(--line);
     font-size:11px; color:var(--muted); font-weight:600;}
@@ -336,6 +338,35 @@
   .table-center .h{font-size:10.5px; font-weight:700; opacity:.85; margin-top:2px;}
   .table-center .chev{font-size:9px; opacity:.75; margin-top:4px;}
   .table-center.static{cursor:default; font-size:11px; font-weight:800; line-height:1.5;}
+  /* 詳細入力の卓（.input-table）だけ、リーチ／鳴きボタンを大きく押しやすくする（席選択オーバーレイの卓には影響させない）。
+     中央列を細くして左右の席を広げ、対面・自家は横一列ぶんの行に置いて左右の席と同じ幅で中央寄せにする。 */
+  .table-wrap.input-table{padding:8px;}
+  .input-table .table-grid{
+    --tg-gap:6px;
+    grid-template-columns: 1.2fr 0.8fr 1.2fr;
+    grid-template-areas:
+      "toimen   toimen   toimen"
+      "kamicha  center   shimocha"
+      "jika     jika     jika";
+    gap:var(--tg-gap);
+  }
+  .input-table .seat-toimen, .input-table .seat-jika{
+    justify-self:center; width:calc((100% - 2 * var(--tg-gap)) * 0.375); /* 1.2 / (1.2+0.8+1.2) */
+  }
+  /* 卓のサイズは画面の高さに合わせて伸縮させる（--tb-pad）。縦に長い画面ほどボタンが高くなり、
+     ツモ／ロン／流局ボタンが画面下部（タブバーの直上）付近まで下がる。文字サイズは画面幅に合わせて伸縮させる。 */
+  .input-table{--tb-pad:12px;} /* 実際の値は描画後にfitInputTable()が画面の高さに合わせて上書きする */
+  .input-table .seat-card{padding:calc(var(--tb-pad) * .55) 5px calc(var(--tb-pad) * .65); gap:8px;}
+  /* 座席ラベルとプレイヤー名を1行に横並びにし、名前を大きく表示する（長い名前は…で省略、親バッジは常に表示） */
+  .seat-card-head{display:flex; align-items:baseline; justify-content:center; gap:5px; width:100%; min-width:0; padding:1px 2px 0;}
+  .seat-card-head .seat-card-pos{font-size:clamp(11px, 2.7vw, 13px); margin-bottom:0; flex:none;}
+  .seat-card-head .seat-card-name{font-size:clamp(16px, 4.2vw, 21px); min-width:0; flex:0 1 auto;}
+  .seat-card-head .dealer-badge{margin-left:0; padding:2px 6px; border-radius:7px; font-size:clamp(11px, 2.8vw, 14px); flex:none; align-self:center;}
+  /* リーチ／鳴きは端末幅に関わらず常に縦2段に積み、カード幅いっぱいに広げる */
+  .input-table .seat-card-toggles{flex-direction:column; gap:7px;}
+  .input-table .table-center .k{font-size:clamp(17px, 4.6vw, 23px);}
+  .input-table .table-center .h{font-size:clamp(10.5px, 2.8vw, 13px);}
+  .input-table .toggle-btn.mini{padding:var(--tb-pad) 2px; font-size:clamp(14px, 3.6vw, 18px); border-radius:11px;}
 
   /* 半荘準備・席の修正オーバーレイ内の卓：各席をタップできるボタンとして並べる */
   .table-wrap.compact{padding:10px; margin:4px 0 10px;}
@@ -430,6 +461,7 @@
     .toggle-btn.mini{padding:7px 1px; font-size:10px;}
     .action-btn{padding:11px 0 9px;}
     .seat-pick{padding:8px 4px;}
+    .input-table .toggle-btn.mini{padding:7px 2px; font-size:12px;}
   }
 
   /* 縦画面・横画面のどちらでも、対局者トグル（リーチ／副露／ツモ／ロン／放銃）と着順チップは
@@ -550,8 +582,25 @@ function validateAgariHoujuuConsistency(){
   return true;
 }
 
+// ランキング条件の初期値：開いた日の当月1日〜（終了日なし）・曜日は「すべて」。
+// 端末にもバックアップにも保存された条件が無い場合だけ使う（保存された条件があればそちらを優先する）。
+function defaultRankingRange(){
+  return { from: todayStr().slice(0,7) + "-01", to: "", weekday: "all" };
+}
+
+// GitHub連携（Contents API）の既定リポジトリ。設定タブで各自変更可能。
+const DEFAULT_GITHUB_OWNER = "ikiym2206-masu";
+const DEFAULT_GITHUB_REPO = "mahjongstats";
+const DEFAULT_GITHUB_PATH = "backup.json";
+
 let state = {
   tab: "input",
+  github: {
+    owner: DEFAULT_GITHUB_OWNER, repo: DEFAULT_GITHUB_REPO, path: DEFAULT_GITHUB_PATH, token: "",
+    syncing: false, lastSyncAt: null, lastError: null,
+  },
+  seatFixPending: [], // 席・起家を修正したがまだGitHubへ送信していない半荘キー（GitHubとのマージ時にローカル側を優先する）
+  membersPending: false, // 既定メンバー・プレイヤーリストを変更したがまだGitHubへ送信していない印（GitHubとのマージ時にローカル側を優先する）
   players: DEFAULT_PLAYERS.slice(), // 既定メンバー：次に始める半荘の準備オーバーレイの初期値としてのみ使う（進行中・記録済みの半荘の表示には使わない）
   playerRoster: [],  // 事前登録されたプレイヤー名リスト（対局者4人はこの中から選択する）
   records: [],      // {id, date, hanchanNo, kyoku, honba, resultType, stats:[[riichi,fuuro,tsumo,ron,houjuu,chombo]x4]}
@@ -563,7 +612,8 @@ let state = {
   dealers: {},       // `${date}_${hanchanNo}` -> [東家idx, 南家idx, 西家idx, 北家idx]（idx＝卓上の位置 0自家/1下家/2対面/3上家）
   recordPlayers: {}, // `${date}_${hanchanNo}` -> [自家,下家,対面,上家の名前]。その半荘の名前の唯一の出どころ。
                       //   半荘開始（準備オーバーレイ確定）時に作成し、変更は「席の修正」だけで行う。
-  rankingRange: { from: "", to: "", weekday: "all" }, // ランキングタブの期間フィルタ・曜日フィルタ（all/weekday/weekend）
+  rankingRange: defaultRankingRange(), // ランキングタブの期間フィルタ・曜日フィルタ（all/weekday/weekend）。保存された条件が無い端末では「開いた月の1日〜・すべて」
+  rankingPending: false, // ランキング条件を変更したがまだGitHubへ送信していない印（GitHubとのマージ時にローカル側を優先する）
   current: { date: todayStr(), hanchanNo: 1, kyoku: 0, honba: 0, toggles: emptyToggles() },
   editingId: null,
   editBackup: null,
@@ -602,18 +652,31 @@ function localSet(key, value){
   }catch(e){ return false; }
 }
 async function storageGet(key){ return localGet(key); }
+// 通常保存（端末内localStorage）のみ行う。GitHubへの送信は自動では行わず、
+// 設定タブの「⬆️ 今すぐGitHubへ送信」ボタンを押した時だけ行う（手動同期）。
 async function storageSet(key, value){ if(!localSet(key, value)) state.storageOk = false; }
 
 async function loadAll(){
-  const [settings, records, ranks, dealers, hanchanConfirmed, finalScores, finalPoints, recordPlayers] = await Promise.all([
+  const [settings, records, ranks, dealers, hanchanConfirmed, finalScores, finalPoints, recordPlayers, githubSettings] = await Promise.all([
     storageGet("mj-settings"), storageGet("mj-records"), storageGet("mj-ranks"), storageGet("mj-dealers"),
     storageGet("mj-hanchan-confirmed"), storageGet("mj-final-scores"), storageGet("mj-final-points"),
-    storageGet("mj-record-players")
+    storageGet("mj-record-players"), storageGet("mj-github-settings")
   ]);
+  const seatFixPending = await storageGet("mj-seatfix-pending");
+  if(Array.isArray(seatFixPending)) state.seatFixPending = seatFixPending;
+  state.membersPending = (await storageGet("mj-members-pending")) === true;
+  state.rankingPending = (await storageGet("mj-ranking-pending")) === true;
   if(settings){
     state.players = settings.players && settings.players.length===4 ? settings.players : DEFAULT_PLAYERS.slice();
     state.playerRoster = settings.playerRoster || settings.usedNames || [];
     state.inputMode = settings.inputMode === "simple" ? "simple" : "detail";
+    applyRankingRange(settings.rankingRange);
+  }
+  if(githubSettings){
+    state.github.owner = githubSettings.owner || DEFAULT_GITHUB_OWNER;
+    state.github.repo = githubSettings.repo || DEFAULT_GITHUB_REPO;
+    state.github.path = githubSettings.path || DEFAULT_GITHUB_PATH;
+    state.github.token = githubSettings.token || "";
   }
   if(!state.playerRoster.length) state.playerRoster = DEFAULT_PLAYERS.slice(); // 初回起動時は既定名をリストの初期値にする
   if(records) state.records = records;
@@ -636,7 +699,7 @@ async function loadAll(){
   render();
 }
 
-function saveSettings(){ storageSet("mj-settings", {players: state.players, playerRoster: state.playerRoster, inputMode: state.inputMode}); }
+function saveSettings(){ storageSet("mj-settings", {players: state.players, playerRoster: state.playerRoster, inputMode: state.inputMode, rankingRange: state.rankingRange}); }
 function saveRecords(){ storageSet("mj-records", state.records); }
 function saveRanks(){ storageSet("mj-ranks", state.ranks); }
 function saveDealers(){ storageSet("mj-dealers", state.dealers); }
@@ -645,6 +708,18 @@ function saveFinalScores(){ storageSet("mj-final-scores", state.finalScores); }
 function saveFinalPoints(){ storageSet("mj-final-points", state.finalPoints); }
 function saveHanchanEndAt(){ storageSet("mj-hanchan-end-at", state.hanchanEndAt); }
 function saveRecordPlayers(){ storageSet("mj-record-players", state.recordPlayers); }
+function saveSeatFixPending(){ storageSet("mj-seatfix-pending", state.seatFixPending); }
+// 既定メンバー・プレイヤーリストをこの端末で変更したら呼ぶ。GitHubへ送信するまでは、マージ時にGitHub側で上書きしない。
+function markMembersPending(){ state.membersPending = true; storageSet("mj-members-pending", true); }
+// ランキング条件をこの端末で変更したら呼ぶ。GitHubへ送信するまでは、マージ時にGitHub側で上書きしない。
+function markRankingPending(){ state.rankingPending = true; storageSet("mj-ranking-pending", true); }
+function clearRankingPending(){ state.rankingPending = false; storageSet("mj-ranking-pending", false); }
+function clearMembersPending(){ state.membersPending = false; storageSet("mj-members-pending", false); }
+function saveGithubSettings(){
+  storageSet("mj-github-settings", {
+    owner: state.github.owner, repo: state.github.repo, path: state.github.path, token: state.github.token,
+  });
+}
 
 // その半荘（date_hanchanNo）の対局者名を返す。画面表示・保存・集計のすべてがこの関数を経由する（名前の出どころを1か所に統一）。
 // スナップショットがまだ無い半荘（準備前・簡易入力の未記録など）だけは、既定メンバー（players）を使う。
@@ -669,7 +744,7 @@ function ensureRecordPlayersSnapshot(date, hanchanNo){
 function buildBackupPayload(){
   return {
     app: "mahjong-stats-backup", version: 3, exportedAt: new Date().toISOString(),
-    players: state.players, playerRoster: state.playerRoster,
+    players: state.players, playerRoster: state.playerRoster, rankingRange: state.rankingRange,
     records: state.records, ranks: state.ranks, dealers: state.dealers,
     hanchanConfirmed: state.hanchanConfirmed, finalScores: state.finalScores, finalPoints: state.finalPoints,
     hanchanEndAt: state.hanchanEndAt,
@@ -685,6 +760,260 @@ function exportBackup(){
   URL.revokeObjectURL(url);
   toast("バックアップを保存しました");
 }
+// ---------- GitHub連携（Contents APIでbackup.jsonへ直接コミットする） ----------
+// トークン・owner・repo・pathが揃っている場合のみ動作する。未設定なら何もしない
+// （＝従来のローカル保存のみの動作にフォールバックする）。
+function githubConfigured(){
+  const g = state.github;
+  return !!(g.token && g.owner && g.repo && g.path);
+}
+
+let githubSyncInFlight = false;
+
+async function runGithubSync(){
+  if(!githubConfigured()) return;
+  if(githubSyncInFlight) return; // 同期中に重ねて押された場合は何もしない（手動操作なので再試行は行わない）
+  githubSyncInFlight = true;
+  state.github.syncing = true;
+  updateGithubStatusUi();
+  try{
+    await uploadBackupToGithub();
+    state.github.lastError = null;
+    state.github.lastSyncAt = new Date().toISOString();
+  }catch(e){
+    state.github.lastError = (e && e.message) ? e.message : String(e);
+    toast(`⚠️ GitHubへの同期に失敗しました：${state.github.lastError}`);
+  }finally{
+    githubSyncInFlight = false;
+    state.github.syncing = false;
+    updateGithubStatusUi();
+  }
+}
+
+// UTF-8文字列（日本語名を含むJSON）をBase64へ変換する。GitHub Contents APIはcontentをBase64で受け取るため。
+function utf8ToBase64(str){
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return btoa(binary);
+}
+// Base64（GitHub Contents APIが返すcontent。60桁ごとに改行が入る）をUTF-8文字列へ戻す。
+function base64ToUtf8(b64){
+  const binary = atob(b64.replace(/\n/g, ""));
+  const bytes = new Uint8Array(binary.length);
+  for(let i=0; i<binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+// ---------- GitHub上の最新データをローカルへ取り込む（プル・マージ） ----------
+// 複数端末で入力する際、自分の端末のローカルキャッシュが古いまま保存すると、
+// 他の端末が既にGitHubへ送信した記録を消してしまう事故が起きうる。これを防ぐため、
+// 「GitHub側を正として、ローカルにしかない未送信分だけを重ねる」マージを、
+// (a)送信直前（uploadBackupToGithub内）、(b)設定タブの「⬇️ 最新をGitHubから取得」ボタン、の2箇所で行う
+// （どちらもボタン操作時のみ。起動時・バックグラウンド復帰時の自動取得は行わない）。
+//
+// マージ方針：
+// - records：id基準の和集合。同じidはGitHub側の内容を採用し、ローカルにしかないidのみ追加する。
+// - 半荘キー(`date_hanchanNo`)付きマップ（ranks/dealers/finalScores/finalPoints/hanchanConfirmed/recordPlayers）：
+//   GitHub側をベースに、ローカルにしかないキーのみ追加する。
+// - プレイヤー名リスト・対局メンバー・ランキング条件はGitHub側を優先する（変更頻度が低く、共有側を正とする）。
+//   ただし、この端末で変更して未送信のもの（membersPending／rankingPending）がある間はローカル側を優先する。
+// 双方が同じレコード／同じ半荘キーをほぼ同時に編集した場合はGitHub側が優先され、ローカルの
+// その変更分は失われる点は既知の制約（身内の少人数運用を前提に、完全な競合解決までは行わない）。
+function mergeRemoteIntoState(remote){
+  let localOnlyAdded = false;
+  let remoteHasNew = false;
+  let rankingChanged = false;
+
+  // 「席・起家の修正」をした未送信の半荘は、名前・座席・各局のスタッツの並びをローカル側で入れ替えているため、
+  // その半荘に限っては同じid・同じキーでもローカル側を優先する（GitHub側の古い並びで上書きすると、
+  // 名前と記録の位置がずれる＝誰の成績かが入れ替わってしまうため）。送信が成功したら印を消す。
+  const fixedKeys = new Set(state.seatFixPending || []);
+  const isFixed = r => fixedKeys.has(`${r.date}_${r.hanchanNo}`);
+  const localById = new Map(state.records.map(r=>[r.id, r]));
+  const prevIds = new Set(state.records.map(r=>r.id));
+  remoteHasNew = remote.records.some(r=>!prevIds.has(r.id));
+  const remoteIds = new Set(remote.records.map(r=>r.id));
+  const localOnlyRecords = state.records.filter(r=>!remoteIds.has(r.id));
+  if(localOnlyRecords.length) localOnlyAdded = true;
+  state.records = remote.records.map(r=>{
+    const local = localById.get(r.id);
+    return (local && isFixed(local)) ? local : r;
+  }).concat(localOnlyRecords);
+
+  const mergeMap = (remoteMap, localMap)=>{
+    remoteMap = remoteMap || {};
+    localMap = localMap || {};
+    if(Object.keys(remoteMap).some(k=>!(k in localMap))) remoteHasNew = true;
+    const merged = Object.assign({}, remoteMap);
+    Object.keys(localMap).forEach(k=>{
+      if(!(k in merged)){ merged[k] = localMap[k]; localOnlyAdded = true; }
+      else if(fixedKeys.has(k)){ merged[k] = localMap[k]; } // 席・起家を修正した半荘はローカル優先
+    });
+    return merged;
+  };
+  state.ranks = mergeMap(remote.ranks, state.ranks);
+  state.dealers = mergeMap(remote.dealers, state.dealers);
+  state.finalScores = mergeMap(remote.finalScores, state.finalScores);
+  state.finalPoints = mergeMap(remote.finalPoints, state.finalPoints);
+  state.hanchanEndAt = mergeMap(remote.hanchanEndAt, state.hanchanEndAt);
+  state.hanchanConfirmed = mergeMap(remote.hanchanConfirmed, state.hanchanConfirmed);
+  state.recordPlayers = mergeMap(remote.recordPlayers, state.recordPlayers);
+
+  // この端末で変更した未送信の既定メンバー・プレイヤーリストがある場合はローカル側を優先する（送信前のマージで消さないため）
+  if(!state.membersPending){
+    if(remote.players && remote.players.length===4) state.players = remote.players;
+    if(remote.playerRoster) state.playerRoster = remote.playerRoster;
+  }
+
+  // ランキング条件もGitHub側に合わせる（GitHub側に条件が無ければ現在の条件のまま）。
+  // この端末で変更して未送信の条件がある場合はローカル側を優先する。
+  if(!state.rankingPending && remote.rankingRange){
+    const before = JSON.stringify(state.rankingRange);
+    applyRankingRange(remote.rankingRange);
+    if(JSON.stringify(state.rankingRange) !== before) rankingChanged = true;
+  }
+
+  persistMergedStateLocally();
+  return { localOnlyAdded, remoteHasNew, rankingChanged };
+}
+
+// マージ結果をlocalStorageへ書き込む。
+function persistMergedStateLocally(){
+  localSet("mj-settings", {players: state.players, playerRoster: state.playerRoster, inputMode: state.inputMode, rankingRange: state.rankingRange});
+  localSet("mj-records", state.records);
+  localSet("mj-ranks", state.ranks);
+  localSet("mj-dealers", state.dealers);
+  localSet("mj-hanchan-confirmed", state.hanchanConfirmed);
+  localSet("mj-final-scores", state.finalScores);
+  localSet("mj-final-points", state.finalPoints);
+  localSet("mj-hanchan-end-at", state.hanchanEndAt);
+  localSet("mj-record-players", state.recordPlayers);
+}
+
+// 入力再開位置（半荘No・局・本場）を、現在のrecordsから再計算する。対局日付は常に「今日」を維持する。
+// 編集中の入力を壊さないよう、アプリ起動直後（まだ何も入力していない状態）でのみ呼ぶ。
+function recomputeCurrentPosition(){
+  state.current.date = todayStr();
+  const pos = resumePositionForDate(state.current.date);
+  state.current.hanchanNo = pos.hanchanNo;
+  state.current.kyoku = pos.kyoku;
+  state.current.honba = pos.honba;
+}
+
+// GitHub上の最新backup.jsonを取得してローカルへマージする。
+// opts.silent: trueならエラーをトースト表示しない（バックグラウンド復帰時など、頻繁に走る場面で使う）
+// opts.initial: trueなら取り込み後に入力再開位置も再計算する（起動直後のみ）
+async function pullLatestFromGithub(opts){
+  opts = opts || {};
+  if(!githubConfigured()) return;
+  const { owner, repo, path, token } = state.github;
+  const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}`;
+  const headers = { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github+json" };
+  let res;
+  try{
+    res = await fetch(apiUrl, { headers, cache: "no-store" });
+  }catch(e){
+    if(!opts.silent) toast("GitHubから最新データを取得できませんでした（通信エラー）");
+    return;
+  }
+  if(res.status === 404) return; // まだファイルが存在しない（初回保存前）
+  if(res.status === 401 || res.status === 403){
+    state.github.lastError = "トークンが無効か、権限が不足しています";
+    if(!opts.silent) toast(`⚠️ ${state.github.lastError}`);
+    updateGithubStatusUi();
+    return;
+  }
+  if(res.status !== 200){
+    if(!opts.silent) toast(`GitHubから最新データを取得できませんでした（${res.status}）`);
+    return;
+  }
+  let remote;
+  try{
+    const info = await res.json();
+    remote = JSON.parse(base64ToUtf8(info.content));
+  }catch(e){
+    if(!opts.silent) toast("GitHub上のデータ形式を読み取れませんでした");
+    return;
+  }
+  if(!remote || !Array.isArray(remote.records)) return { remoteHasNew:false, localOnlyAdded:false };
+  const { localOnlyAdded, remoteHasNew, rankingChanged } = mergeRemoteIntoState(remote);
+  if(opts.initial) recomputeCurrentPosition();
+  if(remoteHasNew || localOnlyAdded || rankingChanged) render();
+  if(remoteHasNew) toast("GitHubの最新データを取り込みました");
+  else if(rankingChanged) toast("GitHubのランキング条件を取り込みました");
+  // ローカルにしかない分がある場合も自動送信はしない（手動同期）。必要なら「⬆️ 今すぐGitHubへ送信」を押してもらう。
+  return { remoteHasNew, localOnlyAdded, rankingChanged };
+}
+
+// GitHub Contents APIで対象ファイルを取得（sha取得）→内容を書き換えてPUT（コミット）する。
+// 他の人がほぼ同時に保存してsha不一致（409）になった場合は、最新shaを取り直して1回だけ自動リトライする。
+async function uploadBackupToGithub(retryCount){
+  retryCount = retryCount || 0;
+  const { owner, repo, path, token } = state.github;
+  const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}`;
+  const headers = { "Authorization": `Bearer ${token}`, "Accept": "application/vnd.github+json" };
+
+  let sha = null;
+  const getRes = await fetch(apiUrl, { headers, cache: "no-store" });
+  if(getRes.status === 200){
+    const info = await getRes.json();
+    sha = info.sha;
+    // pushする前に、GitHub側の最新内容をこの時点でローカルへマージしておく。
+    // 他の端末が自分より先に保存していた場合、その内容を消さずに含めてから書き戻すため。
+    try{
+      const remote = JSON.parse(base64ToUtf8(info.content));
+      if(remote && Array.isArray(remote.records)){
+        const { remoteHasNew, rankingChanged } = mergeRemoteIntoState(remote);
+        if(remoteHasNew || rankingChanged) render();
+      }
+    }catch(e){ /* 解析できなければローカルの内容だけで続行する */ }
+  }else if(getRes.status === 401 || getRes.status === 403){
+    throw new Error("トークンが無効か、権限が不足しています");
+  }else if(getRes.status !== 404){
+    throw new Error(`ファイル情報の取得に失敗（${getRes.status}）`);
+  }
+
+  const content = utf8ToBase64(JSON.stringify(buildBackupPayload(), null, 2));
+  const body = { message: `update backup.json (input-app / ${new Date().toISOString()})`, content };
+  if(sha) body.sha = sha;
+
+  const putRes = await fetch(apiUrl, {
+    method: "PUT",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if(putRes.status === 200 || putRes.status === 201){
+    state.seatFixPending = []; // 送信済みになったので、席・起家修正のローカル優先は解除する
+    saveSeatFixPending();
+    clearMembersPending(); // 既定メンバー・プレイヤーリストのローカル優先も解除する
+    clearRankingPending(); // ランキング条件のローカル優先も解除する
+    return;
+  }
+  if(putRes.status === 409 && retryCount < 2){ await uploadBackupToGithub(retryCount + 1); return; }
+  if(putRes.status === 401 || putRes.status === 403) throw new Error("トークンが無効か、権限が不足しています");
+  throw new Error(`保存に失敗しました（${putRes.status}）`);
+}
+
+// 設定タブの「最終同期」表示だけを、再描画（render）なしで更新する。
+// render()を呼ぶとトークン入力中などにフォーカスが失われてしまうため、DOM直接更新にしている。
+function githubStatusLabel(){
+  if(!githubConfigured()) return "未設定です（トークン・owner・repoを入力して保存してください）";
+  if(state.github.syncing) return "🔄 GitHubへ同期中…";
+  if(state.github.lastError) return `⚠️ 前回の同期に失敗しました：${state.github.lastError}`;
+  if(state.github.lastSyncAt) return `✅ 最終同期：${formatDateTimeJa(state.github.lastSyncAt)}`;
+  return "まだ同期していません";
+}
+function formatDateTimeJa(isoStr){
+  const d = new Date(isoStr);
+  const p = n => String(n).padStart(2,"0");
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function updateGithubStatusUi(){
+  const el = document.getElementById("githubStatusText");
+  if(el) el.textContent = githubStatusLabel();
+}
+
 // Viewer遷移時に、この端末の記録データをlocalStorage経由で1回だけ引き継ぐための書き込み。
 // （同一オリジンのためlocalStorageを共有できる。Viewer側は読み込み後すぐにこのキーを削除する）
 const VIEWER_HANDOFF_KEY = "mj-viewer-handoff";
@@ -705,6 +1034,15 @@ function parseBackupJson(rawText){
   if(!data || !Array.isArray(data.records)) return null;
   return data;
 }
+// ランキングの期間・曜日条件を反映する（settings／backup.json に保存されている場合のみ。無ければ現在値のまま）。
+function applyRankingRange(rr){
+  if(!rr || typeof rr !== "object") return;
+  state.rankingRange = {
+    from: typeof rr.from === "string" ? rr.from : "",
+    to: typeof rr.to === "string" ? rr.to : "",
+    weekday: ["all","weekday","weekend"].includes(rr.weekday) ? rr.weekday : "all",
+  };
+}
 // 検証済みのバックアップデータを現在の状態に適用して保存する（確認ダイアログは呼び出し側の責任）。
 function applyBackupData(data){
   state.players = (data.players && data.players.length===4) ? data.players : state.players;
@@ -717,8 +1055,11 @@ function applyBackupData(data){
   state.finalPoints = data.finalPoints || {};
   state.hanchanEndAt = data.hanchanEndAt || {};
   state.recordPlayers = data.recordPlayers || {};
+  applyRankingRange(data.rankingRange);
   saveSettings(); saveRecords(); saveRanks(); saveDealers(); saveHanchanConfirmed();
   saveFinalScores(); saveFinalPoints(); saveRecordPlayers(); saveHanchanEndAt();
+  clearMembersPending(); // バックアップの内容で置き換えたので、未送信の変更扱いは解除する
+  clearRankingPending();
 }
 // バックアップJSONのテキストそのものを受け取って復元する共通処理（ファイル選択・サーバー読み込みの両方から呼ばれる）。
 // 既存データがある状態からの上書きなので、実行前に確認ダイアログを出す。
@@ -730,7 +1071,7 @@ function processBackupText(rawText){
   render();
   toast("バックアップを復元しました");
 }
-// サイト上（同じNetlifyサイトのルート）に置かれているbackup.jsonをfetchで取得して復元する。
+// このアプリと同じサイトのルートに置かれているbackup.jsonをfetchで取得して復元する。
 async function importBackupFromServer(){
   try{
     const res = await fetch("./backup.json", { cache: "no-store" });
@@ -1152,6 +1493,7 @@ function render(){
     ${state.showWelcomeBackupPrompt ? renderWelcomeBackupPrompt() : ""}
   `;
   bindEvents();
+  fitInputTable();
   if(state.tab==="hanchan" && state.scrollToHanchanKey){
     const key = state.scrollToHanchanKey;
     state.scrollToHanchanKey = null;
@@ -1262,8 +1604,10 @@ function renderDetailInput(){
     const badge = i===dealerIndex ? '<span class="dealer-badge">親</span>' : '';
     return `
       <div class="seat-card ${POS_CLASSES[i]} ${i===dealerIndex?'is-dealer':''}">
-        <div class="seat-card-pos">${POS_LABELS[i]}</div>
-        <div class="seat-card-name">${escapeHtml(name || "プレイヤー"+(i+1))}${badge}</div>
+        <div class="seat-card-head">
+          <span class="seat-card-pos">${POS_LABELS[i]}</span>
+          <span class="seat-card-name">${escapeHtml(name || "プレイヤー"+(i+1))}</span>${badge}
+        </div>
         <div class="seat-card-toggles">
           <button class="toggle-btn mini riichi ${t[K_RIICHI]?'on':''}" data-p="${i}" data-k="${K_RIICHI}">リーチ</button>
           <button class="toggle-btn mini fuuro ${t[K_FUURO]?'on':''}" data-p="${i}" data-k="${K_FUURO}">鳴き</button>
@@ -1321,7 +1665,7 @@ function renderDetailInput(){
     </div>
     ${headerDetails}
 
-    <div class="table-wrap">
+    <div class="table-wrap input-table">
       <div class="table-grid">
         ${seatCards}
         <div class="table-center" id="tableCenterToggle">
@@ -1563,6 +1907,7 @@ function startHanchanWithStarter(starter){
   const key = `${cur.date}_${cur.hanchanNo}`;
   state.players = ov.players.slice();
   saveSettings();
+  markMembersPending();
   state.recordPlayers[key] = ov.players.slice();
   saveRecordPlayers();
   setSeatOrder(cur.date, cur.hanchanNo, seatOrderFromStarter(starter));
@@ -1619,9 +1964,12 @@ function confirmSeatFix(){
   if(identity && ov.starter === seatOrder[0]){ state.overlay = null; render(); return; }
   applySeatFix(cur.date, cur.hanchanNo, ov.perm, ov.starter);
   cur.toggles = permuteArray(cur.toggles, ov.perm);
+  const fixedKey = `${cur.date}_${cur.hanchanNo}`;
+  if(!state.seatFixPending.includes(fixedKey)){ state.seatFixPending.push(fixedKey); saveSeatFixPending(); }
   // 修正後の並びを既定メンバーにも反映し、次の半荘の初期値にする
   state.players = currentNames().slice();
   saveSettings();
+  markMembersPending();
   state.overlay = null;
   render();
   toast("席・起家を修正しました");
@@ -1904,6 +2252,35 @@ function renderSettings(){
       <a class="btn-ghost" href="viewer-app.html" id="openViewerBtn" style="display:block; text-align:center; box-sizing:border-box; text-decoration:none;">📊 Viewerを開く</a>
     </div>
     <div class="card">
+      <h2>GitHub連携（手動同期）</h2>
+      <div class="empty" style="text-align:left; padding:0 0 10px;">
+        「⬇️ 最新をGitHubから取得」「⬆️ 今すぐGitHubへ送信」のボタンを押した時だけ、GitHubリポジトリ上のbackup.jsonと同期します（自動同期は行いません）。他のメンバーのViewerに反映するには、送信後に相手側で取得しなおしてもらう必要があります。初回のみ、GitHub Personal Access Token（Fine-grained・対象リポジトリのContents: Read and write権限）の設定が必要です。
+      </div>
+      <div class="field">
+        <label>Personal Access Token</label>
+        <input type="password" id="githubTokenInput" placeholder="github_pat_..." value="${escapeAttr(state.github.token)}" autocomplete="off">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>owner</label>
+          <input type="text" id="githubOwnerInput" placeholder="owner" value="${escapeAttr(state.github.owner)}">
+        </div>
+        <div class="field">
+          <label>repo</label>
+          <input type="text" id="githubRepoInput" placeholder="repo" value="${escapeAttr(state.github.repo)}">
+        </div>
+      </div>
+      <div class="field">
+        <label>ファイルパス</label>
+        <input type="text" id="githubPathInput" placeholder="backup.json" value="${escapeAttr(state.github.path)}">
+      </div>
+      <button class="btn-ghost" id="saveGithubSettingsBtn">GitHub設定を保存</button>
+      <button class="btn-ghost" id="githubPullNowBtn" style="margin-top:8px;">⬇️ 最新をGitHubから取得</button>
+      <button class="btn-ghost" id="githubSyncNowBtn" style="margin-top:8px;">⬆️ 今すぐGitHubへ送信</button>
+      <div class="empty" style="text-align:left; padding:10px 0 0;">「⬆️ 今すぐGitHubへ送信」を押すと、送信直前にGitHub側の最新内容を取り込んでからコミットします（記録は半荘ごとのid単位でマージされるため、別々の半荘を別端末で入力した分は基本的に両方残ります）。</div>
+      <div class="empty" id="githubStatusText" style="text-align:left; padding:10px 0 0; font-size:12px;">${githubStatusLabel()}</div>
+    </div>
+    <div class="card">
       <h2>データ管理</h2>
       <button class="btn-ghost" id="exportBtn">CSVで書き出す</button>
       <label class="btn-ghost" style="display:block; text-align:center; margin-top:8px; cursor:pointer;">
@@ -2179,11 +2556,11 @@ function bindEvents(){
   }
   if(state.tab==="ranking"){
     const rankingFrom = document.getElementById("rankingFrom");
-    if(rankingFrom) rankingFrom.onchange = ()=>{ state.rankingRange.from = rankingFrom.value; render(); };
+    if(rankingFrom) rankingFrom.onchange = ()=>{ state.rankingRange.from = rankingFrom.value; saveSettings(); markRankingPending(); render(); };
     const rankingTo = document.getElementById("rankingTo");
-    if(rankingTo) rankingTo.onchange = ()=>{ state.rankingRange.to = rankingTo.value; render(); };
+    if(rankingTo) rankingTo.onchange = ()=>{ state.rankingRange.to = rankingTo.value; saveSettings(); markRankingPending(); render(); };
     document.querySelectorAll("[data-weekday]").forEach(b=>b.onclick=()=>{
-      state.rankingRange.weekday = b.dataset.weekday; render();
+      state.rankingRange.weekday = b.dataset.weekday; saveSettings(); markRankingPending(); render();
     });
   }
   if(state.tab==="settings"){
@@ -2203,19 +2580,19 @@ function bindEvents(){
       if(!val){ toast("名前を入力してください"); return; }
       if(state.playerRoster.includes(val)){ toast("すでにリストにあります"); return; }
       state.playerRoster.push(val);
-      saveSettings(); render(); toast("リストに追加しました");
+      saveSettings(); markMembersPending(); render(); toast("リストに追加しました");
     };
     document.querySelectorAll("[data-roster-del]").forEach(b=>b.onclick=()=>{
       const name = b.dataset.rosterDel;
       state.playerRoster = state.playerRoster.filter(n=>n!==name);
-      saveSettings(); render(); toast("リストから削除しました");
+      saveSettings(); markMembersPending(); render(); toast("リストから削除しました");
     });
     document.querySelectorAll("[data-player-select]").forEach(sel=>{
       sel.onchange = ()=>{
         const i = Number(sel.dataset.playerSelect);
         state.players[i] = sel.value;
-        saveSettings(); render();
-        toast(currentHanchanInProgress() ? "保存しました（進行中の半荘には反映されません）" : "保存しました");
+        saveSettings(); markMembersPending(); render();
+        toast(currentHanchanInProgress() ? "保存しました（進行中の半荘には反映されません）。共有するには「GitHubへ送信」" : "保存しました。共有するには「GitHubへ送信」");
       };
     });
     const exportBackupBtn = document.getElementById("exportBackupBtn");
@@ -2231,6 +2608,29 @@ function bindEvents(){
     if(importBackupUrlBtn) importBackupUrlBtn.onclick = importBackupFromServer;
     const resetAllDataBtn = document.getElementById("resetAllDataBtn");
     if(resetAllDataBtn) resetAllDataBtn.onclick = resetAllData;
+    const saveGithubSettingsBtn = document.getElementById("saveGithubSettingsBtn");
+    if(saveGithubSettingsBtn) saveGithubSettingsBtn.onclick = ()=>{
+      state.github.token = (document.getElementById("githubTokenInput").value || "").trim();
+      state.github.owner = (document.getElementById("githubOwnerInput").value || "").trim() || DEFAULT_GITHUB_OWNER;
+      state.github.repo = (document.getElementById("githubRepoInput").value || "").trim() || DEFAULT_GITHUB_REPO;
+      state.github.path = (document.getElementById("githubPathInput").value || "").trim() || DEFAULT_GITHUB_PATH;
+      state.github.lastError = null;
+      saveGithubSettings();
+      toast(githubConfigured() ? "GitHub設定を保存しました" : "GitHub設定を保存しました（未入力の項目があるため同期は行われません）");
+      updateGithubStatusUi();
+    };
+    const githubSyncNowBtn = document.getElementById("githubSyncNowBtn");
+    if(githubSyncNowBtn) githubSyncNowBtn.onclick = ()=>{
+      if(!githubConfigured()){ toast("先にトークン・owner・repoを保存してください"); return; }
+      runGithubSync();
+    };
+    const githubPullNowBtn = document.getElementById("githubPullNowBtn");
+    if(githubPullNowBtn) githubPullNowBtn.onclick = ()=>{
+      if(!githubConfigured()){ toast("先にトークン・owner・repoを保存してください"); return; }
+      pullLatestFromGithub({}).then(result=>{
+        if(result && !result.remoteHasNew && !result.localOnlyAdded && !result.rankingChanged) toast("最新の状態です（変更はありませんでした）");
+      });
+    };
   }
 }
 
@@ -2406,7 +2806,7 @@ function processCsvText(rawText){
     importWideKyokuCsv(lines);
   }
 }
-// サイト上（同じNetlifyサイトのルート）に置かれているhanchan.csvをfetchで取得して取り込む。
+// このアプリと同じサイトのルートに置かれているhanchan.csvをfetchで取得して取り込む。
 async function importCsvFromServer(){
   try{
     const res = await fetch("./hanchan.csv", { cache: "no-store" });
@@ -2586,6 +2986,47 @@ function importLegacyHanchanResultsCsv(lines, header){
   render();
   toast(`${validGroups.length}件の半荘結果を取り込みました`);
 }
+
+// 詳細入力の卓の高さを画面に合わせる：ツモ／ロン／流局ボタンの下端がタブバーのすぐ上に来るよう、
+// リーチ／鳴きボタンの上下余白（--tb-pad、8〜24px）を実測しながら調整する。
+// 詳細設定を開いている間は高さを変えず、閉じた状態で求めた値をそのまま使う（開閉で卓のサイズが変わらないように）。
+const FIT_TB_PAD_MIN = 8, FIT_TB_PAD_MAX = 24, FIT_TB_MARGIN = 6;
+function fitInputTable(){
+  const wrap = document.querySelector(".table-wrap.input-table");
+  const bar = document.querySelector(".action-bar");
+  const tab = document.querySelector("nav.tabbar");
+  if(!wrap || !bar || !tab) return;
+  if(fitInputTable.pad && (!state.tableHeaderCollapsed || state.editingId)){
+    wrap.style.setProperty("--tb-pad", fitInputTable.pad + "px");
+    return;
+  }
+  let pad = fitInputTable.pad || 12;
+  const target = window.innerHeight - tab.offsetHeight - FIT_TB_MARGIN; // タブバー上端（スクロール0の状態での位置）
+  for(let i=0; i<8; i++){
+    wrap.style.setProperty("--tb-pad", pad + "px");
+    const barBottom = bar.getBoundingClientRect().bottom + window.scrollY;
+    const diff = target - barBottom;
+    if(Math.abs(diff) < 1.5) break;
+    const next = Math.min(FIT_TB_PAD_MAX, Math.max(FIT_TB_PAD_MIN, pad + diff / 13));
+    if(Math.abs(next - pad) < 0.1) break;
+    pad = next;
+  }
+  // 端数で少しはみ出す場合は少しずつ戻して確実にタブバーの上に収める
+  for(let i=0; i<8 && pad > FIT_TB_PAD_MIN; i++){
+    if(bar.getBoundingClientRect().bottom + window.scrollY <= target + 0.5) break;
+    pad = Math.max(FIT_TB_PAD_MIN, pad - 0.5);
+    wrap.style.setProperty("--tb-pad", pad + "px");
+  }
+  fitInputTable.pad = pad;
+}
+// 画面の回転・サイズ変更時に再計算する（スマホのアドレスバーの出し入れ程度の小さな高さ変化では再計算しない）
+let fitLastW = window.innerWidth, fitLastH = window.innerHeight;
+window.addEventListener("resize", ()=>{
+  if(window.innerWidth === fitLastW && Math.abs(window.innerHeight - fitLastH) < 120) return;
+  fitLastW = window.innerWidth; fitLastH = window.innerHeight;
+  fitInputTable.pad = null;
+  fitInputTable();
+});
 
 loadAll();
 </script>

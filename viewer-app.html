@@ -1086,7 +1086,7 @@ function processBackupText(rawText, errEl){
   state.houjuuMatrixTargets = null;
   render();
 }
-// サイト上（同じNetlifyサイトのルート）に置かれているbackup.jsonをfetchで取得して読み込む。
+// サイト上（このアプリと同じ場所）に置かれているbackup.jsonをfetchで取得して読み込む。
 async function loadFromServer(){
   const errEl = document.getElementById("loader-error");
   if(errEl) errEl.textContent = "";
