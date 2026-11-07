@@ -226,18 +226,30 @@
   .score-input-wrap{display:flex; align-items:center; gap:8px;}
   .score-input-wrap .rank-chip{width:28px; height:28px; border-radius:8px; font-size:12px; pointer-events:none;}
   .score-input{
-    width:96px; text-align:right; padding:9px 10px; border:1.5px solid var(--line); border-radius:10px;
+    width:72px; text-align:right; padding:9px 10px; border:1.5px solid var(--line); border-radius:10px;
     font-size:17px; font-weight:800; color:var(--ink); background:var(--bg); font-family:inherit;
   }
   .score-input:focus{outline:none; border-color:var(--primary);}
+  /* 素点は100点単位のため、十の位・一の位は「00」で固定表示し、入力欄には百の位以上だけを入力する */
+  .score-suffix{font-size:17px; font-weight:800; color:var(--muted); margin-left:-6px;}
   /* 素点の符号切替ボタン：スマホのテンキーにマイナスが無い機種向けに、タップでマイナスを付け外しする */
   .score-sign-btn{
     width:38px; height:38px; flex:none; border:1.5px solid var(--line); border-radius:10px; background:var(--surface);
     font-size:18px; font-weight:800; color:var(--houjuu); font-family:inherit; padding:0;
   }
   .score-sign-btn:active{background:var(--houjuu-tint);}
-  @media (max-width:360px){ .score-input{width:84px;} .score-input-wrap{gap:6px;} }
+  @media (max-width:360px){ .score-input{width:62px;} .score-input-wrap{gap:6px;} }
   .score-cell{font-weight:800;}
+  /* 半荘集計タブ：年月ごとの折りたたみ見出し */
+  .month-head{
+    display:flex; align-items:center; justify-content:space-between; width:100%;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; margin-bottom:10px; font-family:inherit; cursor:pointer; text-align:left;
+  }
+  .month-head .mh-title{font-size:16px; font-weight:800; color:var(--ink);}
+  .month-head .mh-meta{font-size:12px; font-weight:700; color:var(--muted); display:flex; align-items:center; gap:10px;}
+  .month-head.open{background:var(--primary-tint); border-color:var(--primary);}
+  .month-body{margin:0 0 6px;}
   .score-cell.neg{color:var(--houjuu);}
 
   /* stats */
@@ -558,6 +570,7 @@ let state = {
   loaded: false,
   showWelcomeBackupPrompt: false, // 起動のたびに「サイト上のbackup.jsonを読み込むか」を尋ねるモーダルの表示状態（画面上のUI状態のみ、保存はしない）
   storageOk: true,
+  hanchanMonthOpen: {}, // "YYYY-MM" -> true で展開。未設定（デフォルト）は折りたたみ表示（画面上のUI状態のみ、保存はしない）
   hanchanCollapsed: {}, // `${date}_${hanchanNo}` -> false で明示的に展開。未設定（デフォルト）は最小化表示（画面上のUI状態のみ、保存はしない）
   hanchanMonthFilter: "", // 半荘集計タブの年月絞り込み（"YYYY-MM"。空文字なら全期間を表示。画面表示用の一時状態のみ、保存はしない）
   hanchanWeekdayFilter: "all", // 半荘集計タブの曜日絞り込み（"all"|"weekday"|"weekend"。画面表示用の一時状態のみ、保存はしない）
@@ -1634,7 +1647,7 @@ function renderHanchanTab(){
     const msg = filter ? `${filter.slice(0,4)}年${filter.slice(5,7)}月に該当する半荘がありません` : `該当する半荘がありません`;
     return filterBar + `<div class="card"><div class="empty">${msg}</div></div>`;
   }
-  return filterBar + groups.map(({date,hanchanNo})=>{
+  const renderHanchanCard = ({date,hanchanNo})=>{
     const key = `${date}_${hanchanNo}`;
     const names = namesForHanchan(date, hanchanNo);
     const totals = computeHanchanTotals(date, hanchanNo);
@@ -1705,7 +1718,7 @@ function renderHanchanTab(){
       </tr>`).join("");
     const scoreRows = [0,1,2,3].map(i=>{
       const r = previewRanks[i];
-      const val = (scores[i]===null || scores[i]===undefined) ? "" : scores[i];
+      const val = (scores[i]===null || scores[i]===undefined) ? "" : scores[i]/100; // 入力欄は百の位以上のみ（例：25300点 → 253）
       const ptPreview = previewPoints ? fmtPt(previewPoints[i]) : "-";
       return `
       <div class="score-row">
@@ -1714,7 +1727,7 @@ function renderHanchanTab(){
           <span class="rank-chip rank-preview ${r?'on-'+r:''}">${r||"-"}</span>
           <button type="button" class="score-sign-btn" data-score-sign-key="${key}" data-score-sign-p="${i}">−</button>
           <input type="text" inputmode="numeric" class="score-input" placeholder="0" autocomplete="off"
-            data-score-key="${key}" data-score-p="${i}" value="${val}">
+            data-score-key="${key}" data-score-p="${i}" value="${val}"><span class="score-suffix">00</span>
           <span class="n-sub" style="min-width:44px; text-align:right;">${ptPreview}</span>
         </div>
       </div>`;
@@ -1740,6 +1753,32 @@ function renderHanchanTab(){
         <button class="btn-confirm-rank" data-confirm-hanchan="${key}">順位を確定する</button>
         ${recordList}
       </div>`;
+  };
+
+  // 年月（YYYY-MM）ごとにまとめ、新しい年月が上に来るよう降順で並べる。各年月は初期表示で折りたたむ。
+  // ただし、半荘終了直後などで自動スクロール対象の半荘がある場合はその年月を展開し、
+  // 年月フィルタで1か月に絞り込んでいる場合もその年月を展開して表示する。
+  if(state.scrollToHanchanKey){
+    const target = groups.find(g=>`${g.date}_${g.hanchanNo}`===state.scrollToHanchanKey);
+    if(target) state.hanchanMonthOpen[target.date.slice(0,7)] = true;
+  }
+  const byMonth = new Map();
+  groups.forEach(g=>{
+    const m = g.date.slice(0,7);
+    if(!byMonth.has(m)) byMonth.set(m, []);
+    byMonth.get(m).push(g);
+  });
+  const months = Array.from(byMonth.keys()).sort((a,b)=> a<b ? 1 : a>b ? -1 : 0);
+  return filterBar + months.map(m=>{
+    const list = byMonth.get(m);
+    const open = !!filter || !!state.hanchanMonthOpen[m];
+    const unconfirmed = list.filter(g=>!state.hanchanConfirmed[`${g.date}_${g.hanchanNo}`]).length;
+    return `
+    <button type="button" class="month-head ${open?'open':''}" data-toggle-hanchan-month="${m}">
+      <span class="mh-title">${m.slice(0,4)}年${Number(m.slice(5,7))}月</span>
+      <span class="mh-meta">${list.length}半荘${unconfirmed?` <span style="color:var(--houjuu);">未確定${unconfirmed}</span>`:""}<span>${open?'▼':'▶'}</span></span>
+    </button>
+    ${open ? `<div class="month-body">${list.map(renderHanchanCard).join("")}</div>` : ""}`;
   }).join("");
 }
 
@@ -1853,12 +1892,13 @@ function normalizeScoreText(raw){
     .replace(/[−－‐‑–—ー▲]/g, "-")
     .replace(/[,，\s]/g, "");
 }
-// 正規化した素点文字列を整数に変換する。空欄・「-」のみ・数値として不正な場合は null（未入力）。
+// 正規化した素点文字列を整数（点）に変換する。空欄・「-」のみ・数値として不正な場合は null（未入力）。
+// 入力欄は百の位以上のみを受け付け（十の位以下は「00」固定表示）、入力値×100 を素点とする（例：253 → 25300点、-12 → -1200点）。
 function parseScoreInput(raw){
   const t = normalizeScoreText(raw);
   if(t === "" || t === "-") return null;
   const n = Number(t);
-  return isFinite(n) ? Math.trunc(n) : null;
+  return isFinite(n) ? Math.round(n*100) : null;
 }
 
 function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -2006,6 +2046,12 @@ function bindEvents(){
     if(monthClear) monthClear.onclick = ()=>{ state.hanchanMonthFilter = ""; render(); };
     document.querySelectorAll("[data-hanchan-weekday]").forEach(b=>b.onclick=()=>{
       state.hanchanWeekdayFilter = b.dataset.hanchanWeekday; render();
+    });
+    document.querySelectorAll("[data-toggle-hanchan-month]").forEach(el=>el.onclick=()=>{
+      const m = el.dataset.toggleHanchanMonth;
+      if(state.hanchanMonthFilter) return; // 1か月に絞り込み中は常に展開表示
+      state.hanchanMonthOpen[m] = !state.hanchanMonthOpen[m];
+      render();
     });
     document.querySelectorAll("[data-toggle-hanchan-collapse]").forEach(el=>el.onclick=()=>{
       const key = el.dataset.toggleHanchanCollapse;
