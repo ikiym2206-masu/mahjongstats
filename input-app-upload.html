@@ -44895,6 +44895,7 @@ let state = {
   records: [],      // {id, date, hanchanNo, kyoku, honba, resultType, stats:[[riichi,fuuro,tsumo,ron,houjuu,chombo]x4]}
   ranks: {},        // `${date}_${hanchanNo}` -> [r1,r2,r3,r4]（同点は同着＝同じ順位番号。null = unset）
   finalScores: {},  // `${date}_${hanchanNo}` -> [s1,s2,s3,s4] (最終持ち点＝素点。整数・マイナス可、null=未入力)
+  hanchanEndAt: {}, // `${date}_${hanchanNo}` -> 半荘終了時刻（ISO文字列）。南4で半荘が終了した局／結果のみ入力を保存した時刻を自動記録する
   finalPoints: {},  // `${date}_${hanchanNo}` -> [pt1,pt2,pt3,pt4]（配給原点・オカ・ウマを反映した最終スコア pt。順位確定時に自動算出）
   hanchanConfirmed: {}, // `${date}_${hanchanNo}` -> true になったら「確定」済み（順位入力を締めて集計表示に切り替える）
   dealers: {},       // `${date}_${hanchanNo}` -> [東家idx, 南家idx, 西家idx, 北家idx]（idx＝卓上の位置 0自家/1下家/2対面/3上家）
@@ -44970,6 +44971,8 @@ async function loadAll(){
   if(hanchanConfirmed) state.hanchanConfirmed = hanchanConfirmed;
   if(finalScores) state.finalScores = finalScores;
   if(finalPoints) state.finalPoints = finalPoints;
+  const hanchanEndAt = await storageGet("mj-hanchan-end-at");
+  if(hanchanEndAt) state.hanchanEndAt = hanchanEndAt;
   if(recordPlayers) state.recordPlayers = recordPlayers;
   const embeddedApplied = applyEmbeddedBackupOnce();
   // 対局日付は常に「今日」を自動セットし、その日付内での続き（半荘No・局・積み場）から再開する
@@ -44992,6 +44995,7 @@ function saveDealers(){ storageSet("mj-dealers", state.dealers); }
 function saveHanchanConfirmed(){ storageSet("mj-hanchan-confirmed", state.hanchanConfirmed); }
 function saveFinalScores(){ storageSet("mj-final-scores", state.finalScores); }
 function saveFinalPoints(){ storageSet("mj-final-points", state.finalPoints); }
+function saveHanchanEndAt(){ storageSet("mj-hanchan-end-at", state.hanchanEndAt); }
 function saveRecordPlayers(){ storageSet("mj-record-players", state.recordPlayers); }
 function saveSeatFixPending(){ storageSet("mj-seatfix-pending", state.seatFixPending); }
 function saveGithubSettings(){
@@ -45026,6 +45030,7 @@ function buildBackupPayload(){
     players: state.players, playerRoster: state.playerRoster, rankingRange: state.rankingRange,
     records: state.records, ranks: state.ranks, dealers: state.dealers,
     hanchanConfirmed: state.hanchanConfirmed, finalScores: state.finalScores, finalPoints: state.finalPoints,
+    hanchanEndAt: state.hanchanEndAt,
     recordPlayers: state.recordPlayers,
   };
 }
@@ -45132,6 +45137,7 @@ function mergeRemoteIntoState(remote){
   state.dealers = mergeMap(remote.dealers, state.dealers);
   state.finalScores = mergeMap(remote.finalScores, state.finalScores);
   state.finalPoints = mergeMap(remote.finalPoints, state.finalPoints);
+  state.hanchanEndAt = mergeMap(remote.hanchanEndAt, state.hanchanEndAt);
   state.hanchanConfirmed = mergeMap(remote.hanchanConfirmed, state.hanchanConfirmed);
   state.recordPlayers = mergeMap(remote.recordPlayers, state.recordPlayers);
 
@@ -45152,6 +45158,7 @@ function persistMergedStateLocally(){
   localSet("mj-hanchan-confirmed", state.hanchanConfirmed);
   localSet("mj-final-scores", state.finalScores);
   localSet("mj-final-points", state.finalPoints);
+  localSet("mj-hanchan-end-at", state.hanchanEndAt);
   localSet("mj-record-players", state.recordPlayers);
 }
 
@@ -45329,10 +45336,11 @@ function applyBackupData(data){
   state.hanchanConfirmed = data.hanchanConfirmed || {};
   state.finalScores = data.finalScores || {};
   state.finalPoints = data.finalPoints || {};
+  state.hanchanEndAt = data.hanchanEndAt || {};
   state.recordPlayers = data.recordPlayers || {};
   applyRankingRange(data.rankingRange);
   saveSettings(); saveRecords(); saveRanks(); saveDealers(); saveHanchanConfirmed();
-  saveFinalScores(); saveFinalPoints(); saveRecordPlayers();
+  saveFinalScores(); saveFinalPoints(); saveRecordPlayers(); saveHanchanEndAt();
 }
 // バックアップJSONのテキストそのものを受け取って復元する共通処理（ファイル選択・サーバー読み込みの両方から呼ばれる）。
 // 既存データがある状態からの上書きなので、実行前に確認ダイアログを出す。
@@ -46283,7 +46291,8 @@ function renderHanchanTab(){
     const isResultOnlyHanchan = state.records.some(r=>r.date===date && r.hanchanNo===hanchanNo && r.resultType==="resultonly");
     // 結果のみ入力の半荘は座席データを記録・保持しないため、座席表示も常に「-」とする（seatLabelForPlayerを呼ばない）
     const seatLabel = (i)=> isResultOnlyHanchan ? "-" : seatLabelForPlayer(seatOrder, i);
-    const headMeta = `<span class="n">半荘No.${hanchanNo}</span> <span class="n-sub">${isResultOnlyHanchan ? "結果のみ入力（局の詳細なし）" : `総局数${kyokuStats.total} ・ 流局数${kyokuStats.ryuukyoku}`}</span>`;
+    const timingText = fmtHanchanTiming(hanchanTiming(date, hanchanNo));
+    const headMeta = `<span class="n">半荘No.${hanchanNo}</span> <span class="n-sub">${isResultOnlyHanchan ? "結果のみ入力（局の詳細なし）" : `総局数${kyokuStats.total} ・ 流局数${kyokuStats.ryuukyoku}`}${timingText ? ` ・ ${timingText}` : ""}</span>`;
 
     if(confirmed){
       // ---- 確定済み：順位の昇順（1着→4着、同着は同じ順位）に並べ替えて表示 ----
@@ -46402,6 +46411,40 @@ function renderHanchanTab(){
     </button>
     ${open ? `<div class="month-body">${list.map(renderHanchanCard).join("")}</div>` : ""}`;
   }).join("");
+}
+
+// ---- 半荘の時間（終了時刻・所要時間） ----
+// 局レコードのid（uid()）の先頭8文字は保存時刻（Date.nowの36進数）なので、そこから各局の保存時刻を復元できる。
+// CSV取り込みなど、対局日と異なる日に作られたidは保存時刻として使えないため除外する（対局日または翌日の深夜帯のみ有効）。
+function recordSavedAt(rec){
+  const ms = parseInt(String(rec.id||"").slice(0,8), 36);
+  if(!isFinite(ms) || ms < Date.UTC(2020,0,1) || ms > Date.UTC(2100,0,1)) return null;
+  const t = new Date(ms);
+  const ymd = (d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  if(ymd(t) === rec.date) return t;
+  const next = new Date(rec.date+"T00:00:00"); next.setDate(next.getDate()+1);
+  if(ymd(t) === ymd(next) && t.getHours() < 6) return t;
+  return null;
+}
+// 終了時刻：記録済み（hanchanEndAt）を優先し、無ければ最後の局の保存時刻で代用する。
+// 所要時間：最初の局の保存時刻〜終了時刻（東1局の打牌時間は含まれないため「約」表記）。
+function hanchanTiming(date, hanchanNo){
+  const key = `${date}_${hanchanNo}`;
+  const times = state.records
+    .filter(r=>r.date===date && r.hanchanNo===hanchanNo && r.resultType!=="resultonly")
+    .map(recordSavedAt).filter(Boolean).sort((a,b)=>a-b);
+  let end = state.hanchanEndAt[key] ? new Date(state.hanchanEndAt[key]) : null;
+  if(end && isNaN(end)) end = null;
+  if(!end && times.length) end = times[times.length-1];
+  if(!end) return null;
+  const start = times.length ? times[0] : null;
+  const minutes = (start && end - start >= 60000) ? Math.round((end - start)/60000) : null;
+  return { end, minutes };
+}
+function fmtHanchanTiming(t){
+  if(!t) return "";
+  const hm = `${t.end.getHours()}:${String(t.end.getMinutes()).padStart(2,"0")}`;
+  return `⏱${hm}終了${t.minutes!==null ? `（約${t.minutes}分）` : ""}`;
 }
 
 // チョンボは発生することが稀なため、発生した場合のみ小さなマークとして選手名の隣に添える。
@@ -46764,6 +46807,7 @@ function bindEvents(){
       const date = key.slice(0,idx), hanchanNo = Number(key.slice(idx+1));
       state.records = state.records.filter(r=>!(r.date===date && r.hanchanNo===hanchanNo));
       delete state.ranks[key]; delete state.finalScores[key]; delete state.finalPoints[key];
+      delete state.hanchanEndAt[key]; saveHanchanEndAt();
       delete state.hanchanConfirmed[key]; delete state.dealers[key]; delete state.recordPlayers[key];
       saveRecords(); saveRanks(); saveFinalScores(); saveFinalPoints(); saveHanchanConfirmed(); saveDealers(); saveRecordPlayers();
       render();
@@ -46915,6 +46959,8 @@ function onSaveResultOnly(){
   };
   state.records.push(rec);
   saveRecords();
+  state.hanchanEndAt[`${rec.date}_${rec.hanchanNo}`] = new Date().toISOString();
+  saveHanchanEndAt();
 
   if(!hasOtherRecords){
     const key = `${cur.date}_${cur.hanchanNo}`;
@@ -46961,6 +47007,8 @@ function onSave(resultType){
   cur.toggles = emptyToggles();
 
   if(hanchanEnded){
+    state.hanchanEndAt[`${rec.date}_${rec.hanchanNo}`] = new Date().toISOString();
+    saveHanchanEndAt();
     state.tab = "hanchan";
     state.hanchanMonthFilter = ""; // 遷移先の半荘が確実に見えるよう、月・曜日フィルタは解除する
     state.hanchanWeekdayFilter = "all";
