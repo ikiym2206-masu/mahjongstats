@@ -9,6 +9,22 @@
 <link rel="icon" type="image/png" sizes="16x16" href="./favicon-viewer-16.png">
 <link rel="apple-touch-icon" href="./apple-touch-icon-viewer.png">
 <link rel="manifest" href="./manifest-viewer.json">
+<script>
+// ---- ホーム画面に追加（PWAインストール）の案内：index.html の「＋」から ?install=1 付きで開かれたときだけ動く ----
+// ?install=1 はすぐにURLから消す（iPhoneの「ホーム画面に追加」で付いたまま保存されないように）。
+// インストール確認（beforeinstallprompt）は、案内を出すときだけブラウザ標準の表示を止めて手元で預かる。
+(function(){
+  var want = /(^|[?&])install=1(&|$)/.test(location.search.slice(1));
+  if(want){ try{ history.replaceState(null, "", location.pathname + location.hash); }catch(e){} }
+  var st = window.__pwaInstall = { want: want, evt: null, onReady: null };
+  window.addEventListener("beforeinstallprompt", function(e){
+    if(!st.want) return;
+    e.preventDefault();
+    st.evt = e;
+    if(st.onReady) st.onReady();
+  });
+})();
+</script>
 <meta name="theme-color" content="#0d3f2e">
 <meta name="apple-mobile-web-app-title" content="麻雀分析">
 <style>
@@ -3028,6 +3044,82 @@ function bindEvents(stats){
 })();
 
 render();
+</script>
+<style>
+  /* ---- ホーム画面に追加の案内（?install=1 で開いたときだけ表示） ---- */
+  .pwa-guide{
+    position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top,0px)); z-index:95;
+    width:min(calc(100% - 24px), 440px); transform:translate(-50%,-12px); opacity:0;
+    display:flex; align-items:center; gap:12px; padding:12px 12px 12px 14px; border-radius:14px;
+    color:#24231e; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    background:linear-gradient(180deg,#f7f2e4 0%,#efe7d2 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 2px 0 #ddd2b2, 0 4px 0 #c99a3e, 0 5px 0 #a87c2c, 0 12px 24px rgba(0,0,0,.4);
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .pwa-guide.show{opacity:1; transform:translate(-50%,0);}
+  .pwa-guide .pg-ic{flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:10px; background:#fffdf7; border:1px solid #ddd2b2; color:#146b4c;}
+  .pwa-guide .pg-body{flex:1; min-width:0;}
+  .pwa-guide .pg-title{font-size:14px; font-weight:800; letter-spacing:.04em;}
+  .pwa-guide .pg-sub{font-size:12px; font-weight:600; color:#7d7662; line-height:1.55; margin-top:2px;}
+  .pwa-guide .pg-sub b{color:#24231e;}
+  .pwa-guide .pg-actions{flex:none; display:flex; flex-direction:column; gap:6px;}
+  .pwa-guide button{min-height:38px; padding:0 14px; border:none; border-radius:10px; font-family:inherit; font-size:13px; font-weight:800; letter-spacing:.04em; cursor:pointer;}
+  .pwa-guide .pg-go{color:#fff; background:linear-gradient(180deg,#1d805c,#146b4c); box-shadow:0 2px 0 #0d4a34, 0 3px 0 #c99a3e;}
+  .pwa-guide .pg-go:active{transform:translateY(2px); box-shadow:0 1px 0 #0d4a34;}
+  .pwa-guide .pg-close{min-height:30px; color:#7d7662; background:none;}
+  @media (prefers-reduced-motion:reduce){ .pwa-guide{transition:none;} }
+</style>
+<script>
+(function(){
+  var st = window.__pwaInstall;
+  if(!st || !st.want) return;
+  var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+  if(standalone) return; // すでにインストール済みのアプリとして開いている
+  var appName = /viewer-app/.test(location.pathname) ? "分析ビューア" : "スマホ入力";
+  var ua = navigator.userAgent || "";
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var ICON = '<svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="13" height="13" rx="3.2"/><path d="M9 6v6M6 9h6"/></svg>';
+  var el = document.createElement("div");
+  el.className = "pwa-guide";
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-label", "ホーム画面に追加");
+  document.body.appendChild(el);
+
+  function close(){ el.classList.remove("show"); setTimeout(function(){ el.remove(); }, 250); st.onReady = null; }
+  function paint(sub, withInstall){
+    el.innerHTML =
+      '<span class="pg-ic">' + ICON + '</span>' +
+      '<div class="pg-body"><div class="pg-title">' + appName + 'をホーム画面に追加</div><div class="pg-sub">' + sub + '</div></div>' +
+      '<div class="pg-actions">' + (withInstall ? '<button type="button" class="pg-go">インストール</button>' : '') +
+      '<button type="button" class="pg-close">' + (withInstall ? 'あとで' : '閉じる') + '</button></div>';
+    el.querySelector(".pg-close").onclick = close;
+    var go = el.querySelector(".pg-go");
+    if(go) go.onclick = function(){
+      var evt = st.evt;
+      if(!evt){ close(); return; }
+      st.evt = null; // インストール確認は1回しか出せない
+      evt.prompt();
+      (evt.userChoice || Promise.resolve({})).then(function(c){
+        if(c && c.outcome === "accepted"){ paint("インストールしました。ホーム画面のアイコンから開けます。", false); setTimeout(close, 2500); }
+        else close();
+      }, close);
+    };
+    requestAnimationFrame(function(){ el.classList.add("show"); });
+  }
+  function showPrompt(){ paint("アプリとして、ホーム画面のアイコンから直接開けるようになります。", true); }
+
+  if(st.evt){ showPrompt(); return; }
+  if(isIOS){
+    paint('画面の<b>共有ボタン</b>から<b>「ホーム画面に追加」</b>を選んでください。', false);
+    return;
+  }
+  st.onReady = showPrompt; // インストール確認が届いたら差し替える
+  setTimeout(function(){
+    if(st.evt || !el.isConnected) return;
+    paint('ブラウザのメニュー（<b>⋮</b>）から<b>「アプリをインストール」</b>または<b>「ホーム画面に追加」</b>を選んでください。', false);
+  }, 1500);
+  window.addEventListener("appinstalled", function(){ if(el.isConnected) close(); });
+})();
 </script>
 </body>
 </html>
