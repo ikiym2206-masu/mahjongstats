@@ -2,7 +2,41 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" id="vp" content="width=device-width, initial-scale=1">
+<script>
+// ---- 表示の切替（スマホ表示／PC表示）：スマホ・タブレットのときだけ使える ----
+// PC表示は、viewportの幅を1100pxにして、PC画面と同じレイアウト（サイドバー＋広い表）を画面幅に縮小して表示する（ピンチで拡大できる）。
+// 選んだ表示はこの端末のブラウザ（localStorage「mj-viewer-view」）に保存し、次回もその表示で開く。
+(function(){
+  var KEY = "mj-viewer-view", PC_W = 1100;
+  var touch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+  var handheld = touch && Math.min(screen.width, screen.height) <= 900;
+  function deviceW(){
+    var a = screen.width, b = screen.height;
+    var land = window.matchMedia && window.matchMedia("(orientation: landscape)").matches;
+    return land ? Math.max(a,b) : Math.min(a,b);
+  }
+  function apply(mode){
+    var vp = document.getElementById("vp");
+    if(mode === "pc"){
+      vp.setAttribute("content", "width=" + PC_W + ", initial-scale=" + (deviceW()/PC_W).toFixed(3));
+      document.documentElement.classList.add("view-pc");
+    }else{
+      vp.setAttribute("content", "width=device-width, initial-scale=1");
+      document.documentElement.classList.remove("view-pc");
+    }
+  }
+  var saved = null;
+  try{ saved = localStorage.getItem(KEY); }catch(e){}
+  var api = window.__viewMode = {
+    handheld: handheld,
+    mode: (handheld && saved === "pc") ? "pc" : "sp",
+    set: function(m){ api.mode = m; try{ localStorage.setItem(KEY, m); }catch(e){} apply(m); }
+  };
+  if(api.mode === "pc") apply("pc");
+  window.addEventListener("orientationchange", function(){ if(api.mode === "pc") setTimeout(function(){ apply("pc"); }, 250); });
+})();
+</script>
 <title>麻雀スタッツ（PC分析ビューア）</title>
 <link rel="icon" href="./favicon-viewer.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon-viewer-32.png">
@@ -427,6 +461,8 @@
   /* 固定した名前列：.table-scrollのpadding（6px）分だけ外へ寄せて固定し、左端からスクロールした数値が覗かないようにする */
   #compare-table .col-name{left:-6px;}
   #compare-table.is-by-player thead th{vertical-align:bottom;}
+  /* 行＝選手：指標名が長いので列見出しは折り返す（列幅が指標名で広がりすぎないように） */
+  #compare-table.is-by-player thead tr:not(.cmp-subhead) th:not(.col-name){white-space:normal; max-width:7.2em; line-height:1.35; word-break:normal; word-break:auto-phrase;}
   .card #compare-table.is-by-player td:not(.col-name), .card #compare-table.is-by-player th:not(.col-name){min-width:64px; padding-left:8px; padding-right:10px;}
   .card #compare-table.is-by-player .col-name{min-width:88px;}
   #compare-table.is-by-player tr.cmp-subhead th{border-bottom:none; padding-bottom:2px; font-size:10.5px; letter-spacing:.06em;}
@@ -439,7 +475,7 @@
   .card #compare-table.is-by-player td:not(.col-name), .card #compare-table.is-by-player th:not(.col-name){min-width:56px; padding-left:6px; padding-right:8px;}
   .card #compare-table.is-by-player .col-name{min-width:76px; padding-right:12px;}
 
-  /* ===================== 見て楽しい分析：マイ牌・称号・卓を囲む・点棒メーター・リプレイ ===================== */
+  /* ===================== 見て楽しい分析：マイ牌・称号・日別リザルト・点棒メーター・リプレイ ===================== */
   /* マイ牌 */
   .mytile{--h:34px; position:relative; display:inline-grid; place-items:center; flex:0 0 auto; width:calc(var(--h)*.76); height:var(--h); border-radius:calc(var(--h)*.14);
     background:linear-gradient(180deg,#fffdf7 0%,#efe7d2 100%); color:var(--pc,#146b4c);
@@ -453,7 +489,7 @@
   .mytile-item{display:flex; flex-direction:column; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); width:58px;}
   /* 称号カード */
   @keyframes shine{ 0%{transform:translateX(-60%);} 35%,100%{transform:translateX(60%);} }
-  /* 卓を囲む */
+  /* 日別リザルト */
   .table-toolbar{display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; margin-bottom:16px;}
   .day-select{display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink-sub);}
   .day-select select{height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--tile-edge); background:#fffdf7; color:var(--ink); font-size:13px; font-weight:700; font-family:inherit; font-variant-numeric:tabular-nums;}
@@ -529,7 +565,7 @@
     .seat-0{order:1;} .seat-1{order:2;} .seat-2{order:3;} .seat-3{order:4;}
     .seat-pt{font-size:19px;} .seat-who{font-size:14px;}
   }
-  /* ⑥卓を囲む：1位〜4位を縦1列に並べる。各席は横長の帯（順位札｜マイ牌＋名前｜合計pt｜着順の推移｜平均順位・半荘数） */
+  /* ⑥日別リザルト：1位〜4位を縦1列に並べる。各席は横長の帯（順位札｜マイ牌＋名前｜合計pt｜着順の推移｜平均順位・半荘数） */
   .mj-felt{grid-template-columns:1fr !important; gap:12px !important; padding:24px 26px 26px !important; width:min(100%,820px) !important;}
   .seat{display:grid !important; grid-template-columns:56px minmax(130px,170px) 128px minmax(0,1fr); grid-template-areas:"rank who pt hist" "rank sub pt hist";
     align-items:center; column-gap:14px; row-gap:2px; padding:12px 18px !important; order:0 !important;}
@@ -626,6 +662,27 @@
 
   /* 統計の上部：称号・点棒メーター */
   .stats-hero{margin-bottom:30px;}
+  /* 持ち味 */
+  .wp-wrap{padding:18px 20px;}
+  .wp-toolbar{display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; margin-bottom:14px;}
+  .wp-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr)); gap:12px;}
+  .wp-card{border:1px solid var(--tile-edge); border-left:4px solid var(--green); border-radius:10px; padding:12px 14px; background:#fffdf6;}
+  .wp-card.down{border-left-color:var(--ron);}
+  .wp-card.is-flat{border-left-color:var(--ink-sub); opacity:.85;}
+  .wp-who{display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; letter-spacing:.04em;}
+  .wp-head{margin-top:8px; font-size:16px; font-weight:700; color:var(--green); letter-spacing:.03em;}
+  .wp-card.down .wp-head{color:var(--ron);} .wp-card.is-flat .wp-head{color:var(--ink-sub);}
+  .wp-metric{margin-top:8px; font-size:11px; font-weight:700; color:var(--ink-sub); letter-spacing:.04em;}
+  .wp-metric + .wp-vals{margin-top:0;}
+  .wp-sub{margin-top:2px; font-size:12px; color:var(--ink-sub);}
+  .wp-vals{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:8px; font-size:11.5px; color:var(--ink-sub);}
+  .wp-vals b{margin-left:4px; font-size:15px; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .wp-gap b{color:var(--green);} .wp-card.down .wp-gap b{color:var(--ron);}
+  .wp-base, .wp-n{margin-top:4px; font-size:11px; color:var(--ink-sub);}
+  .winpat-line{display:flex; align-items:baseline; gap:8px; margin:6px 0 6px; font-size:12.5px; color:var(--ink); line-height:1.5;}
+  .winpat-line b{flex:none; padding:1px 7px; border-radius:4px; font-size:10.5px; color:#fff; background:var(--green); letter-spacing:.06em;}
+  .winpat-line em{font-style:normal; font-weight:700; color:var(--green);}
+  .winpat-line small{display:block; font-size:11px; color:var(--ink-sub);}
   .hero-head{display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin:0 0 12px; font-family:var(--serif); font-size:19px; font-weight:700; letter-spacing:.08em; color:var(--tile);}
   .hero-head small{font-family:var(--sans); font-size:12px; font-weight:500; letter-spacing:.02em; color:var(--felt-text);}
   .hero-head .tool-btn{margin-left:auto; font-family:var(--sans);}
@@ -659,6 +716,18 @@
   .toast.show{opacity:1; transform:translate(-50%,0);}
 
   @media (hover:hover){ .stat-player-card:hover{transform:translateY(-1px);} }
+  /* 表示の切替（スマホ表示／PC表示）。スマホ・タブレットのときだけ出す */
+  .view-switch{display:flex; gap:3px; margin-top:16px; padding:3px; border-radius:10px; background:rgba(8,44,32,.55); border:1px solid var(--felt-line);}
+  .view-switch button{flex:1; min-height:32px; padding:0 10px; border:none; border-radius:7px; background:transparent; color:var(--felt-text);
+    font-family:inherit; font-size:12.5px; font-weight:700; letter-spacing:.04em; white-space:nowrap; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:5px;}
+  .view-switch button.on{color:var(--ink); background:linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%); box-shadow:0 2px 0 var(--tile-back),0 3px 4px rgba(0,0,0,.3);}
+  .view-switch svg{flex:none;}
+  /* PC表示で縮小されているときに、スマホ表示へ戻るための大きなボタン（縮小されても押せる大きさ） */
+  .view-fab{display:none;}
+  html.view-pc .view-fab{display:inline-flex; position:fixed; right:28px; bottom:28px; z-index:60; align-items:center; gap:12px; min-height:96px; padding:0 34px 0 28px;
+    border:none; border-radius:999px; font-family:var(--sans); font-size:30px; font-weight:800; letter-spacing:.04em; color:var(--ink); cursor:pointer;
+    background:linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%); box-shadow:inset 0 2px 0 #fff, 0 4px 0 var(--tile-edge), 0 8px 0 var(--tile-back), 0 18px 30px rgba(0,0,0,.45);}
+  html.view-pc .view-fab svg{width:34px; height:34px; color:var(--green);}
   /* 絞り込みボタン（スマホ幅のみ表示） */
   .m-filter-toggle{display:none;}
   @media (max-width:900px){
@@ -672,6 +741,10 @@
     .app-title{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;}
     .app-title .eyebrow,.app-title .riichi{display:none;}
     .app-title-main{font-size:18px; margin:0; letter-spacing:.08em;}
+    .app-title-main{white-space:nowrap; font-size:17px; letter-spacing:.04em;}
+    .app-title .view-switch{order:1; margin:0 0 0 auto; padding:2px; gap:2px;}
+    .app-title .view-switch button{min-height:30px; padding:0 7px; font-size:11.5px; gap:4px; letter-spacing:0;}
+    .app-title .m-filter-toggle{order:2; white-space:nowrap; padding:0 10px;}
     .m-filter-toggle{display:inline-flex; align-items:center; gap:6px; min-height:34px; padding:0 12px; border-radius:9px; cursor:pointer;
       border:1px solid var(--felt-line); background:rgba(159,216,191,.06); color:var(--felt-text); font-size:12px; font-weight:700; letter-spacing:.04em;}
     .m-filter-toggle.is-active{color:var(--ink); border-color:transparent; background:linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%); box-shadow:0 2px 0 var(--tile-back);}
@@ -715,6 +788,7 @@
 <body>
 <div id="app"></div>
 <div class="toast" id="toast"></div>
+<button type="button" class="view-fab" id="viewFab" aria-label="スマホ表示に戻す"><svg viewBox="0 0 12 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="1" width="9" height="14" rx="2"/><path d="M5 12.5h2"/></svg>スマホ表示に戻す</button>
 
 <script>
 // ---------- 定数 ----------
@@ -726,32 +800,34 @@ const CHART_GRID = "#e2d8bd", CHART_GRID_STRONG = "#cfc3a2", CHART_TEXT = "#7d76
 
 // ①比較表：折りたたみ可能なグループ定義
 const COMPARE_METRIC_GROUPS = [
-  {key:"rank", label:"着順系"},
-  {key:"score", label:"打ち筋系"},
-  {key:"breakdown", label:"和了/放銃　内訳"},
-  {key:"oyako", label:"親番／子番"},
+  {key:"rank", label:"着順"},
+  {key:"score", label:"打ち筋"},
+  {key:"breakdown", label:"和了・放銃の内訳"},
+  {key:"oyako", label:"親番・子番"},
 ];
 // ①比較表：サブグループ見出し（リーチ後／副露後／和了内訳／放銃内訳／放銃相手内訳）に添える1行説明
 const COMPARE_SUBGROUP_DESC = {
-  "和了内訳": "プレイヤーの和了形",
-  "放銃内訳": "放銃時の自分の手の状態",
-  "放銃相手内訳": "放銃した相手の和了形",
-  "座席別平均順位": "半荘開始時の座席ごと（座席記録のある半荘のみ）",
+  "リーチ後": "リーチした局のうちの割合",
+  "副露後": "鳴いた局のうちの割合",
+  "和了の内訳": "アガったときの自分の手",
+  "放銃の内訳（自分）": "放銃したときの自分の手",
+  "放銃の内訳（相手）": "放銃した相手（アガった人）の手",
+  "開始座席別の平均順位": "半荘開始時の座席ごと（座席記録のある半荘のみ）",
   "親番": "自分が親の局のみ",
   "子番": "自分が子の局のみ",
 };
 const COMPARE_METRICS = [
-  {key:"kyokuCount", label:"総局数", fmt:fmtCount, group:"score", better:"neutral", main:true, desc:"参加した局の数（チョンボ・結果のみ入力の局は除く）"},
+  {key:"kyokuCount", label:"集計局数", fmt:fmtCount, group:"score", better:"neutral", main:true, desc:"打ち筋系の指標を集計した局の数＝和了率・放銃率・リーチ率・副露率の分母（チョンボ・結果のみ入力の局は除く）"},
   {key:"hanchanRankedCount", label:"半荘数", fmt:fmtCount, group:"rank", better:"neutral", main:true, desc:"着順が確定した半荘の数"},
   {key:"avgRank", label:"平均順位", fmt:fmtAvg, group:"rank", better:"low", main:true, desc:"着順の合計 ÷ 半荘数（小さいほど良い）"},
   {key:"top", label:"トップ率", fmt:fmtPct, group:"rank", better:"high", main:true, desc:"1着だった回数 ÷ 半荘数"},
   {key:"second", label:"2着率", fmt:fmtPct, group:"rank", better:"neutral", main:true, desc:"2着だった回数 ÷ 半荘数"},
   {key:"third", label:"3着率", fmt:fmtPct, group:"rank", better:"neutral", main:true, desc:"3着だった回数 ÷ 半荘数"},
   {key:"last", label:"ラス率", fmt:fmtPct, group:"rank", better:"low", main:true, desc:"4着だった回数 ÷ 半荘数"},
-  {key:"seatAvgRank0", label:"東家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位", better:"low", desc:"半荘開始時に東家だった半荘の平均順位（座席の記録がある半荘のみ）"},
-  {key:"seatAvgRank1", label:"南家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位", better:"low", desc:"半荘開始時に南家だった半荘の平均順位（座席の記録がある半荘のみ）"},
-  {key:"seatAvgRank2", label:"西家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位", better:"low", desc:"半荘開始時に西家だった半荘の平均順位（座席の記録がある半荘のみ）"},
-  {key:"seatAvgRank3", label:"北家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位", better:"low", desc:"半荘開始時に北家だった半荘の平均順位（座席の記録がある半荘のみ）"},
+  {key:"seatAvgRank0", label:"東家スタート", fmt:fmtAvgOrDash, group:"rank", subgroup:"開始座席別の平均順位", better:"low", desc:"半荘開始時に東家だった半荘の平均順位（座席の記録がある半荘のみ）"},
+  {key:"seatAvgRank1", label:"南家スタート", fmt:fmtAvgOrDash, group:"rank", subgroup:"開始座席別の平均順位", better:"low", desc:"半荘開始時に南家だった半荘の平均順位（座席の記録がある半荘のみ）"},
+  {key:"seatAvgRank2", label:"西家スタート", fmt:fmtAvgOrDash, group:"rank", subgroup:"開始座席別の平均順位", better:"low", desc:"半荘開始時に西家だった半荘の平均順位（座席の記録がある半荘のみ）"},
+  {key:"seatAvgRank3", label:"北家スタート", fmt:fmtAvgOrDash, group:"rank", subgroup:"開始座席別の平均順位", better:"low", desc:"半荘開始時に北家だった半荘の平均順位（座席の記録がある半荘のみ）"},
   {key:"agari", label:"和了数", fmt:fmtCount, group:"score", better:"neutral", desc:"ツモかロンでアガった回数"},
   {key:"agariRate", label:"和了率", fmt:fmtPct0, group:"score", better:"high", main:true, desc:"和了数 ÷ 総局数"},
   {key:"houjuu", label:"放銃数", fmt:fmtCount, group:"score", better:"neutral", desc:"ロンされた回数"},
@@ -760,48 +836,74 @@ const COMPARE_METRICS = [
   {key:"riichiRate", label:"リーチ率", fmt:fmtPct0, group:"score", better:"neutral", main:true, desc:"リーチ数 ÷ 総局数"},
   {key:"fuuro", label:"副露数", fmt:fmtCount, group:"score", better:"neutral", desc:"ポン・チー・カンで鳴いた局の数"},
   {key:"fuuroRate", label:"副露率", fmt:fmtPct0, group:"score", better:"neutral", main:true, desc:"副露数 ÷ 総局数"},
-  {key:"riichiAgariRate", label:"和了率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"high", main:true, desc:"リーチした局のうち、アガった割合（÷ リーチ数）"},
-  {key:"riichiHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"low", main:true, desc:"リーチした局のうち、放銃した割合（÷ リーチ数）"},
-  {key:"riichiRyuukyokuRate", label:"流局率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"neutral", desc:"リーチした局のうち、誰もアガらず流局した割合（÷ リーチ数）"},
-  {key:"fuuroAgariRate", label:"和了率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"high", main:true, desc:"鳴いた局のうち、アガった割合（÷ 副露数）"},
-  {key:"fuuroHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"low", main:true, desc:"鳴いた局のうち、放銃した割合（÷ 副露数）"},
-  {key:"fuuroRyuukyokuRate", label:"流局率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"neutral", desc:"鳴いた局のうち、誰もアガらず流局した割合（÷ 副露数）"},
-  {key:"agariRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、リーチしていた回数"},
-  {key:"agariRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、リーチしていた割合（÷ 和了数）"},
-  {key:"agariFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、鳴いていた回数"},
-  {key:"agariFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、鳴いていた割合（÷ 和了数）"},
-  {key:"agariOther", label:"ダマテン数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、リーチも副露もしていなかった回数"},
-  {key:"agariOtherRate", label:"ダマテン率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、リーチも副露もしていなかった割合（÷ 和了数）"},
-  {key:"houjuuRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分がリーチ中だった回数"},
-  {key:"houjuuRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分がリーチ中だった割合（÷ 放銃数）"},
-  {key:"houjuuFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分が鳴いていた回数"},
-  {key:"houjuuFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分が鳴いていた割合（÷ 放銃数）"},
-  {key:"houjuuOther", label:"その他数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分がリーチも副露もしていなかった回数"},
-  {key:"houjuuOtherRate", label:"その他率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分がリーチも副露もしていなかった割合（÷ 放銃数）"},
-  {key:"houjuuOpponentRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手（ロンした人）がリーチだった回数"},
-  {key:"houjuuOpponentRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手がリーチだった割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
-  {key:"houjuuOpponentFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手（ロンした人）が鳴いていた回数"},
-  {key:"houjuuOpponentFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手が鳴いていた割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
-  {key:"houjuuOpponentOther", label:"ダマテン数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手（ロンした人）がダマテンだった回数"},
-  {key:"houjuuOpponentOtherRate", label:"ダマテン率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手がダマテンだった割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
+  {key:"riichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"high", main:true, desc:"リーチした局のうち、アガった割合（÷ リーチ数）"},
+  {key:"riichiHoujuuRate", label:"リーチ後放銃率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"low", main:true, desc:"リーチした局のうち、放銃した割合（÷ リーチ数）"},
+  {key:"riichiRyuukyokuRate", label:"リーチ後流局率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"neutral", desc:"リーチした局のうち、誰もアガらず流局した割合（÷ リーチ数）"},
+  {key:"fuuroAgariRate", label:"副露後和了率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"high", main:true, desc:"鳴いた局のうち、アガった割合（÷ 副露数）"},
+  {key:"fuuroHoujuuRate", label:"副露後放銃率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"low", main:true, desc:"鳴いた局のうち、放銃した割合（÷ 副露数）"},
+  {key:"fuuroRyuukyokuRate", label:"副露後流局率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"neutral", desc:"鳴いた局のうち、誰もアガらず流局した割合（÷ 副露数）"},
+  {key:"agariRiichi", label:"リーチ和了数", fmt:fmtCount, group:"breakdown", subgroup:"和了の内訳", better:"neutral", desc:"アガったとき、リーチしていた回数"},
+  {key:"agariFuuro", label:"副露和了数", fmt:fmtCount, group:"breakdown", subgroup:"和了の内訳", better:"neutral", desc:"アガったとき、鳴いていた回数"},
+  {key:"agariOther", label:"ダマテン和了数", fmt:fmtCount, group:"breakdown", subgroup:"和了の内訳", better:"neutral", desc:"アガったとき、リーチも副露もしていなかった回数"},
+  {key:"agariRiichiRate", label:"リーチ和了の割合", fmt:fmtPct0, group:"breakdown", subgroup:"和了の内訳", better:"neutral", main:true, desc:"アガったとき、リーチしていた割合（÷ 和了数）"},
+  {key:"agariFuuroRate", label:"副露和了の割合", fmt:fmtPct0, group:"breakdown", subgroup:"和了の内訳", better:"neutral", main:true, desc:"アガったとき、鳴いていた割合（÷ 和了数）"},
+  {key:"agariOtherRate", label:"ダマテン和了の割合", fmt:fmtPct0, group:"breakdown", subgroup:"和了の内訳", better:"neutral", main:true, desc:"アガったとき、リーチも副露もしていなかった割合（÷ 和了数）"},
+  {key:"houjuuRiichi", label:"リーチ中放銃数", fmt:fmtCount, group:"breakdown", subgroup:"放銃の内訳（自分）", better:"neutral", desc:"放銃したとき、自分がリーチ中だった回数"},
+  {key:"houjuuFuuro", label:"副露中放銃数", fmt:fmtCount, group:"breakdown", subgroup:"放銃の内訳（自分）", better:"neutral", desc:"放銃したとき、自分が鳴いていた回数"},
+  {key:"houjuuOther", label:"門前放銃数", fmt:fmtCount, group:"breakdown", subgroup:"放銃の内訳（自分）", better:"neutral", desc:"放銃したとき、自分がリーチも副露もしていなかった回数"},
+  {key:"houjuuRiichiRate", label:"リーチ中放銃の割合", fmt:fmtPct0, group:"breakdown", subgroup:"放銃の内訳（自分）", better:"neutral", main:true, desc:"放銃したとき、自分がリーチ中だった割合（÷ 放銃数）"},
+  {key:"houjuuFuuroRate", label:"副露中放銃の割合", fmt:fmtPct0, group:"breakdown", subgroup:"放銃の内訳（自分）", better:"neutral", main:true, desc:"放銃したとき、自分が鳴いていた割合（÷ 放銃数）"},
+  {key:"houjuuOtherRate", label:"門前放銃の割合", fmt:fmtPct0, group:"breakdown", subgroup:"放銃の内訳（自分）", better:"neutral", main:true, desc:"放銃したとき、自分がリーチも副露もしていなかった割合（÷ 放銃数）"},
+  {key:"houjuuOpponentRiichi", label:"対リーチ放銃数", fmt:fmtCount, group:"breakdown", subgroup:"放銃の内訳（相手）", better:"neutral", desc:"放銃した相手（ロンした人）がリーチだった回数"},
+  {key:"houjuuOpponentFuuro", label:"対副露放銃数", fmt:fmtCount, group:"breakdown", subgroup:"放銃の内訳（相手）", better:"neutral", desc:"放銃した相手（ロンした人）が鳴いていた回数"},
+  {key:"houjuuOpponentOther", label:"対ダマテン放銃数", fmt:fmtCount, group:"breakdown", subgroup:"放銃の内訳（相手）", better:"neutral", desc:"放銃した相手（ロンした人）がダマテンだった回数"},
+  {key:"houjuuOpponentRiichiRate", label:"対リーチ放銃の割合", fmt:fmtPct0, group:"breakdown", subgroup:"放銃の内訳（相手）", better:"neutral", desc:"放銃した相手がリーチだった割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
+  {key:"houjuuOpponentFuuroRate", label:"対副露放銃の割合", fmt:fmtPct0, group:"breakdown", subgroup:"放銃の内訳（相手）", better:"neutral", desc:"放銃した相手が鳴いていた割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
+  {key:"houjuuOpponentOtherRate", label:"対ダマテン放銃の割合", fmt:fmtPct0, group:"breakdown", subgroup:"放銃の内訳（相手）", better:"neutral", desc:"放銃した相手がダマテンだった割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
   // 親番／子番：座席（dealers）が記録されている半荘の局のみが対象
-  {key:"oyaKyoku", label:"局数", fmt:fmtCount, group:"oyako", subgroup:"親番", better:"neutral", desc:"自分が親だった局の数（座席の記録がある局のみ）"},
-  {key:"oyaAgariRate", label:"和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"high", main:true, desc:"親の局のうち、アガった割合"},
-  {key:"oyaHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"low", desc:"親の局のうち、放銃した割合"},
-  {key:"oyaRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"neutral", desc:"親の局のうち、リーチした割合"},
-  {key:"oyaFuuroRate", label:"副露率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"neutral", desc:"親の局のうち、鳴いた割合"},
-  {key:"oyaRiichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"high", desc:"親でリーチした局のうち、アガった割合"},
+  {key:"oyaKyoku", label:"親の局数", fmt:fmtCount, group:"oyako", subgroup:"親番", better:"neutral", desc:"自分が親だった局の数（座席の記録がある局のみ）"},
+  {key:"oyaAgariRate", label:"親の和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"high", main:true, desc:"親の局のうち、アガった割合"},
+  {key:"oyaHoujuuRate", label:"親の放銃率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"low", desc:"親の局のうち、放銃した割合"},
+  {key:"oyaRiichiRate", label:"親のリーチ率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"neutral", desc:"親の局のうち、リーチした割合"},
+  {key:"oyaFuuroRate", label:"親の副露率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"neutral", desc:"親の局のうち、鳴いた割合"},
+  {key:"oyaRiichiAgariRate", label:"親のリーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"high", desc:"親でリーチした局のうち、アガった割合"},
   {key:"oyaRenchan", label:"連荘数", fmt:fmtCount, group:"oyako", subgroup:"親番", better:"neutral", desc:"親の局で連荘した回数（聴牌連荘を含む）"},
   {key:"oyaRenchanRate", label:"連荘率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"high", main:true, desc:"連荘数 ÷ 親の局数"},
   {key:"oyaKaburi", label:"親被り数", fmt:fmtCount, group:"oyako", subgroup:"親番", better:"neutral", desc:"自分が親の局で、他家にツモアガりされた回数"},
-  {key:"koKyoku", label:"局数", fmt:fmtCount, group:"oyako", subgroup:"子番", better:"neutral", desc:"自分が子だった局の数（座席の記録がある局のみ）"},
-  {key:"koAgariRate", label:"和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"high", main:true, desc:"子の局のうち、アガった割合"},
-  {key:"koHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"low", main:true, desc:"子の局のうち、放銃した割合"},
-  {key:"koRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"neutral", desc:"子の局のうち、リーチした割合"},
-  {key:"koFuuroRate", label:"副露率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"neutral", desc:"子の局のうち、鳴いた割合"},
-  {key:"koRiichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"high", desc:"子でリーチした局のうち、アガった割合"},
+  {key:"koKyoku", label:"子の局数", fmt:fmtCount, group:"oyako", subgroup:"子番", better:"neutral", desc:"自分が子だった局の数（座席の記録がある局のみ）"},
+  {key:"koAgariRate", label:"子の和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"high", main:true, desc:"子の局のうち、アガった割合"},
+  {key:"koHoujuuRate", label:"子の放銃率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"low", main:true, desc:"子の局のうち、放銃した割合"},
+  {key:"koRiichiRate", label:"子のリーチ率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"neutral", desc:"子の局のうち、リーチした割合"},
+  {key:"koFuuroRate", label:"子の副露率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"neutral", desc:"子の局のうち、鳴いた割合"},
+  {key:"koRiichiAgariRate", label:"子のリーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"high", desc:"子でリーチした局のうち、アガった割合"},
   {key:"koHoujuuToOya", label:"親への放銃数", fmt:fmtCount, group:"oyako", subgroup:"子番", better:"neutral", desc:"子のとき、親にロンされた回数"},
 ];
+
+// ---------- 持ち味診断（着順別打ち筋スタッツの活用） ----------
+// 各選手の「1着の半荘」と「4着の半荘」の打ち筋を比べ、全員の平均的な差（＝誰にでも起きる差）を引いて、
+// その人ならではの差がいちばん大きい指標を「持ち味」とする。
+// 例：ラスの半荘は誰でも放銃率が上がるので、平均より大きく上がる人だけが対象になる。
+const WINPAT_KEYS = ["agariRate","houjuuRate","riichiRate","fuuroRate","riichiAgariRate","fuuroAgariRate","agariOtherRate"];
+const WINPAT_MIN_HANCHAN = 3;   // トップ時・比較相手とも、局の詳細がある半荘がこの数以上の人だけ判定する
+const WINPAT_VS_LABEL = {rest:"2〜4着時", last:"ラス時"}; // 比較相手の切替（state.winPatVs）
+const WINPAT_MIN_UNIQUE = 0.03; // 平均的な差との開きがこれ（3pt）未満なら「目立つ差なし」
+const WINPAT_MIN_DENOM = 5;     // 率の分母（局数・リーチ数・副露数・和了数）が1着・4着どちらかでこれ未満の指標は判定に使わない
+const WINPAT_MIN_Z = 1.0;       // 回数の少なさによるブレを考慮した「開きの確からしさ」がこれ未満なら採用しない
+// 各指標の率の分母（着順別集計のキー）。分母が小さい指標ほどブレやすいので、開きをブレの大きさで割って比べる
+const WINPAT_DENOM = {agariRate:"kyokuCount", houjuuRate:"kyokuCount", riichiRate:"kyokuCount", fuuroRate:"kyokuCount",
+  riichiAgariRate:"riichi", fuuroAgariRate:"fuuro", agariOtherRate:"agari"};
+// 持ち味：その人がトップを取る半荘で目立つ打ち筋を「強み」として言い表す。
+// up＝トップの半荘ほど高い、down＝低い。定義の無い向き（例：トップの半荘ほど和了率が低い）は強みと呼べないので判定に使わない
+const WINPAT_STRENGTH = {
+  agariRate:{up:{name:"アガリ切る決定力", desc:"トップを取る半荘は、とにかくアガリを重ねて押し切る"}},
+  houjuuRate:{down:{name:"鉄壁の守備力", desc:"トップを取る半荘は、振り込まずに失点を抑えて逃げ切る"}},
+  riichiRate:{up:{name:"リーチ攻勢", desc:"リーチで主導権を握り、卓を押し込んでトップを取る"}, down:{name:"引き際の判断力", desc:"無理にリーチをかけない見極めが、トップにつながる"}},
+  fuuroRate:{up:{name:"鳴きの機動力", desc:"鳴いて局を動かし、主導権を握ってトップを取る"}, down:{name:"門前の粘り腰", desc:"鳴かずにじっくり手を育て、本手でトップを取る"}},
+  riichiAgariRate:{up:{name:"リーチの勝負強さ", desc:"かけたリーチをきっちりアガリに結びつける"}},
+  fuuroAgariRate:{up:{name:"鳴いて仕留める速さ", desc:"鳴いたら最後まで走り切り、局を自分で終わらせる"}},
+  agariOtherRate:{up:{name:"ダマの嗅覚", desc:"静かに張って、気配を消したままアガリを拾う"}, down:{name:"攻め切る推進力", desc:"リーチや鳴きで前に出て、真っ向から攻め切る"}},
+};
+
 
 
 // ④成績5段階評価：軸ごとに、選択した対象プレイヤーの実績範囲を5等分したしきい値で1〜5に変換する（固定の絶対基準ではなく相対基準）。
@@ -887,8 +989,9 @@ const state = {
   compareScope: "main", // ①比較表："main"（主要指標のみ）| "all"（すべての指標）
   mobileMenuOpen: false,
   graphReplay: false, // ②スコア推移：リプレイ表示中か
-  tableDay: null, // ⑥卓を囲む：表示中の対局日（nullなら期間内の最新日）
+  tableDay: null, // ⑥日別リザルト：表示中の対局日（nullなら期間内の最新日）
   meterName: null, // 統計：点棒メーターで表示中の選手
+  winPatVs: "rest", // 持ち味の比較相手："rest"（2〜4着をまとめて）| "last"（4着のみ）
   titleEditOpen: false, // 統計：二つ名の編集パネルを開いているか // スマホ幅：上部バーの絞り込み（期間・曜日フィルタ等）パネルの開閉 // ①比較表を"player"向きで表示するときのグループタブ（COMPARE_METRIC_GROUPSのkey）
 };
 // 指標の定義（ツールチップ用）。COMPARE_METRICSのdescを、統計タブのタイル・着順別表でも共通で使う
@@ -1375,7 +1478,7 @@ function renderRankSplitTableFromData(data){
     `<th>${rk}着<small>${fmtCount(data[rk].hanchanCount)}半荘</small></th>`
   ).join("");
   // ①比較表と同じグループ定義・同じ折りたたみ状態（state.compareGroupCollapsed）を共有するアコーディオン形式で表示する
-  const groupBlocks = COMPARE_METRIC_GROUPS.filter(g=>g.key!=="rank" && g.key!=="oyako").map(grp=>{
+  const groupBlocks = COMPARE_METRIC_GROUPS.filter(g=>RANKSPLIT_METRICS.some(m=>m.group===g.key)).map(grp=>{
     const collapsed = state.compareGroupCollapsed[grp.key] === true; // デフォルトは展開
     const groupHeaderRow = `<tr class="compare-group-row" data-toggle-compare-group="${grp.key}">
       <td class="col-name compare-group-cell" colspan="5">
@@ -1429,6 +1532,113 @@ function computeAverageRankSplitStats(statsList){
   });
   return result;
 }
+// ---------- 持ち味診断：計算 ----------
+function fmtPtSigned(v){ if(typeof v!=="number" || !isFinite(v)) return "—"; const r = Math.round(v*100); return (r>0?"+":r<0?"−":"±")+Math.abs(r)+"pt"; }
+// 着順別集計は重いので、同じデータ・同じ絞り込み条件のあいだは結果を使い回す
+const _winPatCache = new WeakMap();
+function winPatCacheBucket(){
+  const fk = `${state.dateRange.from}|${state.dateRange.to}|${state.dayFilter}|${state.winPatVs}`;
+  let c = _winPatCache.get(state.raw);
+  if(!c || c.fk!==fk){ c = {fk, split:new Map(), baseline:null, result:new Map()}; _winPatCache.set(state.raw, c); }
+  return c;
+}
+function rankSplitCached(name){ const c = winPatCacheBucket(); if(!c.split.has(name)) c.split.set(name, computeRankSplitStats(name)); return c.split.get(name); }
+// 比較相手の集計：ラスのみなら4着をそのまま、2〜4着なら各指標を分母（局数・リーチ数など）で重み付けして合算する
+function winPatOther(d){
+  if(state.winPatVs==="last") return d[4];
+  const o = {hanchanCount:[2,3,4].reduce((a,rk)=>a+(d[rk].hanchanCount||0),0)};
+  ["kyokuCount","riichi","fuuro","agari"].forEach(f=>{ o[f] = [2,3,4].reduce((a,rk)=>a+(d[rk][f]||0),0); });
+  WINPAT_KEYS.forEach(k=>{
+    const f = WINPAT_DENOM[k], n = o[f];
+    o[k] = n ? [2,3,4].reduce((a,rk)=>a+(d[rk][k]||0)*(d[rk][f]||0),0)/n : 0;
+  });
+  return o;
+}
+// 着順別集計を {top, other} の2群に整理したもの（キャッシュ）
+function winPatPair(name){
+  const c = winPatCacheBucket();
+  if(!c.pair) c.pair = new Map();
+  if(!c.pair.has(name)){ const d = rankSplitCached(name); c.pair.set(name, d ? {top:d[1], other:winPatOther(d)} : null); }
+  return c.pair.get(name);
+}
+function winPatEnough(pr){ return !!pr && pr.top.hanchanCount>=WINPAT_MIN_HANCHAN && pr.other.hanchanCount>=WINPAT_MIN_HANCHAN; }
+// 全員の平均的な差（判定できる人だけの単純平均）
+function winPatBaseline(){
+  const c = winPatCacheBucket();
+  if(c.baseline) return c.baseline;
+  const ds = computeOverallStats().filter(s=>s.kyokuCount>0 && s.name).map(s=>winPatPair(s.name)).filter(winPatEnough);
+  const base = {n: ds.length};
+  WINPAT_KEYS.forEach(k=>{ base[k] = ds.length ? ds.reduce((a,pr)=>a+((pr.top[k]||0)-(pr.other[k]||0)),0)/ds.length : 0; });
+  c.baseline = base;
+  return base;
+}
+function winPattern(name){
+  const c = winPatCacheBucket();
+  if(c.result.has(name)) return c.result.get(name);
+  const pr = name ? winPatPair(name) : null;
+  let res;
+  if(!winPatEnough(pr)){
+    res = {ok:false, n1:pr ? pr.top.hanchanCount : 0, n4:pr ? pr.other.hanchanCount : 0};
+  }else{
+    const base = winPatBaseline();
+    const rows = WINPAT_KEYS.map(k=>{
+      const m = COMPARE_METRICS.find(x=>x.key===k);
+      const top = pr.top[k]||0, last = pr.other[k]||0, gap = top-last;
+      const n1 = pr.top[WINPAT_DENOM[k]]||0, n4 = pr.other[WINPAT_DENOM[k]]||0;
+      // ブレの目安（2つの割合の差の標準誤差）。両側の割合を合算した値で見積もる
+      const pp = (n1+n4) ? (top*n1+last*n4)/(n1+n4) : 0;
+      const se = Math.sqrt(Math.max(pp*(1-pp), 0.01) * ((n1?1/n1:1)+(n4?1/n4:1)));
+      const unique = gap-base[k];
+      return {key:k, label:m.label, fmt:m.fmt, top, last, gap, base:base[k], unique, n1, n4, z:unique/se};
+    });
+    // 自分の差と「平均との開き」が同じ向きのものだけ（「平均ほど下がらない」は持ち味と呼びにくいため除く）。
+    // 並べ替えは開きの大きさそのものではなく、ブレを考慮した確からしさ（z）で行う
+    const cands = base.n>=2 ? rows.filter(r=>winPatStrength(r) && Math.abs(r.gap)>=WINPAT_MIN_UNIQUE && Math.sign(r.gap)===Math.sign(r.unique) && Math.abs(r.unique)>=WINPAT_MIN_UNIQUE
+      && r.n1>=WINPAT_MIN_DENOM && r.n4>=WINPAT_MIN_DENOM && Math.abs(r.z)>=WINPAT_MIN_Z) : [];
+    cands.sort((a,b)=>Math.abs(b.z)-Math.abs(a.z));
+    res = {ok:true, n1:pr.top.hanchanCount, n4:pr.other.hanchanCount, rows, best:cands[0]||null, baseN:base.n};
+  }
+  c.result.set(name, res);
+  return res;
+}
+function winPatStrength(r){ const h = WINPAT_STRENGTH[r.key]; return (h && h[r.gap>0?"up":"down"]) || null; }
+function winPatEvidence(r){ return `トップ時の${r.label} ${r.fmt(r.top)}（${WINPAT_VS_LABEL[state.winPatVs]} ${r.fmt(r.last)}）`; }
+// 統計タブ：プレイヤーカードの見出し下に出す1行
+function winPatLine(s){
+  if(!s.name || !(s.kyokuCount>0)) return "";
+  const w = winPattern(s.name);
+  if(!w.ok) return "";
+  if(!w.best) return `<div class="winpat-line"><b>持ち味</b><span><em>オールラウンダー</em><small>特定の型に頼らず、どの形でもトップを取る</small></span></div>`;
+  const b = w.best, st = winPatStrength(b);
+  return `<div class="winpat-line"><b>持ち味</b><span><em>${escapeHtml(st.name)}</em><small>${escapeHtml(winPatEvidence(b))}</small></span></div>`;
+}
+// 統計タブ：称号の下に並べる「持ち味」カード
+function renderWinPatternBlock(stats){
+  const list = stats.filter(s=>s.kyokuCount>0 && s.name).map(s=>({s, w:winPattern(s.name)})).filter(x=>x.w.ok)
+    .sort((a,b)=>b.s.hanchanRankedCount-a.s.hanchanRankedCount);
+  if(!list.length) return "";
+  const cards = list.map(({s,w})=>{
+    const who = `<div class="wp-who">${myTile(s.name,"sm")}${escapeHtml(s.name)}</div>`;
+    const vs = WINPAT_VS_LABEL[state.winPatVs];
+    const n = `<div class="wp-n">1着${w.n1}半荘・${state.winPatVs==="last"?"4着":"2〜4着"}${w.n4}半荘から判定</div>`;
+    if(!w.best) return `<div class="wp-card is-flat">${who}<div class="wp-head">オールラウンダー</div><div class="wp-sub">特定の型に頼らず、どの形でもトップを取る</div>${n}</div>`;
+    const b = w.best, st = winPatStrength(b);
+    return `<div class="wp-card">${who}
+      <div class="wp-head">${escapeHtml(st.name)}</div>
+      <div class="wp-sub">${escapeHtml(st.desc)}</div>
+      <div class="wp-metric">${escapeHtml(b.label)}</div><div class="wp-vals"><span>トップ時<b>${b.fmt(b.top)}</b></span><span>${vs}<b>${b.fmt(b.last)}</b></span></div>
+      <div class="wp-base">差 ${fmtPtSigned(b.gap)}（みんなの平均的な差は${fmtPtSigned(b.base)}）</div>
+      ${n}</div>`;
+  }).join("");
+  const vsBtn = (v,l)=>`<button type="button" class="seg-btn ${state.winPatVs===v?'on':''}" data-winpat-vs="${v}" aria-pressed="${state.winPatVs===v}">${l}</button>`;
+  return `<div class="hero-head">持ち味<small>トップを取る半荘で光る、その人ならではの強み</small></div>
+    <div class="card wp-wrap">
+      <div class="wp-toolbar"><span class="ttl-period-label">トップ時と比べる相手</span><div class="seg" role="group" aria-label="比べる相手">${vsBtn("rest","2〜4着")}${vsBtn("last","ラスのみ")}</div></div>
+      <div class="wp-grid">${cards}</div>
+      <div class="note">※トップを取った半荘とそれ以外（2〜4着／ラス）の打ち筋を比べ、その人だけ大きく違う点を強みとして表示しています。「トップの半荘は誰でも和了率が高い」のような共通の差は除いて判定し、回数が少なくブレやすい指標は割り引いています。目立つ差がなければ「オールラウンダー」になります。1着・比べる相手とも、局の詳細がある半荘が${WINPAT_MIN_HANCHAN}回以上の人が対象です。</div>
+    </div>`;
+}
+
 // ---------- 統計タブ（プレイヤー別スタッツカード。入力アプリの統計タブを移植） ----------
 // 全プレイヤーの打ち筋系スタッツ（率・数）を単純平均した値を算出する（着順系・チョンボ系は対象外）。
 // RANKSPLIT_METRICS（＝①比較表の「打ち筋系」「内訳」グループ）に列挙されているキーをそのまま平均するため、
@@ -1518,6 +1728,7 @@ function renderPlayerStatCard(s){
         <div class="stat-name">${s.name ? myTile(s.name,"sm") : ""}${escapeHtml(s.name||"（名前未設定）")}</div>
         <span class="chev" aria-hidden="true">${collapsed?'▶':'▼'}</span>
       </div>
+      ${winPatLine(s)}
       ${collapsed ? "" : `
       <div class="row-between" data-toggle-stats-collapse="${escapeAttr(slotsKey)}" data-toggle-default="expanded">
         <div class="stat-section-label" style="margin:0;">着順（半荘${s.hanchanRankedCount}回分）</div>
@@ -1559,7 +1770,7 @@ function renderStatsSection(){
   const avgCard = avg ? renderAverageStatCard(avg, activeStats) : "";
   const cards = avgCard + allStats.map(s=>renderPlayerStatCard(s)).join("");
   const heroStats = allStats.filter(s=>s.kyokuCount>0 || s.hanchanRankedCount>0);
-  const hero = heroStats.length ? renderTitlesBlock(heroStats) + renderMeterBlock(heroStats) : "";
+  const hero = heroStats.length ? renderTitlesBlock(heroStats) + renderWinPatternBlock(heroStats) + renderMeterBlock(heroStats) : "";
   return `${hero}
       <div class="hero-head">プレイヤー別スタッツ<small>名前をクリックで開く</small></div>
       <div class="stats-grid">${cards}</div>
@@ -1745,6 +1956,7 @@ function renderSidebar(stats){
         <span class="app-title-main">分析ビューア</span>
         <button type="button" class="m-filter-toggle ${anyFilterActive?'is-active':''}" data-m-filter-toggle aria-expanded="${!!state.mobileMenuOpen}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3.5h12L9.5 9v4l-3 1.5V9z"/></svg>${anyFilterActive?'絞込中':'絞り込み'}<span class="chev-mini" aria-hidden="true">▼</span></button>
         <div class="riichi" aria-hidden="true"></div>
+        ${renderViewSwitch()}
       </div>
       <div class="summary-line"><span>半荘（確定済み／全体）</span><b>${confirmedCount}／${totalHanchan}件</b></div>
       ${anyFilterActive ? `<div class="summary-line"><span>絞込後（確定済み）</span><b>${inRangeConfirmedCount}件</b></div>` : ""}
@@ -1766,11 +1978,28 @@ function renderSidebar(stats){
       ${navBtn("compatradar","3","相性レーダーチャート")}
       ${navBtn("rankgrade","4","成績5段階評価（相対評価）")}
       ${navBtn("houjuumatrix","5","放銃マトリクス")}
-      ${navBtn("table","6","卓を囲む")}
+      ${navBtn("table","6","日別リザルト")}
     </nav>
     <div class="side-spacer"></div>
     <button class="reload-btn" data-reload><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3.2l1.5 1.6H13c.7 0 1.2.5 1.2 1.2v6.5c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg>別のファイルを読み込む</button>
   `;
+}
+// 表示の切替（スマホ表示／PC表示）のボタン。スマホ・タブレットで開いたときだけ表示する（PCでは不要）
+const ICON_PHONE = '<svg width="12" height="14" viewBox="0 0 12 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="1" width="9" height="14" rx="2"/><path d="M5 12.5h2"/></svg>';
+const ICON_PC = '<svg width="15" height="14" viewBox="0 0 16 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="1" y="1.5" width="14" height="9.5" rx="1.5"/><path d="M5.5 13.5h5M8 11v2.5"/></svg>';
+function renderViewSwitch(){
+  const vm = window.__viewMode;
+  if(!vm || !vm.handheld) return "";
+  const b = (m, icon, label)=>`<button type="button" class="${vm.mode===m?'on':''}" data-view-mode="${m}" aria-pressed="${vm.mode===m}">${icon}${label}</button>`;
+  return `<div class="view-switch" role="group" aria-label="表示の切替">${b("sp", ICON_PHONE, "スマホ")}${b("pc", ICON_PC, "PC")}</div>`;
+}
+function setViewMode(m){
+  const vm = window.__viewMode;
+  if(!vm || vm.mode===m) return;
+  vm.set(m);
+  state.mobileMenuOpen = false;
+  // viewportの切替が反映されてから描き直す（①比較表の向きの自動判定などが画面幅を見るため）
+  setTimeout(()=>{ render(); window.scrollTo(0,0); }, 80);
 }
 function navBtn(id, num, label){
   return `<button data-section="${id}" class="${state.section===id?'active':''}"${state.section===id?' aria-current="page"':''}><span class="nav-num" aria-hidden="true">${num}</span>${label}</button>`;
@@ -1784,7 +2013,7 @@ const SECTION_META = {
   compatradar:  {no:"3",  en:"COMPATIBILITY",  title:"相性レーダーチャート", desc:"選手ごとに、同卓した相手との平均得点pt差を表示"},
   rankgrade:    {no:"4",  en:"RELATIVE GRADE", title:"成績5段階評価（相対評価）", desc:"選手ごとに個別のレーダーチャートで表示"},
   houjuumatrix: {no:"5",  en:"DEAL-IN MATRIX", title:"放銃マトリクス",       desc:"誰が誰に何回放銃したか（行＝放銃者、列＝和了者）"},
-  table:        {no:"6",  en:"TABLE OF THE DAY", title:"卓を囲む",          desc:"対局日ごとに、その日の4人を雀卓に座らせて表示"},
+  table:        {no:"6",  en:"DAILY RESULT", title:"日別リザルト",          desc:"対局日を選んで、その日の順位と着順の流れをふり返る"},
 };
 function renderPageHead(stats){
   const m = SECTION_META[state.section] || SECTION_META.compatradar;
@@ -1974,7 +2203,7 @@ function renderCompareSection(allStats){
       </div>
       ${orientSwitch}
       ${tableHtml}
-      ${targets.length && (orient==="metric" || state.compareTab==="oyako") ? `<div class="note">※「親番／子番」は座席が記録されている半荘の局のみで集計（連荘数は聴牌連荘を含む／親被り数＝自分が親の局で他家がツモ和了した回数）</div>` : ""}
+      ${targets.length && (orient==="metric" || state.compareTab==="oyako") ? `<div class="note">※「親番・子番」は座席が記録されている半荘の局のみで集計（連荘数は聴牌連荘を含む／親被り数＝自分が親の局で他家がツモ和了した回数）</div>` : ""}
     </div>`;
 }
 
@@ -2535,7 +2764,7 @@ function renderHoujuuMatrixSection(allStats){
 }
 
 
-// ===================== 見て楽しい分析：マイ牌・称号・卓を囲む・点棒メーター・リプレイ =====================
+// ===================== 見て楽しい分析：マイ牌・称号・日別リザルト・点棒メーター・リプレイ =====================
 // マイ牌：名前の1文字目を字牌のように刻んだアイコン。1文字目が他の選手と重なる場合は2文字を小さく刻む。
 // 文字はCSSの::before（data-ch）で描くため、表のテキスト（コピー・読み上げ用）には混ざらない。
 function myTile(name, size){
@@ -2549,18 +2778,23 @@ function myTile(name, size){
 // 対象条件は「その期間で最も多く打った人の3割以上」（最低ライン：半荘2回・16局など）。同率は全員に称号。
 // 二つ名は画面上で編集でき、この端末のブラウザに保存する（TITLE_NAMES_KEY）。未設定なら既定の名前。
 const TITLE_DEFS = [
-  {id:"top",    name:"天下人", cat:"着順",   metric:"トップ率", desc:"卓の頂を、最も多く手中に収めた", key:"top", better:"high", fmt:fmtPct, base:"rank"},
-  {id:"last",   name:"不沈艦",     cat:"着順",   metric:"ラス率",   desc:"どんな荒波にも沈まず、嵐が過ぎるのをじっと待つ", key:"last", better:"low", fmt:fmtPct, base:"rank"},
-  {id:"agari",  name:"卓上のソリスト",   cat:"打ち筋", metric:"和了率",   desc:"「ロン！」「ツモ！」今日はこの人のワンマンライブ", key:"agariRate", better:"high", fmt:fmtPct, base:"kyoku"},
-  {id:"houjuu", name:"点棒の金庫番",       cat:"打ち筋", metric:"放銃率",   desc:"固い意志で、点棒は一本も外に出さない", key:"houjuuRate", better:"low", fmt:fmtPct, base:"kyoku"},
-  {id:"riichi", name:"勝利の予言者", cat:"打ち筋", metric:"リーチ後和了率", desc:"「リーチ」とは、すなわち勝利予告である", key:"riichiAgariRate", better:"high", fmt:fmtPct, base:"riichi"},
-  {id:"fuuro",  name:"鳴きのスピードスター", cat:"打ち筋", metric:"副露後和了率", desc:"鳴いて、走って、ぶっちぎる。誰も背中に追いつけない", key:"fuuroAgariRate", better:"high", fmt:fmtPct, base:"fuuro"},
-  {id:"renchan",name:"おかわり親方",     cat:"打ち筋", metric:"連荘率",   desc:"「もう一局」が止まらない。誰かこの人を止めてくれ", key:"oyaRenchanRate", better:"high", fmt:fmtPct, base:"oya"},
-  {id:"dama",   name:"無音の刺客", cat:"打ち筋", metric:"ダマテン和了率", desc:"気配ゼロ。気づいた時には、もう手牌が倒れている", key:"agariOtherRate", better:"high", fmt:fmtPct, base:"kyoku"},
-  // ここから下は「珍」称号：良い成績ではないが、ユーモアで讃える（バッジは「ワースト」）
-  {id:"chaos",  name:"混沌の使者", cat:"珍",     metric:"副露後和了率", badge:"ワースト", desc:"鳴く度に卓がざわつく。……で、どうするの？", key:"fuuroAgariRate", better:"low", fmt:fmtPct, base:"fuuro"},
-  {id:"unlucky",name:"リーチの殉教者", cat:"珍",   metric:"リーチ後放銃率", badge:"ワースト", desc:"果敢に名乗りを上げ、勇ましく散った", key:"riichiHoujuuRate", better:"high", fmt:fmtPct, base:"riichi"},
+  // 讃える称号：説明は短い断定（20字前後）で統一
+  {id:"top",    name:"天下人",         cat:"着順",   desc:"卓の頂を、最も多く手中に収めた", key:"top", better:"high", fmt:fmtPct, base:"rank"},
+  {id:"last",   name:"不沈艦",         cat:"着順",   desc:"荒波にも沈まず、冷静に乗りこなす", key:"last", better:"low", fmt:fmtPct, base:"rank"},
+  {id:"agari",  name:"卓上のソリスト", cat:"打ち筋", desc:"鳴り響く「ロン」「ツモ」の独演会", key:"agariRate", better:"high", fmt:fmtPct, base:"kyoku"},
+  {id:"houjuu", name:"難攻不落の要塞", cat:"打ち筋", desc:"どこから攻めても、この要塞は崩れない", key:"houjuuRate", better:"low", fmt:fmtPct, base:"kyoku"},
+  {id:"riichi", name:"勝利の予言者",   cat:"打ち筋", desc:"「リーチ」とは、すなわち勝利宣言である", key:"riichiAgariRate", better:"high", fmt:fmtPct, base:"riichi"},
+  {id:"fuuro",  name:"疾風の鳴き師",   cat:"打ち筋", desc:"鳴いて、駆けて、誰より先に手牌を倒す", key:"fuuroAgariRate", better:"high", fmt:fmtPct, base:"fuuro"},
+  {id:"renchan",name:"玉座の主",       cat:"打ち筋", desc:"「もう一局」が、どこまでも止まらない", key:"oyaRenchanRate", better:"high", fmt:fmtPct, base:"oya"},
+  {id:"dama",   name:"無音の刺客",     cat:"打ち筋", desc:"気づいた時には、もう手牌が倒れている", key:"agariOtherRate", better:"high", fmt:fmtPct, base:"kyoku"},
+  // 「珍」称号：良い成績ではないが、ユーモアで讃える（バッジは「ワースト」）。説明は「前振り。……オチ」の形で統一
+  {id:"chaos",  name:"混沌の使者",     cat:"珍", badge:"ワースト", desc:"ポン！チー！カン！卓は大混乱。……本人の手牌も大混乱", key:"fuuroAgariRate", better:"low", fmt:fmtPct, base:"fuuro"},
+  {id:"reckless",name:"丸腰の突撃兵",  cat:"珍", badge:"ワースト", desc:"鳴いて勇んで飛び出した。……守る牌は、もう残っていない", key:"fuuroHoujuuRate", better:"high", fmt:fmtPct, base:"fuuro"},
+  {id:"daredevil",name:"無謀なる勇者", cat:"珍", badge:"ワースト", desc:"勇気と無謀は紙一重。……リーチの声は、聞こえなかったことにする", key:"houjuuOpponentRiichiRate", better:"high", fmt:fmtPct, base:"houjuu"},
+  {id:"unlucky",name:"リーチの殉教者", cat:"珍", badge:"ワースト", desc:"高らかにリーチを宣言し、潔く散る。……リーチ棒もろとも", key:"riichiHoujuuRate", better:"high", fmt:fmtPct, base:"riichi"},
 ];
+// 指標名は①比較表（COMPARE_METRICS）のラベルをそのまま使い、名称が乖離しないようにする
+TITLE_DEFS.forEach(t=>{ const m = COMPARE_METRICS.find(x=>x.key===t.key); t.metric = m ? m.label : t.key; });
 const TITLE_SHARE = 0.3; // 対象条件：期間内の最多の人の何割以上か
 const TITLE_NAMES_KEY = "mj-viewer-title-names";
 function loadTitleNames(){ try{ return JSON.parse(localStorage.getItem(TITLE_NAMES_KEY)||"{}")||{}; }catch(e){ return {}; } }
@@ -2569,10 +2803,10 @@ function titleName(def){ const custom = loadTitleNames()[def.id]; return (custom
 function titleThresholds(stats){
   const mx = k => Math.max(0, ...stats.map(s=>s[k]||0));
   const th = (k, floor) => Math.max(floor, Math.ceil(mx(k)*TITLE_SHARE));
-  return {rank:th("hanchanRankedCount",2), kyoku:th("kyokuCount",16), riichi:th("riichi",5), fuuro:th("fuuro",5), oya:th("oyaKyoku",4)};
+  return {rank:th("hanchanRankedCount",2), kyoku:th("kyokuCount",16), riichi:th("riichi",5), fuuro:th("fuuro",5), oya:th("oyaKyoku",4), houjuu:th("houjuu",3)};
 }
-const TITLE_BASE_FIELD = {rank:"hanchanRankedCount", kyoku:"kyokuCount", riichi:"riichi", fuuro:"fuuro", oya:"oyaKyoku"};
-const TITLE_BASE_UNIT = {rank:"半荘", kyoku:"局", riichi:"リーチ", fuuro:"副露", oya:"親番の局"};
+const TITLE_BASE_FIELD = {rank:"hanchanRankedCount", kyoku:"kyokuCount", riichi:"riichi", fuuro:"fuuro", oya:"oyaKyoku", houjuu:"houjuu"};
+const TITLE_BASE_UNIT = {rank:"半荘", kyoku:"局", riichi:"リーチ", fuuro:"副露", oya:"親番の局", houjuu:"放銃"};
 function computeTitles(stats){
   const T = titleThresholds(stats);
   return TITLE_DEFS.map(t=>{
@@ -2683,8 +2917,8 @@ function renderMeterBlock(stats){
   </div>`;
 }
 
-// ⑥卓を囲む：選んだ対局日の確定済み半荘から、その日のメンバー（半荘数の多い順に4人）を東南西北に座らせる。
-// 座る位置はその日の合計ptの順（東＝1位、南＝2位、西＝3位、北＝4位）。実際の座席ではない。
+// ⑥日別リザルト：選んだ対局日の確定済み半荘から、その日のメンバー（半荘数の多い順に4人）を選び、
+// その日の合計ptの順に1位〜4位として並べる（実際の座席とは関係ない）。
 function tableDays(){
   const set = new Set();
   hanchanGroups().forEach(g=>{ if(state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`] && passesFilters(g.date)) set.add(g.date); });
@@ -2907,6 +3141,7 @@ function bindEvents(stats){
     const pr = periodPresets().find(x=>x.id===b.dataset.periodPreset); if(!pr) return;
     state.dateRange = {from:pr.from, to:pr.to}; render._countupNext = true; render();
   }));
+  app.querySelectorAll("[data-winpat-vs]").forEach(b=>b.addEventListener("click", ()=>{ state.winPatVs = b.dataset.winpatVs; render(); }));
   app.querySelectorAll("[data-title-edit]").forEach(b=>b.addEventListener("click", ()=>{ state.titleEditOpen = !state.titleEditOpen; render(); }));
   const tSave = app.querySelector("[data-title-save]");
   if(tSave) tSave.addEventListener("click", ()=>{
@@ -2921,6 +3156,7 @@ function bindEvents(stats){
   if(tDay) tDay.addEventListener("change", ()=>{ state.tableDay = tDay.value; render._countupNext = true; render(); });
   const gReplay = app.querySelector("[data-graph-replay]");
   if(gReplay) gReplay.addEventListener("click", ()=>{ state.graphReplay = !state.graphReplay; render(); });
+  app.querySelectorAll("[data-view-mode]").forEach(b=>b.addEventListener("click", ()=> setViewMode(b.dataset.viewMode)));
   const mToggle = app.querySelector("[data-m-filter-toggle]");
   if(mToggle) mToggle.addEventListener("click", ()=>{ state.mobileMenuOpen = !state.mobileMenuOpen; render(); });
 
@@ -3043,6 +3279,7 @@ function bindEvents(stats){
   }catch(e){ /* 読み込み失敗時は通常のローダー画面にフォールバック */ }
 })();
 
+document.getElementById("viewFab").addEventListener("click", ()=> setViewMode("sp"));
 render();
 </script>
 <style>
