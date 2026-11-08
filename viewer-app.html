@@ -9,181 +9,690 @@
 <link rel="icon" type="image/png" sizes="16x16" href="./favicon-viewer-16.png">
 <link rel="apple-touch-icon" href="./apple-touch-icon-viewer.png">
 <link rel="manifest" href="./manifest-viewer.json">
-<meta name="theme-color" content="#C98A2B">
+<meta name="theme-color" content="#0d3f2e">
 <meta name="apple-mobile-web-app-title" content="麻雀分析">
 <style>
   :root{
-    --bg:#F6F3EC;
-    --surface:#FFFFFF;
-    --ink:#242629;
-    --muted:#767b83;
-    --line:#E4DFD3;
-    --primary:#1F6F54;
-    --primary-dark:#154A38;
-    --primary-tint:#E4EFE9;
-    --houjuu:#B23A2E;
-    --ron:#2E6DA4;
-    --radius:14px;
-    --sidebar-w:252px;
+    /* 雀卓グリーン×牌（claude/design-guide.md 準拠） */
+    --felt:#0f4a36; --felt-hi:#17644a; --felt-lo:#082c20;
+    --felt-line:rgba(159,216,191,.18); --felt-text:#9fd8bf;
+    --tile:#f7f2e4; --tile-face2:#efe7d2; --tile-edge:#ddd2b2;
+    --tile-back:#c99a3e; --tile-back-lo:#a87c2c;
+    --ink:#24231e; --ink-sub:#7d7662;
+    --green:#146b4c; --red:#b8322a;
+    --rule:rgba(125,118,98,.16);      /* 牌上の罫線（控えめ） */
+    --rule-strong:#d9cfb0;            /* 見出し下の罫線 */
+    --recess:rgba(125,118,98,.075);   /* 牌上のくぼみ面 */
+    --green-tint:rgba(20,107,76,.09);
+    --serif:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP","Noto Serif CJK JP",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP","Noto Sans CJK JP",sans-serif;
+    /* 既存のインラインstyleが参照する互換トークン */
+    --bg:var(--recess); --surface:var(--tile); --muted:var(--ink-sub); --line:var(--rule);
+    --primary:var(--green); --primary-dark:#0d4a34; --primary-tint:var(--green-tint);
+    --houjuu:var(--red); --ron:#2a66b8;
+    --radius:12px; --sidebar-w:264px;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0; padding:0; background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic","Segoe UI",sans-serif;
-    height:100%;}
-  #app{min-height:100vh; display:flex;}
+  html,body{margin:0; padding:0;}
+  body{
+    min-height:100vh; color:var(--tile); font-family:var(--sans); -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(120% 60% at 50% -10%, var(--felt-hi) 0%, transparent 60%),
+      radial-gradient(140% 90% at 50% 120%, var(--felt-lo) 0%, transparent 60%),
+      var(--felt);
+    background-attachment:fixed;
+  }
+  /* ラシャの織り目 */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; opacity:.22; mix-blend-mode:overlay; z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  #app{position:relative; z-index:1; min-height:100vh; display:flex;}
+  button,input{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--tile-back); outline-offset:2px;}
+
+  /* ---------- 共通部品 ---------- */
+  .eyebrow{font-size:10px; font-weight:600; letter-spacing:.32em; color:var(--felt-text);}
+  .riichi{position:relative; width:112px; height:8px; border-radius:4px;
+    background:linear-gradient(180deg,#fff 0%,#ebe5d4 100%);
+    box-shadow:0 2px 0 rgba(0,0,0,.18),0 6px 12px rgba(0,0,0,.25);}
+  .riichi::after{content:""; position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px;
+    border-radius:50%; background:var(--red);}
+  .num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
+  /* 牌（面グラデ＋縁→金の裏→落ち影） */
+  .card,.stat-player-card,.radar-grid-card,.loader-card,.chip-bar{
+    --lift:5px;
+    position:relative; color:var(--ink);
+    background:linear-gradient(180deg,var(--tile) 0,var(--tile-face2) 90px) var(--tile-face2);
+    border-radius:var(--radius);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.9),
+      0 3px 0 var(--tile-edge),
+      0 var(--lift) 0 var(--tile-back),
+      0 calc(var(--lift) + 1px) 0 var(--tile-back-lo),
+      0 calc(var(--lift) + 10px) 22px rgba(0,0,0,.32);
+  }
+  @keyframes deal{ from{opacity:0; transform:translateY(16px) scale(.985);} to{opacity:1; transform:none;} }
+  @keyframes fadein{ from{opacity:0;} to{opacity:1;} }
 
   /* ---------- loader screen ---------- */
-  .loader-screen{flex:1; display:flex; align-items:center; justify-content:center; padding:24px;}
-  .loader-card{max-width:480px; width:100%; text-align:center; padding:44px 36px; border:2px dashed var(--line);
-    border-radius:20px; background:var(--surface); transition:border-color .15s, background .15s;}
-  .loader-card.dragover{border-color:var(--primary); background:var(--primary-tint);}
-  .loader-icon{font-size:40px; margin-bottom:8px;}
-  .loader-card h1{font-size:19px; margin:0 0 12px; letter-spacing:.02em;}
-  .loader-desc{font-size:13px; color:var(--muted); line-height:1.8; margin:0 0 22px;}
-  .file-select-btn{display:inline-block; padding:12px 28px; border-radius:999px; background:var(--primary);
-    color:#fff; font-size:14px; font-weight:800; cursor:pointer;}
-  .file-select-btn:hover{background:var(--primary-dark);}
-  .loader-hint{font-size:12px; color:var(--muted); margin:18px 0 0;}
-  .loader-note{font-size:11px; color:var(--muted); margin:20px 0 0; padding-top:16px; border-top:1px solid var(--line);}
-  .loader-error{font-size:12px; color:var(--houjuu); font-weight:700; margin-top:12px; min-height:16px;}
+  .loader-screen{flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px;}
+  .loader-wrap{width:100%; max-width:520px;}
+  .loader-wrap > .eyebrow{text-align:center; margin-bottom:18px;}
+  .loader-card{--lift:7px; width:100%; text-align:center; padding:40px 44px 30px; outline:2px dashed transparent;
+    outline-offset:-14px; transition:outline-color .15s, transform .15s cubic-bezier(.3,.7,.4,1.3);
+    animation:deal .55s cubic-bezier(.2,.8,.2,1) both;}
+  .loader-card.dragover{outline-color:var(--green); transform:translateY(-3px);}
+  .loader-card.dragover .loader-icon{border-color:var(--green);}
+  .loader-icon{width:72px; height:72px; margin:0 auto 18px; display:grid; place-items:center; background:#fffdf7;
+    border:1px solid var(--tile-edge); border-radius:14px; transition:border-color .15s;}
+  .loader-card h1{font-family:var(--serif); font-size:28px; font-weight:700; letter-spacing:.08em; margin:0 0 14px; color:var(--ink);}
+  .loader-card .riichi{margin:0 auto 22px; width:96px;}
+  .loader-desc{font-size:13px; color:var(--ink-sub); line-height:1.9; margin:0 0 26px;}
+  .loader-actions{display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .file-select-btn{
+    --lift:4px; display:inline-flex; align-items:center; justify-content:center; gap:8px; width:320px; max-width:100%; min-height:48px;
+    padding:0 26px; border:none; border-radius:10px; cursor:pointer; font-size:14px; font-weight:700; letter-spacing:.06em;
+    color:#f7f2e4; background:linear-gradient(180deg,#1b7a58 0%,var(--green) 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 0 #0d4a34,0 var(--lift) 0 var(--tile-back),
+      0 calc(var(--lift) + 1px) 0 var(--tile-back-lo),0 calc(var(--lift) + 6px) 12px rgba(0,0,0,.22);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1.3),box-shadow .12s ease,filter .12s;
+  }
+  .file-select-btn:hover{filter:brightness(1.08);}
+  .file-select-btn:active{transform:translateY(3px); transition-duration:.05s;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 1px 0 #0d4a34,0 1px 0 var(--tile-back),0 2px 0 var(--tile-back-lo),0 3px 6px rgba(0,0,0,.2);}
+  .file-select-btn:focus-within{outline:2px solid var(--tile-back); outline-offset:3px;}
+  #load-from-server-btn{margin-top:0 !important; color:var(--ink); background:linear-gradient(180deg,#fffdf7 0%,#f3ecdb 100%);
+    box-shadow:inset 0 1px 0 #fff,0 0 0 1px var(--tile-edge),0 3px 0 var(--tile-edge),0 var(--lift) 0 var(--tile-back),
+      0 calc(var(--lift) + 1px) 0 var(--tile-back-lo),0 calc(var(--lift) + 6px) 12px rgba(0,0,0,.16);}
+  #load-from-server-btn:active{box-shadow:inset 0 1px 0 #fff,0 0 0 1px var(--tile-edge),0 1px 0 var(--tile-edge),0 1px 0 var(--tile-back),0 2px 0 var(--tile-back-lo),0 3px 6px rgba(0,0,0,.14);}
+  .file-select-btn svg{flex:0 0 auto;}
+  .loader-hint{font-size:12px; color:var(--ink-sub); margin:0;}
+  .loader-note{text-wrap:balance; word-break:keep-all; overflow-wrap:anywhere; font-size:11px; color:var(--ink-sub); margin:24px 0 0; padding-top:16px; border-top:1px solid var(--rule); line-height:1.7;}
+  .loader-error{font-size:12px; color:var(--red); font-weight:700; margin-top:4px; min-height:16px;}
 
-  /* ---------- sidebar ---------- */
-  .sidebar{width:var(--sidebar-w); flex:0 0 var(--sidebar-w); background:var(--surface); border-right:1px solid var(--line);
-    display:flex; flex-direction:column; padding:22px 16px; position:sticky; top:0; height:100vh; overflow-y:auto;}
-  .app-title{font-size:15px; font-weight:800; line-height:1.4; margin-bottom:16px;}
-  .sidebar-summary{border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:16px;}
-  .summary-line{font-size:11.5px; color:var(--muted); font-weight:600; line-height:1.9;}
-  .sidebar-date-filter{border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:16px;}
-  .sidebar-date-filter .chip-bar-label{display:block; margin-bottom:8px;}
-  .sidebar-date-label{display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px;
-    font-weight:700; color:var(--muted); margin-bottom:6px;}
-  .sidebar-date-label input[type=date]{border:1.5px solid var(--line); border-radius:8px; padding:5px 6px; font-size:12px;
-    font-weight:700; color:var(--ink); background:var(--surface); font-family:inherit; flex:1; min-width:0;}
-  .day-filter-row{display:flex; gap:6px; margin-top:6px;}
-  .day-filter-btn{flex:1; padding:6px 4px; border:1.5px solid var(--line); border-radius:8px; background:var(--surface);
-    color:var(--muted); font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit;}
-  .day-filter-btn:hover{background:var(--bg);}
-  .day-filter-btn.on{background:var(--primary-tint); border-color:var(--primary); color:var(--primary);}
+  /* ---------- sidebar（ラシャの外枠） ---------- */
+  .sidebar{width:var(--sidebar-w); flex:0 0 var(--sidebar-w); display:flex; flex-direction:column; padding:30px 20px 22px;
+    position:sticky; top:0; height:100vh; overflow-y:auto; color:var(--tile);
+    background:linear-gradient(180deg,rgba(8,44,32,.55) 0%,rgba(8,44,32,.25) 100%);
+    border-right:1px solid var(--felt-line); box-shadow:inset -12px 0 24px -18px rgba(0,0,0,.5);}
+  .app-title{margin-bottom:20px;}
+  .app-title .eyebrow{font-size:9px; letter-spacing:.3em;}
+  .app-title-main{display:block; font-family:var(--serif); font-size:25px; font-weight:700; letter-spacing:.1em;
+    line-height:1.25; margin:8px 0 14px; color:var(--tile); text-shadow:0 2px 12px rgba(0,0,0,.25);}
+  .app-title .riichi{width:88px; height:7px;}
+  .sidebar-summary{padding-bottom:18px; margin-bottom:18px; border-bottom:1px solid var(--felt-line);}
+  .summary-line{display:flex; justify-content:space-between; gap:10px; font-size:11.5px; color:var(--felt-text); font-weight:500; line-height:2;}
+  .summary-line b{color:var(--tile); font-weight:700; font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
+  .summary-line small{display:block; font-size:10px; opacity:.7; line-height:1.4;}
+  .sidebar-date-filter{padding-bottom:18px; margin-bottom:16px; border-bottom:1px solid var(--felt-line);}
+  .side-label{display:flex; align-items:baseline; gap:8px; font-size:12px; font-weight:700; letter-spacing:.12em; color:var(--tile); margin-bottom:10px;}
+  .side-label small{font-size:9px; font-weight:600; letter-spacing:.28em; color:var(--felt-text);}
+  .sidebar-date-label{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11.5px;
+    font-weight:600; color:var(--felt-text); margin-bottom:7px;}
+  .sidebar-date-label input[type=date]{flex:1; min-width:0; height:34px; padding:0 8px; border:1px solid var(--felt-line);
+    border-radius:8px; background:rgba(8,44,32,.55); color:var(--tile); font-size:12.5px; font-weight:600; color-scheme:dark;
+    font-variant-numeric:tabular-nums; transition:border-color .12s, background .12s;}
+  .sidebar-date-label input[type=date]:hover{border-color:rgba(159,216,191,.4);}
+  .sidebar-date-label input[type=date]:focus{outline:none; border-color:var(--tile-back); background:rgba(8,44,32,.8);}
+  .day-filter-row{display:flex; gap:3px; margin-top:10px; padding:3px; border-radius:10px; background:rgba(8,44,32,.55); border:1px solid var(--felt-line);}
+  .day-filter-btn{flex:1; height:30px; border:none; border-radius:7px; background:transparent; color:var(--felt-text);
+    font-size:12px; font-weight:700; letter-spacing:.06em; cursor:pointer; transition:background .12s,color .12s,transform .12s;}
+  .day-filter-btn:hover{color:var(--tile); background:rgba(159,216,191,.08);}
+  .day-filter-btn.on{color:var(--ink); background:linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%);
+    box-shadow:0 2px 0 var(--tile-back),0 3px 4px rgba(0,0,0,.3);}
+  .day-filter-btn:active{transform:translateY(1px);}
+  .sidebar .tool-btn.small{background:transparent; color:var(--felt-text); border:1px solid var(--felt-line); box-shadow:none; height:32px;}
+  .sidebar .tool-btn.small:hover{color:var(--tile); border-color:rgba(159,216,191,.45); background:rgba(159,216,191,.06);}
   .side-nav{display:flex; flex-direction:column; gap:4px;}
-  .side-nav button{display:flex; align-items:center; gap:10px; text-align:left; padding:11px 12px; border-radius:11px;
-    border:none; background:transparent; font-size:13.5px; font-weight:700; color:var(--muted); cursor:pointer;
-    font-family:inherit;}
-  .side-nav button:hover{background:var(--bg);}
-  .side-nav button.active{background:var(--primary-tint); color:var(--primary);}
-  .nav-num{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:7px;
-    background:var(--bg); font-size:11px; font-weight:800; flex:0 0 auto;}
-  .side-nav button.active .nav-num{background:var(--primary); color:#fff;}
-  .reload-btn{margin-top:auto; padding:10px 0; border:1px solid var(--line); border-radius:10px; background:var(--surface);
-    color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;}
-  .reload-btn:hover{background:var(--bg);}
+  .side-nav button{position:relative; display:flex; align-items:center; gap:12px; text-align:left; min-height:44px; padding:8px 12px;
+    border-radius:10px; border:none; background:transparent; color:var(--felt-text); font-size:13px; font-weight:700;
+    letter-spacing:.02em; line-height:1.35; cursor:pointer;
+    transition:background .12s ease,color .12s ease,transform .12s cubic-bezier(.3,.7,.4,1.3),box-shadow .12s ease;}
+  .side-nav button:hover{background:rgba(159,216,191,.08); color:var(--tile);}
+  .side-nav button:active{transform:translateY(1px); transition-duration:.05s;}
+  .side-nav button.active{color:var(--ink); background:linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 0 var(--tile-edge),0 4px 0 var(--tile-back),0 5px 0 var(--tile-back-lo),0 9px 14px rgba(0,0,0,.3);}
+  .nav-num{display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:22px; height:27px;
+    border-radius:5px; font-family:var(--serif); font-size:13px; font-weight:700; color:var(--green);
+    background:linear-gradient(180deg,#fbf7ec 0%,#ece3cb 100%); box-shadow:0 2px 0 var(--tile-back),0 3px 3px rgba(0,0,0,.3);}
+  .side-nav button.active .nav-num{color:#f7f2e4; background:linear-gradient(180deg,#1b7a58 0%,var(--green) 100%); box-shadow:0 2px 0 #0d4a34;}
+  .reload-btn{margin-top:auto; display:flex; align-items:center; justify-content:center; gap:8px; min-height:40px;
+    border:1px solid var(--felt-line); border-radius:10px; background:transparent; color:var(--felt-text);
+    font-size:12px; font-weight:700; letter-spacing:.06em; cursor:pointer; transition:color .12s,border-color .12s,background .12s;}
+  .reload-btn:hover{color:var(--tile); border-color:rgba(159,216,191,.45); background:rgba(159,216,191,.06);}
+  .side-spacer{flex:1 0 24px;}
 
   /* ---------- main ---------- */
-  .main{flex:1; padding:28px 36px 60px; max-width:1280px;}
-  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; margin-bottom:20px;}
-  .card h2{font-size:16px; font-weight:800; margin:0; letter-spacing:.01em;}
-  .card h3{font-size:14px; font-weight:800; margin:0;}
-  .n-sub{color:var(--muted); font-weight:600; margin-left:8px; font-size:11.5px;}
+  .main{flex:1; min-width:0; padding:34px 44px 80px;}
+  .main > *{max-width:1400px; margin-left:auto; margin-right:auto;}
+  .page-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-bottom:16px; margin-bottom:26px;
+    border-bottom:1px solid var(--felt-line);}
+  .page-head-text{min-width:0;}
+  .page-title{display:flex; align-items:center; gap:14px; margin:10px 0 0; font-family:var(--serif); font-size:28px; font-weight:700;
+    letter-spacing:.08em; line-height:1.3; color:var(--tile); text-shadow:0 2px 12px rgba(0,0,0,.25);}
+  .page-title .nav-num{width:28px; height:35px; font-size:17px; border-radius:6px;}
+  .page-desc{margin:8px 0 0; font-size:12.5px; color:var(--felt-text); line-height:1.7;}
+  .page-tools{display:flex; gap:10px; flex:0 0 auto; align-self:center; margin-top:18px;}
+  .card{padding:24px 28px; margin-bottom:34px;}
+  .card > .card-title:first-child{margin-top:0;}
+  .card h2{font-size:15px; font-weight:700; margin:0; letter-spacing:.06em;}
+  .card h3{font-size:14px; font-weight:700; margin:0;}
+  .card-title{display:flex; align-items:baseline; gap:10px; margin:30px 0 12px; font-size:13px; font-weight:700; letter-spacing:.12em; color:var(--ink);}
+  .card-title::before{content:""; width:3px; height:13px; border-radius:2px; background:var(--green); align-self:center;}
+  .card-title small{font-size:11.5px; font-weight:500; letter-spacing:.02em; color:var(--ink-sub);}
+  .n-sub{color:var(--ink-sub); font-weight:500; margin-left:8px; font-size:11.5px; line-height:1.7;}
+  .note{display:block; margin-top:12px; color:var(--ink-sub); font-size:11.5px; line-height:1.75;}
+  .felt-note{max-width:1400px; color:var(--felt-text); font-size:11.5px; line-height:1.8; margin:-14px auto 30px;}
   .section-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
-  .tool-btn{border:1px solid var(--line); background:var(--surface); color:var(--ink); font-size:12px; font-weight:700;
-    border-radius:9px; padding:8px 14px; cursor:pointer; font-family:inherit; white-space:nowrap;}
-  .tool-btn:hover{background:var(--bg);}
+  .tool-btn{
+    display:inline-flex; align-items:center; gap:7px; min-height:36px; padding:0 14px; border:none; border-radius:9px;
+    font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--ink); cursor:pointer; white-space:nowrap;
+    background:linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%);
+    box-shadow:inset 0 1px 0 #fff,0 2px 0 var(--tile-edge),0 4px 0 var(--tile-back),0 5px 0 var(--tile-back-lo),0 8px 12px rgba(0,0,0,.28);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1.3),box-shadow .12s ease,filter .12s;}
+  .tool-btn:hover{filter:brightness(1.03);}
+  .tool-btn:active{transform:translateY(3px); transition-duration:.05s;
+    box-shadow:inset 0 1px 0 #fff,0 1px 0 var(--tile-edge),0 1px 0 var(--tile-back),0 2px 0 var(--tile-back-lo),0 3px 5px rgba(0,0,0,.25);}
   .tool-btn:disabled{opacity:.4; cursor:default;}
-  .tool-btn.small{padding:5px 10px; font-size:11px;}
-  .empty{color:var(--muted); font-size:13px; text-align:center; padding:26px 0;}
+  .tool-btn.small{min-height:30px; padding:0 10px; font-size:11px; justify-content:center;}
+  .tool-btn svg{color:var(--green);}
+  .empty{color:var(--ink-sub); font-size:13px; text-align:center; padding:30px 0; line-height:1.8;}
 
-  /* chip bar (shared selection, currently used by ②) */
-  .chip-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 16px; background:var(--surface);
-    border:1px solid var(--line); border-radius:12px; margin-bottom:20px;}
-  .chip-bar-label{font-size:11.5px; font-weight:800; color:var(--muted); margin-right:2px;}
-  .chip-bar-empty{font-size:12px; color:var(--muted);}
-  .sel-chip{display:inline-flex; align-items:center; gap:6px; border:1.5px solid; border-radius:999px; padding:5px 6px 5px 12px;
-    font-size:12.5px; font-weight:800;}
-  .sel-chip button{border:none; background:transparent; color:inherit; font-weight:800; font-size:13px; cursor:pointer;
-    padding:2px 4px; line-height:1;}
-  .chip-clear-btn{margin-left:auto; border:none; background:transparent; color:var(--muted); font-size:11.5px;
-    font-weight:700; cursor:pointer; text-decoration:underline; font-family:inherit;}
+  /* 登場：セクション切替・初回表示のときだけ牌が配られる（再描画のたびには動かさない） */
+  .main.is-entering .page-head{animation:fadein .35s ease both;}
+  .main.is-entering .card,
+  .main.is-entering .chip-bar,
+  .main.is-entering .stats-grid > .stat-player-card,
+  .main.is-entering .radar-grid > .radar-grid-card{animation:deal .5s cubic-bezier(.2,.8,.2,1) both;}
+  .main.is-entering > :nth-child(3){animation-delay:.06s;}
+  .main.is-entering > :nth-child(4){animation-delay:.12s;}
+  .main.is-entering > :nth-child(5){animation-delay:.18s;}
+  .main.is-entering .stats-grid > :nth-child(2),.main.is-entering .radar-grid > :nth-child(2){animation-delay:.04s;}
+  .main.is-entering .stats-grid > :nth-child(3),.main.is-entering .radar-grid > :nth-child(3){animation-delay:.08s;}
+  .main.is-entering .stats-grid > :nth-child(4),.main.is-entering .radar-grid > :nth-child(4){animation-delay:.12s;}
+  .main.is-entering .stats-grid > :nth-child(5),.main.is-entering .radar-grid > :nth-child(5){animation-delay:.16s;}
+  .main.is-entering .stats-grid > :nth-child(6),.main.is-entering .radar-grid > :nth-child(6){animation-delay:.2s;}
+  .main.is-entering .stats-grid > :nth-child(n+7),.main.is-entering .radar-grid > :nth-child(n+7){animation-delay:.24s;}
 
-  /* tables */
-  .table-scroll{overflow-x:auto;}
-  .stat-mini-table{width:100%; border-collapse:collapse; font-size:13.5px;}
-  .stat-mini-table th{color:var(--muted); font-weight:700; padding:9px 8px; text-align:center; white-space:nowrap; cursor:default;}
-  .stat-mini-table td{padding:10px 8px; text-align:center; font-weight:700; border-top:1px solid var(--line);}
-  .stat-mini-table tr:nth-child(even) td{background:rgba(118,123,131,.06);}
-  .stat-mini-table .col-name{text-align:left; font-weight:800; white-space:nowrap;}
-  #compare-table .col-name{position:sticky; left:0; z-index:1; background:var(--surface);
-    box-shadow:2px 0 4px -2px rgba(36,38,41,.18);}
-  #compare-table tr:nth-child(even) .col-name{background:var(--bg);}
+  /* chip bar（②スコア推移の選択中プレイヤー） */
+  .chip-bar{--lift:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 18px; margin-bottom:28px; min-height:54px;}
+  .chip-bar-label{font-size:11.5px; font-weight:700; color:var(--ink-sub); letter-spacing:.06em; margin-right:4px;}
+  .chip-bar-empty{font-size:12px; color:var(--ink-sub);}
+  .sel-chip{display:inline-flex; align-items:center; gap:6px; border:1.5px solid; border-radius:8px; padding:4px 4px 4px 11px;
+    font-size:12.5px; font-weight:700;}
+  .sel-chip button{display:grid; place-items:center; width:22px; height:22px; border:none; border-radius:5px; background:transparent;
+    color:inherit; font-weight:700; font-size:14px; cursor:pointer; line-height:1;}
+  .sel-chip button:hover{background:rgba(0,0,0,.07);}
+  .chip-clear-btn{margin-left:auto; border:none; background:transparent; color:var(--ink-sub); font-size:11.5px; font-weight:700;
+    cursor:pointer; text-decoration:underline; text-underline-offset:3px; padding:6px;}
+  .chip-clear-btn:hover{color:var(--ink);}
+
+  /* ---------- tables：牌の上で読みやすく ---------- */
+  .table-scroll{overflow-x:auto; margin:0 -6px; padding:0 6px;}
+  .stat-mini-table{width:100%; border-collapse:collapse; font-size:13px; color:var(--ink);
+    font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
+  .stat-mini-table th{color:var(--ink-sub); font-size:11.5px; font-weight:700; letter-spacing:.03em; padding:8px 12px 9px;
+    text-align:right; white-space:nowrap; vertical-align:bottom; border-bottom:1.5px solid var(--rule-strong); cursor:default;}
+  .stat-mini-table td{padding:8px 12px; text-align:right; font-weight:500; white-space:nowrap; border-top:1px solid var(--rule);}
+  .stat-mini-table tr:not(.compare-group-row):not(.compare-subgroup-row):hover > td{background-color:rgba(20,107,76,.05);}
+  .stat-mini-table tbody th{border-bottom:none; border-top:1px solid var(--rule); vertical-align:middle; padding:8px 12px; font-size:13px; letter-spacing:0;}
+  .stat-mini-table tbody th.col-name{color:var(--ink);}
+  .stat-mini-table tbody tr:hover > th{background-color:rgba(20,107,76,.05);}
+  .stat-mini-table td{vertical-align:middle;}
+  .stat-mini-table .col-name{text-align:left; font-weight:700; white-space:nowrap; color:var(--ink);}
+  .stat-mini-table th.col-name{color:var(--ink-sub);}
+  .stat-mini-table td .n-sub,.stat-mini-table th .n-sub{margin-left:0; font-size:10.5px;}
+  .stat-mini-table th small{display:block; font-size:10px; font-weight:500; color:var(--ink-sub); letter-spacing:0; margin-top:1px;}
+  .stat-mini-table td small{display:block; font-size:10px; font-weight:500; color:var(--ink-sub); line-height:1.3;}
+  #compare-table .col-name{position:sticky; left:0; z-index:1; background:var(--tile-face2); box-shadow:6px 0 6px -6px rgba(36,35,30,.25);}
   #compare-table th.col-name{z-index:2;}
-  tr.compare-group-row td.compare-group-cell{background:var(--bg); font-weight:800; text-align:left; cursor:pointer;}
+  /* 広い画面で列が間延びしないよう、牌（カード）内の表は内容幅＋最低920pxにとどめ左寄せ */
+  .card .stat-mini-table{width:auto; min-width:min(100%,920px);}
+  .card .stat-mini-table td:not(.col-name), .card .stat-mini-table th:not(.col-name){min-width:96px;}
+  .card .stat-mini-table td.col-name, .card .stat-mini-table th.col-name{min-width:150px;}
+  /* ⑤放銃マトリクス：列数が多いので最小幅を詰め、1280px幅でも横スクロールなしで収める */
+  .card #houjuu-matrix-table td:not(.col-name), .card #houjuu-matrix-table th:not(.col-name){min-width:68px; padding-left:8px; padding-right:10px;}
+  .card #houjuu-matrix-table .col-name{min-width:120px;}
+  tr.compare-group-row{cursor:pointer;}
+  tr.compare-group-row td.compare-group-cell{padding:20px 12px 8px; border-top:1.5px solid var(--rule-strong); text-align:left;
+    font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--green); background:transparent;}
+  tr.compare-group-row:first-child td.compare-group-cell,
+  .stat-mini-table tr:first-child + tr.compare-group-row td.compare-group-cell{border-top:none;}
+  tr.compare-group-row:hover td.compare-group-cell{color:#0d4a34; background:rgba(20,107,76,.05);}
   #compare-table tr.compare-group-row td.compare-group-cell{position:static !important; box-shadow:none !important;}
-  .compare-group-arrow{display:inline-block; width:14px; margin-right:4px; font-size:11px; color:var(--muted);}
-  tr.compare-subgroup-row td.compare-subgroup-cell{background:transparent; font-weight:800; font-size:12px; color:var(--muted); text-align:left;
-    padding-top:12px; padding-bottom:2px; border-top:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .compare-group-arrow{display:inline-block; width:16px; margin-right:2px; font-size:8px; color:var(--green); vertical-align:2px;}
+  tr.compare-subgroup-row td.compare-subgroup-cell{background:transparent; font-weight:700; font-size:11.5px; color:var(--ink-sub); text-align:left;
+    padding:14px 12px 4px; border-top:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:.04em;}
   #compare-table tr.compare-subgroup-row td.compare-subgroup-cell{position:static !important; box-shadow:none !important;}
-  .compare-subgroup-desc{font-weight:500; font-size:10.5px; color:var(--muted); opacity:.75; margin-left:8px;}
-  td.compare-metric-indent{padding-left:22px;}
-  .stat-mini-table .col-rank{width:44px; color:var(--muted); font-weight:800;}
+  .compare-subgroup-desc{font-weight:500; font-size:10.5px; color:var(--ink-sub); opacity:.8; margin-left:8px; letter-spacing:0;}
+  td.compare-metric-indent{padding-left:26px !important;}
+  .stat-mini-table .col-rank{width:44px; color:var(--ink-sub); font-weight:700;}
+  /* 行内の最大・最小：色＋記号で示す（色だけに頼らない） */
+  /* 良し悪しのある指標：最良＝緑◎／最悪＝赤△。回数・中立の指標：最大＝青▲／最小＝橙▼ */
+  :root{--c-max:#2a66b8; --c-min:#c4621a;}
+  .stat-mini-table td.is-best{color:var(--green); font-weight:700;}
+  .stat-mini-table td.is-worst{color:var(--red); font-weight:700;}
+  .stat-mini-table td.is-max{color:var(--c-max); font-weight:700;}
+  .stat-mini-table td.is-min{color:var(--c-min); font-weight:700;}
+  .stat-mini-table td.is-best::before,.stat-mini-table td.is-worst::before,.stat-mini-table td.is-max::before,.stat-mini-table td.is-min::before,
+  .mark-best::before,.mark-worst::before,.mark-max::before,.mark-min::before{display:inline-block; font-size:8px; margin-right:4px; vertical-align:1px;}
+  .stat-mini-table td.is-best::before,.mark-best::before{content:"◎"; font-size:9px;}
+  .stat-mini-table td.is-worst::before,.mark-worst::before{content:"✗"; font-size:9px;}
+  .stat-mini-table td.is-max::before,.mark-max::before{content:"▲";}
+  .stat-mini-table td.is-min::before,.mark-min::before{content:"▼";}
+  .mark-best{color:var(--green); font-weight:700;} .mark-worst{color:var(--red); font-weight:700;}
+  .mark-max{color:var(--c-max); font-weight:700;} .mark-min{color:var(--c-min); font-weight:700;}
+  .mark-legend{display:inline-flex; flex-wrap:wrap; gap:2px 12px;}
+  .avg-col{background:var(--recess) !important; font-style:normal;}
+  .avg-badge{display:inline-block; margin-right:6px; padding:1px 5px; border-radius:4px; font-size:9px; font-weight:700;
+    letter-spacing:.12em; color:var(--ink-sub); border:1px solid var(--tile-edge); background:#fffdf7; vertical-align:1px; font-style:normal;}
 
+  /* チップ（対象プレイヤー選択など） */
   .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
-  .chip{padding:6px 12px; border-radius:999px; background:var(--bg); border:1px solid var(--line);
-    font-size:12.5px; color:var(--muted); font-weight:700; cursor:pointer; font-family:inherit;}
-  .roster-chip input{margin-right:5px; vertical-align:middle;}
-  .legend-chip{display:inline-flex; align-items:center; gap:6px; border:1.5px solid var(--line); background:var(--surface);}
-  .legend-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
-  .legend-row{margin-top:14px;}
-  .axis-note{display:block; margin-top:10px; line-height:1.7;}
+  .chip{display:inline-flex; align-items:center; gap:7px; min-height:34px; padding:0 12px; border-radius:8px; cursor:pointer;
+    background:#fffdf7; border:1px solid var(--tile-edge); box-shadow:0 2px 0 var(--tile-edge);
+    font-size:12.5px; color:var(--ink); font-weight:600; user-select:none;
+    transition:transform .12s cubic-bezier(.3,.7,.4,1.3),box-shadow .12s ease,background .12s,border-color .12s;}
+  .chip:hover{transform:translateY(-1px); box-shadow:0 3px 0 var(--tile-edge);}
+  .chip:active{transform:translateY(1px); box-shadow:0 1px 0 var(--tile-edge); transition-duration:.05s;}
+  .chip .chip-n{color:var(--ink-sub); font-weight:500; font-size:11.5px; font-variant-numeric:tabular-nums;}
+  .roster-chip input{appearance:none; -webkit-appearance:none; margin:0; flex:0 0 auto; width:15px; height:15px; border-radius:4px;
+    border:1.5px solid #c9bd99; background:#fff; display:grid; place-items:center; cursor:pointer; transition:background .1s,border-color .1s;}
+  .roster-chip input:checked{background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2l2 2 4-4.4' fill='none' stroke='%23f7f2e4' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px no-repeat; border-color:var(--green);}
+  .roster-chip input:focus-visible{outline:2px solid var(--tile-back); outline-offset:2px;}
+  .target-chip.on{background:#eef4ec; border-color:rgba(20,107,76,.45); box-shadow:0 2px 0 rgba(20,107,76,.35); color:#0d4a34;}
+  .legend-chip{border:1px solid var(--tile-edge);}
+  .legend-dot{width:10px; height:10px; border-radius:50%; display:inline-block; box-shadow:0 0 0 2px #fffdf7;}
+  .legend-row{margin-top:16px;}
+  .axis-note{display:block; margin-top:12px; line-height:1.8;}
 
-  .target-select{margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--line);}
-  .target-select .chip-bar-label{display:block; margin-bottom:8px;}
-  .target-chip.on{background:var(--primary-tint); border-color:var(--primary); color:var(--primary);}
+  .target-select{margin-bottom:20px; padding-bottom:18px; border-bottom:1px solid var(--rule);}
+  .card > .target-select:last-child{margin-bottom:0; padding-bottom:0; border-bottom:none;}
+  .target-select .chip-bar-label{display:block; margin-bottom:10px; line-height:1.6;}
+  .target-select .chip-bar-label small{font-weight:500; letter-spacing:0; color:var(--ink-sub); opacity:.85; margin-left:6px;}
+
+  /* ---------- 統計：プレイヤー別スタッツ（牌をラシャに並べる） ---------- */
+  .stats-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(380px,100%),1fr)); gap:22px 20px; align-items:start; margin-bottom:30px;}
+  .stat-player-card{--lift:4px; padding:4px 22px; transition:transform .12s cubic-bezier(.3,.7,.4,1.3);}
+  .stat-player-card > .row-between:first-child{min-height:58px; margin:0 -22px; padding:0 22px; border-radius:var(--radius);}
+  .stat-player-card > .row-between:first-child:hover{background:rgba(20,107,76,.04);}
+  .stat-player-card.is-open{padding-bottom:20px;}
+  .stat-player-card.is-open > .row-between:first-child{border-bottom:1px solid var(--rule); border-radius:var(--radius) var(--radius) 0 0; margin-bottom:6px;}
+  .stat-name{display:flex; align-items:center; gap:10px; font-size:16px; font-weight:700; letter-spacing:.06em; color:var(--ink);}
+  .stat-name .avg-badge{font-size:9.5px;}
+  .chev{display:grid; place-items:center; width:26px; height:26px; border-radius:7px; color:var(--ink-sub); font-size:9px; margin-left:0 !important;
+    transition:background .12s,color .12s;}
+  .row-between:hover .chev{background:var(--recess); color:var(--ink);}
+  .stat-section-label{display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:700; color:var(--ink-sub); letter-spacing:.1em;
+    margin:16px 0 8px;}
+  .row-between > .stat-section-label::before{content:""; width:3px; height:12px; border-radius:2px; background:var(--green);}
+  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .stat-tile{background:var(--recess); border-radius:8px; padding:10px 8px 9px; text-align:center;}
+  .stat-tile .v{font-size:19px; font-weight:700; color:var(--ink); letter-spacing:.01em; font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
+  .stat-tile .l{font-size:11px; color:var(--ink-sub); font-weight:600; margin-top:2px;}
+  .stat-tile .n{font-size:10.5px; color:var(--ink-sub); font-weight:500; margin-top:1px; opacity:.8; font-variant-numeric:tabular-nums;}
+  .row-between{display:flex; align-items:center; justify-content:space-between; cursor:pointer; min-height:40px; border-radius:8px;}
+  .stat-player-card .row-between:not(:first-child){margin:6px -8px 0; padding:0 8px;}
+  .stat-player-card .row-between:not(:first-child):hover{background:rgba(20,107,76,.05);}
+  /* カード見出しと同じ名前の重複表示は隠す（要素自体は残す） */
+  .rank-split-name{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+  .glossary{font-size:12px; color:var(--felt-text); line-height:1.9; padding-top:14px; border-top:1px solid var(--felt-line);}
+
+  /* レーダー：1人1枚の牌 */
+  .radar-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(280px,100%),1fr)); gap:26px 20px; margin-bottom:30px;}
+  .radar-grid-card{--lift:4px; padding:18px 20px 16px;}
+  .card .radar-grid-card{box-shadow:inset 0 0 0 1px var(--rule); background:#fbf8ef; --lift:0px;}
+  .radar-grid-card-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px; padding-bottom:10px; border-bottom:1px solid var(--rule);}
+  .radar-grid-card-head h3{font-size:16px; font-weight:700; margin:0; letter-spacing:.06em; color:var(--ink);}
+  .radar-svg{width:100%; height:auto; display:block; margin:2px 0 4px;}
+  .radar-svg text{font-family:var(--sans);}
+  .compat-legend-row{display:flex; justify-content:space-between; gap:10px; padding:5px 0; font-size:12px; color:var(--ink-sub); font-weight:600;
+    border-top:1px solid var(--rule); font-variant-numeric:tabular-nums; font-feature-settings:"tnum";}
+  .compat-legend-row > span:last-child{color:var(--ink);}
+  .compat-legend-row small{color:var(--ink-sub); font-weight:500; font-size:10.5px; margin-left:4px;}
+  .grade-total{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .grade-total b{font-size:18px; font-weight:700; color:var(--ink);}
+  .grade-total span{font-size:11px; color:var(--ink-sub); font-weight:600; margin-left:2px;}
+  .grade-total em{display:block; font-style:normal; font-size:11px; color:var(--ink-sub); font-weight:600; margin-top:1px;}
+  .grade-pips{display:inline-flex; gap:2px; margin-left:8px; vertical-align:0;}
+  .grade-pips i{width:5px; height:9px; border-radius:1.5px; background:#e3dac2;}
+  .grade-pips i.on{background:var(--green);}
+  .grade-cell b{font-weight:500;}
+  .grade-cell small{display:block; font-size:10px; color:var(--ink-sub);}
+
+  .rankgrade-tabs{display:inline-flex; gap:3px; margin:0 0 20px; padding:3px; border-radius:10px; background:var(--recess); box-shadow:inset 0 1px 2px rgba(0,0,0,.06);}
+  .rankgrade-tab{min-height:34px; padding:0 20px; border:none; border-radius:8px; background:transparent; color:var(--ink-sub);
+    font-weight:700; font-size:13px; letter-spacing:.06em; cursor:pointer; transition:background .12s,color .12s,box-shadow .12s,transform .12s;}
+  .rankgrade-tab:hover{color:var(--ink);}
+  .rankgrade-tab:active{transform:translateY(1px);}
+  .rankgrade-tab.active{color:var(--green); background:linear-gradient(180deg,#fffdf7 0%,var(--tile) 100%);
+    box-shadow:0 1px 0 var(--tile-edge),0 2px 0 var(--tile-back),0 3px 5px rgba(0,0,0,.12);}
+
+  /* 指標の定義：点線の下線が目印。マウスを乗せる（スマホはタップ）と定義をツールチップで表示 */
+  .has-tip{text-decoration:underline dotted rgba(125,118,98,.7); text-underline-offset:3px; text-decoration-thickness:1px; cursor:help;}
+  .has-tip:focus-visible{outline:2px solid var(--tile-back); outline-offset:2px; border-radius:2px;}
+  .tip-pop{position:fixed; z-index:100; max-width:280px; padding:8px 11px; border-radius:8px; pointer-events:none;
+    background:#1f2a24; color:#f7f2e4; font-size:12px; font-weight:500; line-height:1.6; letter-spacing:.02em; box-shadow:0 6px 18px rgba(0,0,0,.35);
+    opacity:0; transform:translateY(3px); transition:opacity .12s, transform .12s;}
+  .tip-pop.show{opacity:1; transform:none;}
+  .tip-pop b{display:block; font-size:11px; color:#ffd77a; margin-bottom:2px; letter-spacing:.06em;}
+
+  /* ①比較表：絞り込み条件バッジ・指標の範囲切替・見出し行の固定 */
+  .cond-badge{display:inline-flex; align-items:center; gap:6px; margin-left:14px; padding:4px 10px; border-radius:7px; vertical-align:middle;
+    font-family:var(--sans); font-size:12.5px; font-weight:700; letter-spacing:.04em; color:var(--ink); font-variant-numeric:tabular-nums;
+    background:linear-gradient(180deg,var(--tile),var(--tile-face2)); box-shadow:0 2px 0 var(--tile-back), 0 3px 4px rgba(0,0,0,.25);}
+  .cond-badge svg{color:var(--green);}
+  .compare-switches{display:flex; gap:10px; flex-wrap:wrap;}
+  .compare-toolbar .note{display:flex; flex-wrap:wrap; gap:2px 12px; align-items:center;}
+  .legend-sub{color:var(--ink-sub);}
+  .compare-scroll{max-height:calc(100vh - 150px); overflow:auto;}
+  #compare-table thead th{position:sticky; top:0; z-index:3; background:var(--tile); box-shadow:inset 0 -1px 0 var(--rule-strong);}
+  #compare-table thead th.col-name{z-index:4;}
+  #compare-table thead th.avg-col{background:#ebe3cd !important;}
+  #compare-table.is-by-player thead tr.cmp-subhead th{top:0;}
+  #compare-table.is-by-player thead tr:nth-child(2) th{top:var(--subhead-h,0px);}
+
+  /* ①比較表：向き切替と「行＝選手」表示 */
+  .compare-toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap; margin:0 0 12px;}
+  .seg{display:inline-flex; gap:3px; padding:3px; border-radius:10px; background:var(--recess); box-shadow:inset 0 1px 2px rgba(0,0,0,.06); flex:0 0 auto;}
+  .seg-btn{min-height:32px; padding:0 14px; border:none; border-radius:8px; background:transparent; color:var(--ink-sub);
+    font-size:12px; font-weight:700; letter-spacing:.04em; cursor:pointer; white-space:nowrap; transition:background .12s,color .12s,transform .12s;}
+  .seg-btn:hover{color:var(--ink);}
+  .seg-btn:active{transform:translateY(1px);}
+  .seg-btn.on{color:var(--green); background:linear-gradient(180deg,#fffdf7 0%,var(--tile) 100%); box-shadow:0 1px 0 var(--tile-edge),0 2px 0 var(--tile-back),0 3px 5px rgba(0,0,0,.12);}
+  .compare-tabs{display:flex; flex-wrap:wrap; margin-bottom:12px;}
+  @media (max-width:480px){
+    .compare-tabs{display:flex; flex-wrap:nowrap; width:100%;}
+    .card .compare-tabs .rankgrade-tab{flex:1 1 auto; padding:0 6px; font-size:11.5px; letter-spacing:0; white-space:nowrap;}
+  }
+  .compare-tabs .rankgrade-tab{padding:0 14px; font-size:12.5px;}
+  #compare-table.is-by-player{min-width:0;}
+  /* 固定した名前列：.table-scrollのpadding（6px）分だけ外へ寄せて固定し、左端からスクロールした数値が覗かないようにする */
+  #compare-table .col-name{left:-6px;}
+  #compare-table.is-by-player thead th{vertical-align:bottom;}
+  .card #compare-table.is-by-player td:not(.col-name), .card #compare-table.is-by-player th:not(.col-name){min-width:64px; padding-left:8px; padding-right:10px;}
+  .card #compare-table.is-by-player .col-name{min-width:88px;}
+  #compare-table.is-by-player tr.cmp-subhead th{border-bottom:none; padding-bottom:2px; font-size:10.5px; letter-spacing:.06em;}
+  #compare-table.is-by-player tr.cmp-subhead th.has-sub{text-align:center; color:var(--green); box-shadow:inset 0 -1px 0 var(--rule-strong);}
+  #compare-table.is-by-player td.col-name.avg-col{background:#ebe3cd !important;}
+  /* ①比較表：横の余白を詰める（最低920px・列96pxの下限を外し、内容幅に合わせる） */
+  .card #compare-table:not(.is-by-player){min-width:0;}
+  .card #compare-table:not(.is-by-player) td:not(.col-name), .card #compare-table:not(.is-by-player) th:not(.col-name){min-width:66px; padding-left:8px; padding-right:10px;}
+  .card #compare-table:not(.is-by-player) .col-name{min-width:0; padding-left:10px; padding-right:16px;}
+  .card #compare-table.is-by-player td:not(.col-name), .card #compare-table.is-by-player th:not(.col-name){min-width:56px; padding-left:6px; padding-right:8px;}
+  .card #compare-table.is-by-player .col-name{min-width:76px; padding-right:12px;}
+
+  /* ===================== 見て楽しい分析：マイ牌・称号・卓を囲む・点棒メーター・リプレイ ===================== */
+  /* マイ牌 */
+  .mytile{--h:34px; position:relative; display:inline-grid; place-items:center; flex:0 0 auto; width:calc(var(--h)*.76); height:var(--h); border-radius:calc(var(--h)*.14);
+    background:linear-gradient(180deg,#fffdf7 0%,#efe7d2 100%); color:var(--pc,#146b4c);
+    box-shadow:inset 0 1px 0 #fff, inset 0 0 0 1px rgba(125,118,98,.18), 0 2px 0 var(--tile-edge), 0 3.5px 0 var(--tile-back), 0 5px 5px rgba(0,0,0,.18);
+    font-family:var(--serif); font-weight:700; line-height:1; vertical-align:middle;}
+  .mytile::before{content:attr(data-ch); font-size:calc(var(--h)*.56); font-weight:700;}
+  .mytile.two::before{font-size:calc(var(--h)*.32); writing-mode:vertical-rl; letter-spacing:-.05em;}
+  .mytile.xs{--h:20px;}
+  .mytile.sm{--h:26px;} .mytile.md{--h:40px;} .mytile.lg{--h:52px;}
+  .mytile-row{display:flex; flex-wrap:wrap; gap:16px 14px;}
+  .mytile-item{display:flex; flex-direction:column; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink); width:58px;}
+  /* 称号カード */
+  @keyframes shine{ 0%{transform:translateX(-60%);} 35%,100%{transform:translateX(60%);} }
+  /* 卓を囲む */
+  .table-toolbar{display:flex; align-items:center; flex-wrap:wrap; gap:8px 16px; margin-bottom:16px;}
+  .day-select{display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--ink-sub);}
+  .day-select select{height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--tile-edge); background:#fffdf7; color:var(--ink); font-size:13px; font-weight:700; font-family:inherit; font-variant-numeric:tabular-nums;}
+  .mj-table{display:grid; place-items:center; padding:8px 0 4px;}
+  .mj-felt{position:relative; width:min(100%,600px); aspect-ratio:1/1; border-radius:22px; overflow:visible;
+    background:radial-gradient(70% 70% at 50% 45%, var(--felt-hi) 0%, var(--felt) 60%, var(--felt-lo) 100%);
+    box-shadow:inset 0 0 0 10px #5b3a1e, inset 0 0 0 12px #3d2612, inset 0 0 40px rgba(0,0,0,.45), 0 16px 30px rgba(0,0,0,.3);}
+  .mj-felt::before{content:""; position:absolute; inset:12px; border-radius:12px; opacity:.25; mix-blend-mode:overlay; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .mj-center{position:absolute; left:50%; top:50%; width:26%; aspect-ratio:1/1; transform:translate(-50%,-50%) rotate(45deg); border-radius:14px;
+    background:linear-gradient(180deg,#1d2a24,#0c1411); box-shadow:inset 0 0 0 2px rgba(159,216,191,.25), 0 6px 14px rgba(0,0,0,.4);}
+  .mj-center-in{position:absolute; inset:0; transform:rotate(-45deg); display:grid; place-content:center; text-align:center; color:var(--tile);}
+  .mj-date{font-size:11px; letter-spacing:.14em; color:var(--felt-text); font-variant-numeric:tabular-nums;}
+  .mj-hc{font-family:var(--serif); font-size:30px; font-weight:700; line-height:1.1; color:#ffd77a; font-variant-numeric:tabular-nums;}
+  .mj-hc small{font-family:var(--sans); font-size:11px; margin-left:2px; color:var(--felt-text);}
+  .mj-mvp{font-size:10px; color:var(--felt-text); letter-spacing:.1em; margin-top:2px;}
+  .mj-mvp b{display:block; font-size:13px; color:var(--tile); letter-spacing:.06em;}
+  .seat{position:absolute; width:min(40%,220px); padding:10px 12px 10px; border-radius:12px; color:var(--ink);
+    background:linear-gradient(180deg,var(--tile),var(--tile-face2)); box-shadow:inset 0 1px 0 #fff, 0 2px 0 var(--tile-edge), 0 4px 0 var(--tile-back), 0 10px 16px rgba(0,0,0,.35);}
+  /* 席の位置に意味を持たせないため、上に卓の情報、その下に1位〜4位を2×2（読む順＝順位順）で並べる */
+  .mj-felt{aspect-ratio:auto !important; display:grid; grid-template-columns:1fr 1fr; gap:30px 18px; padding:30px 26px 26px; width:min(100%,760px);}
+  .mj-center{position:static !important; transform:none !important; grid-column:1/-1; width:auto !important; aspect-ratio:auto !important; border-radius:12px;}
+  .mj-center-in{position:static !important; transform:none !important; padding:10px 16px; display:flex !important; align-items:center; justify-content:center; gap:22px;}
+  .mj-hc{font-size:28px;}
+  .mj-mvp b{display:inline; margin-left:6px;}
+  .seat{position:relative !important; left:auto; right:auto; top:auto; bottom:auto; transform:none !important; width:auto !important; padding:16px 14px 12px;}
+  .seat-who{display:flex; align-items:center; gap:9px; margin-top:4px; font-size:15px; font-weight:700; letter-spacing:.06em;}
+  .seat-pt{margin-top:6px; font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1;}
+  .seat-pt small{font-size:11px; margin-left:3px; color:var(--ink-sub);}
+  .seat-pt.plus{color:var(--green);} .seat-pt.minus{color:var(--red);}
+  /* その日の順位（席の位置＝風ではないため、風の表示はしない） */
+  .seat-rank{position:absolute; top:-13px; left:12px; display:flex; align-items:baseline; gap:1px; padding:2px 9px; border-radius:6px; font-size:15px; font-weight:700; color:var(--tile);
+    background:var(--felt-lo); box-shadow:0 0 0 1px var(--felt-line); font-variant-numeric:tabular-nums;}
+  .seat-rank small{font-size:10px; margin-left:1px;}
+  .seat-rank.r1{color:#3d2a06; background:linear-gradient(180deg,#e8c063,#b8892f); box-shadow:0 2px 0 #7a5410;}
+  .seat-hist{display:flex; flex-wrap:wrap; gap:4px; margin-top:8px;}
+  .seat-hist i{display:grid; place-items:center; width:23px; height:29px; border-radius:4px; font-style:normal; font-size:15px; font-weight:700; font-variant-numeric:tabular-nums;
+    background:#fffdf7; box-shadow:0 1.5px 0 var(--tile-edge); color:var(--ink-sub);}
+  .seat-hist i.r1{background:var(--green); color:#fff; box-shadow:0 1.5px 0 #0d4a34;}
+  .seat-hist i.r4{color:var(--red); box-shadow:inset 0 0 0 1px rgba(184,50,42,.4), 0 1.5px 0 var(--tile-edge);}
+  .seat-sub{margin-top:5px; font-size:11px; color:var(--ink-sub); font-variant-numeric:tabular-nums;}
+  /* 点棒メーター */
+  .pick-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;}
+  .pick{display:inline-flex; align-items:center; gap:7px; min-height:34px; padding:0 12px 0 8px; border-radius:8px; border:1px solid var(--tile-edge); background:#fffdf7; color:var(--ink); font-size:12.5px; font-weight:700; cursor:pointer; box-shadow:0 2px 0 var(--tile-edge); font-family:inherit;}
+  .pick.on{background:#eef4ec; border-color:rgba(20,107,76,.45); box-shadow:0 2px 0 rgba(20,107,76,.35);}
+  .meter-card{max-width:620px;}
+  .meter-card-head{display:flex; align-items:center; gap:14px; margin-bottom:12px;}
+  .meter-name{font-size:20px; font-weight:700; letter-spacing:.08em;}
+  .meter-sub{font-size:12px; color:var(--ink-sub); font-variant-numeric:tabular-nums;}
+  .meter-sub b{color:var(--ink); font-size:14px;}
+  .meter-row{padding:11px 0 10px; border-top:1px solid var(--rule);}
+  .meter-head{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; font-weight:700;}
+  .meter-head b{font-size:19px; font-variant-numeric:tabular-nums;}
+  .tenbou{position:relative; height:14px; margin:7px 0 5px; border-radius:7px; background:rgba(125,118,98,.12); box-shadow:inset 0 1px 2px rgba(0,0,0,.08);}
+  .tenbou-bar{position:absolute; left:0; top:1px; bottom:1px; width:var(--w); border-radius:6px; display:flex; align-items:center; justify-content:center; gap:5px;
+    background:linear-gradient(180deg,#ffffff 0%,#ebe5d4 100%); box-shadow:0 1px 0 rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.18); transform-origin:left center; animation:grow .9s cubic-bezier(.2,.8,.2,1) both;}
+  .tenbou-bar i{width:6px; height:6px; border-radius:50%; background:var(--red);}
+  .tenbou-bar i:nth-child(n+2){background:#1d1d1d; width:4px; height:4px;}
+  @keyframes grow{ from{transform:scaleX(0);} to{transform:scaleX(1);} }
+  .tenbou-avg{position:absolute; top:-4px; bottom:-4px; left:var(--avg); width:2px; margin-left:-1px; border-radius:1px; background:var(--green); opacity:.8;}
+  .tenbou-avg::after{content:"平均"; position:absolute; top:-13px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:700; color:var(--green); white-space:nowrap;}
+  .meter-row .tenbou-avg::after{display:none;}
+  .meter-card-head + .meter-row .tenbou-avg::after{display:block;}
+  .meter-foot{font-size:11px; color:var(--ink-sub);}
+  .meter-foot em{font-style:normal; font-weight:700; color:var(--ink-sub);}
+  .meter-foot em.good{color:var(--green);} .meter-foot em.bad{color:var(--red);}
+  .meter-foot em.good::before{content:"▲ ";} .meter-foot em.bad::before{content:"▼ ";}
+  @media (max-width:600px){
+    .mj-felt{aspect-ratio:auto; display:grid; grid-template-columns:1fr 1fr; gap:22px 10px; padding:34px 12px 18px;}
+    .mj-center{position:static; transform:none; grid-column:1/-1; order:-1; width:auto; aspect-ratio:auto; border-radius:12px;}
+    .mj-center-in{position:static; transform:none; padding:10px; display:flex; align-items:center; justify-content:center; gap:16px;}
+    .seat{position:relative; left:auto; right:auto; top:auto; bottom:auto; transform:none !important; width:auto; padding:12px 10px 10px;}
+    .seat-0{order:1;} .seat-1{order:2;} .seat-2{order:3;} .seat-3{order:4;}
+    .seat-pt{font-size:19px;} .seat-who{font-size:14px;}
+  }
+  /* ⑥卓を囲む：1位〜4位を縦1列に並べる。各席は横長の帯（順位札｜マイ牌＋名前｜合計pt｜着順の推移｜平均順位・半荘数） */
+  .mj-felt{grid-template-columns:1fr !important; gap:12px !important; padding:24px 26px 26px !important; width:min(100%,820px) !important;}
+  .seat{display:grid !important; grid-template-columns:56px minmax(130px,170px) 128px minmax(0,1fr); grid-template-areas:"rank who pt hist" "rank sub pt hist";
+    align-items:center; column-gap:14px; row-gap:2px; padding:12px 18px !important; order:0 !important;}
+  .seat-rank{position:static !important; grid-area:rank; justify-self:center; padding:5px 10px; font-size:22px; border-radius:7px;}
+  .seat-rank small{font-size:11px;}
+  .seat-who{grid-area:who; margin-top:0; font-size:16px;}
+  .seat-sub{grid-area:sub; margin-top:0; padding-left:2px;}
+  .seat-pt{grid-area:pt; margin-top:0; text-align:right; font-size:24px;}
+  .seat-hist{grid-area:hist; margin-top:0; justify-content:flex-start;}
+  .seat.seat-0{box-shadow:inset 0 0 0 1.5px rgba(184,137,47,.55), inset 0 1px 0 #fff, 0 2px 0 var(--tile-edge), 0 4px 0 var(--tile-back), 0 10px 16px rgba(0,0,0,.35);}
+  @media (max-width:600px){
+    .mj-felt{padding:16px 12px 14px !important; gap:10px !important;}
+    .seat{grid-template-columns:44px minmax(0,1fr) auto; grid-template-areas:"rank who pt" "rank hist hist" "rank sub sub"; column-gap:10px; row-gap:6px; padding:10px 12px !important;}
+    .seat-rank{font-size:18px; padding:4px 8px; align-self:start; margin-top:2px;}
+    .seat-who{font-size:14.5px;} .seat-pt{font-size:20px;}
+    .seat-hist i{width:21px; height:27px; font-size:14px;}
+  }
 
 
-  /* ---------- 統計タブ：プレイヤー別スタッツカード ---------- */
-  .stats-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(360px,100%),1fr)); gap:16px;}
-  .stat-player-card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;}
-  .stat-name{font-size:16px; font-weight:800;}
-  .stat-section-label{font-size:11.5px; font-weight:800; color:var(--muted); letter-spacing:.05em;
-    margin:14px 0 8px; text-transform:uppercase;}
-  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-  .stat-tile{background:var(--bg); border-radius:10px; padding:10px 8px; text-align:center;}
-  .stat-tile .v{font-size:18px; font-weight:800;}
-  .stat-tile .l{font-size:11.5px; color:var(--muted); font-weight:700; margin-top:3px;}
-  .stat-tile .n{font-size:10.5px; color:var(--muted); font-weight:600; margin-top:1px; opacity:.75;}
-  .row-between{display:flex; align-items:center; justify-content:space-between; cursor:pointer;}
-  .glossary{font-size:12.5px; color:var(--muted); line-height:1.8; padding-top:2px;}
+  /* 称号カード（改良版） */
+  .ttl-period{padding:16px 22px; margin-bottom:22px;}
+  .ttl-period-row{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px 18px;}
+  .ttl-period-label{font-size:10.5px; font-weight:700; letter-spacing:.2em; color:var(--ink-sub);}
+  .ttl-period-v{font-size:17px; font-weight:700; letter-spacing:.04em; font-variant-numeric:tabular-nums;}
+  .ttl-period .seg{flex-wrap:wrap;}
+  .ttl-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr)); gap:20px 16px; margin-bottom:10px;}
+  .ttl-card{--edge:#c9b98d; --hi:#fff8e6; position:relative; display:flex; flex-direction:column; padding:14px 16px 12px; border-radius:12px; color:var(--ink); overflow:hidden;
+    background:radial-gradient(140% 90% at 50% -20%, var(--hi) 0%, transparent 60%), linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.7), inset 0 0 0 4px var(--tile), inset 0 0 0 5px var(--edge), 0 3px 0 var(--tile-edge), 0 5px 0 var(--tile-back), 0 6px 0 var(--tile-back-lo), 0 14px 22px rgba(0,0,0,.32);}
+  .ttl-card.rank{--edge:#c99a3e; --hi:#fff0c4;}
+  .ttl-card.rank::before{content:""; position:absolute; inset:-40% -60%; background:linear-gradient(105deg, transparent 42%, rgba(255,255,255,.5) 50%, transparent 58%); transform:translateX(-60%); animation:shine 4s ease-in-out 1.2s infinite; pointer-events:none;}
+  .ttl-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .ttl-cat{padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:.2em; color:#fff; background:var(--green);}
+  .ttl-cat.rank{background:linear-gradient(180deg,#d8ab4c,#a87c2c);}
+  .ttl-metric{display:flex; align-items:center; gap:8px; font-size:16px; font-weight:700; color:var(--green); letter-spacing:.04em;}
+  .ttl-card.rank .ttl-metric{color:#8a6114;}
+  .ttl-metric b{display:inline-block; padding:1px 7px; border-radius:4px; font-size:12.5px; color:#fff; background:var(--green); letter-spacing:.06em;}
+  .ttl-card.rank .ttl-metric b{background:linear-gradient(180deg,#d8ab4c,#a87c2c);}
+  .ttl-name{margin:8px 0 0; font-family:var(--serif); font-size:28px; font-weight:700; letter-spacing:.1em; line-height:1.2;}
+  .ttl-card.rank .ttl-name{color:#7a5410; text-shadow:0 1px 0 #fff;}
+  .ttl-name.is-mid{font-size:25px; letter-spacing:.05em;}
+  .ttl-name.is-long{font-size:22px; letter-spacing:.02em;}
+  /* 一行コメントは文節で折り返し、行末に1文字だけ残らないようにする */
+  .ttl-desc{word-break:auto-phrase; text-wrap:pretty;}
+  .ttl-desc{font-size:14.5px; font-weight:500; color:var(--ink); margin-top:4px; line-height:1.5;}
+  .ttl-body{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:12px; padding-top:12px; border-top:1px dashed rgba(125,118,98,.35); flex:1;}
+  .ttl-holders{display:flex; flex-direction:column; gap:8px;}
+  .ttl-holder{display:flex; align-items:center; gap:10px;}
+  .ttl-who{font-size:16px; font-weight:700; letter-spacing:.06em;}
+  .ttl-val{font-size:26px; font-weight:700; line-height:1; color:var(--green); font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .ttl-val small{font-size:12px; margin-left:1px;}
+  .ttl-card.rank .ttl-val{color:#8a6114;}
+  .ttl-foot{display:flex; justify-content:space-between; gap:8px; margin-top:10px; font-size:11px; color:var(--ink-sub); font-variant-numeric:tabular-nums;}
+  .ttl-foot span{margin-left:auto;}
+  .ttl-card.is-empty{opacity:.75;}
+  /* 珍称号（ワースト）：藤色の縁と斜めの縞で、讃える称号とは別系統と分かるようにする */
+  .ttl-card.fun{--edge:#8e78b0; --hi:#f1eaf8; background:repeating-linear-gradient(135deg, rgba(142,120,176,.06) 0 10px, transparent 10px 20px), radial-gradient(140% 90% at 50% -20%, var(--hi) 0%, transparent 60%), linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%);}
+  .ttl-card.fun .ttl-metric{color:#6a4f93;}
+  .ttl-card.fun .ttl-metric b{background:#6a4f93;}
+  .ttl-card.fun .ttl-name{color:#4e3a70;}
+  .ttl-card.fun .ttl-val{color:#6a4f93;}
+  .ttl-none{margin-top:14px; padding-top:12px; border-top:1px dashed rgba(125,118,98,.35); font-size:12px; color:var(--ink-sub);}
+  /* リプレイ */
+  .rp-wrap{display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:18px; align-items:start;}
+  .rp-chart{position:relative;}
+  .rp-date{position:absolute; left:52px; top:4px; pointer-events:none;}
+  .rp-date-v{display:block; font-family:var(--serif); font-size:26px; font-weight:700; letter-spacing:.06em; color:rgba(36,35,30,.28); font-variant-numeric:tabular-nums;}
+  .rp-count{font-size:11px; color:var(--ink-sub); font-variant-numeric:tabular-nums;}
+  .rp-svg{width:100%; height:auto; display:block;}
+  .rp-svg text{font-family:var(--sans); font-variant-numeric:tabular-nums;}
+  .rp-board{position:relative;}
+  .rp-row{position:absolute; left:0; right:0; top:0; height:36px; display:grid; grid-template-columns:18px auto 1fr auto; grid-template-rows:1fr 4px; align-items:center; column-gap:8px; padding:0 4px;
+    transition:transform .45s cubic-bezier(.3,.7,.4,1.1);}
+  .rp-rank{grid-row:1/3; font-weight:700; color:var(--ink-sub); text-align:right; font-variant-numeric:tabular-nums;}
+  .rp-row .mytile{grid-row:1/3;}
+  .rp-name{font-size:13px; font-weight:700;}
+  .rp-pt{font-size:14px; font-weight:700; font-variant-numeric:tabular-nums;}
+  .rp-pt.plus{color:var(--green);} .rp-pt.minus{color:var(--red);}
+  .rp-bar{grid-column:3/5; height:4px; border-radius:2px; background:rgba(125,118,98,.12); overflow:hidden;}
+  .rp-bar i{display:block; height:100%; border-radius:2px; transition:width .1s linear;}
+  .rp-controls{display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap;}
+  .rp-play{display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:0 18px 0 14px; border:none; border-radius:10px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:700; letter-spacing:.06em;
+    color:#f7f2e4; background:linear-gradient(180deg,#1b7a58 0%,var(--green) 100%); box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 0 #0d4a34,0 4px 0 var(--tile-back),0 8px 12px rgba(0,0,0,.2);}
+  .rp-play:active{transform:translateY(2px);}
+  .rp-play .rp-ico-pause{display:none;} .rp-play.is-playing .rp-ico-pause{display:inline;} .rp-play.is-playing .rp-ico-play{display:none;}
+  .rp-seek{flex:1; min-width:140px; accent-color:var(--green);}
+  @media (max-width:760px){
+    .rp-wrap{grid-template-columns:1fr; gap:6px;}
+    .rp-date{left:46px; top:0;} .rp-date-v{font-size:17px;} .rp-count{font-size:10px;}
+    .rp-row{height:28px; grid-template-rows:1fr 3px;}
+    .rp-row .mytile{--h:22px;} .rp-name{font-size:12.5px;} .rp-pt{font-size:13px;}
+  }
 
-  .radar-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(300px,100%),1fr)); gap:18px;}
-  .radar-grid-card{border:1px solid var(--line); border-radius:12px; padding:16px;}
-  .radar-grid-card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
-  .radar-grid-card-head h3{font-size:14px; font-weight:800; margin:0;}
-  .compat-legend-row{display:flex; justify-content:space-between; padding:3px 0; font-size:12px; color:var(--muted); font-weight:700;}
 
-  .rankgrade-tabs{display:flex; gap:8px; margin:10px 0 16px;}
-  .rankgrade-tab{padding:8px 18px; border:1.5px solid var(--line); border-radius:999px; background:var(--surface);
-    color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; font-family:inherit;}
-  .rankgrade-tab:hover{background:var(--bg);}
-  .rankgrade-tab.active{background:var(--primary); border-color:var(--primary); color:#fff;}
+  /* 統計の上部：称号・点棒メーター */
+  .stats-hero{margin-bottom:30px;}
+  .hero-head{display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin:0 0 12px; font-family:var(--serif); font-size:19px; font-weight:700; letter-spacing:.08em; color:var(--tile);}
+  .hero-head small{font-family:var(--sans); font-size:12px; font-weight:500; letter-spacing:.02em; color:var(--felt-text);}
+  .hero-head .tool-btn{margin-left:auto; font-family:var(--sans);}
+  .ttl-edit{margin-bottom:20px;}
+  .ttl-edit-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr)); gap:10px 16px; margin:4px 0 14px;}
+  .ttl-edit-grid label{display:flex; flex-direction:column; gap:4px; font-size:11.5px; font-weight:700; color:var(--ink-sub);}
+  .ttl-edit-grid input{height:36px; padding:0 10px; border-radius:8px; border:1px solid var(--tile-edge); background:#fffdf7; color:var(--ink); font-size:14px; font-weight:700; font-family:var(--serif); letter-spacing:.06em;}
+  .ttl-edit-grid input:focus{outline:2px solid var(--tile-back); outline-offset:1px;}
+  .ttl-edit-actions{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+  .meter-wrap{display:grid; grid-template-columns:minmax(0,1fr); }
+  .stat-name .mytile{margin-right:2px;}
+  .radar-grid-card-head h3{display:flex; align-items:center; gap:10px;}
+  @media (max-width:600px){
+    .ttl-period .seg{display:flex; width:100%;}
+    .ttl-period .seg-btn{flex:1 1 auto; padding:0 6px; font-size:11.5px;}
+  }
 
-  .toast{position:fixed; left:50%; top:24px; transform:translateX(-50%); background:var(--primary-dark); color:#fff;
-    padding:10px 18px; border-radius:999px; font-size:12.5px; font-weight:700; opacity:0; pointer-events:none;
-    transition:opacity .2s; z-index:50;}
-  .toast.show{opacity:1;}
+  /* グラフ */
+  /* 広い画面で文字ごと拡大されすぎないよう高さに上限（比率は保ったまま中央寄せ） */
+  .graph-svg{width:100%; height:auto; max-height:540px; display:block; margin:4px auto 0;}
+  .graph-svg text{font-family:var(--sans); font-variant-numeric:tabular-nums;}
+  .graph-svg polyline{cursor:pointer; transition:stroke-width .12s, stroke-opacity .12s;}
+  .graph-svg polyline.is-dim:hover{stroke-opacity:.95; stroke-width:2.2;}
+  .graph-svg polyline.is-sel:hover{stroke-width:3.4;}
 
+  .toast{position:fixed; left:50%; top:24px; transform:translate(-50%,-6px); display:flex; align-items:center; gap:10px;
+    background:var(--felt-lo); color:var(--tile); border:1px solid var(--felt-line); padding:10px 20px 10px 16px; border-radius:10px;
+    font-size:12.5px; font-weight:700; letter-spacing:.04em; opacity:0; pointer-events:none; box-shadow:0 10px 24px rgba(0,0,0,.35);
+    transition:opacity .2s, transform .2s; z-index:50;}
+  .toast::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--red); box-shadow:0 0 0 3px rgba(255,255,255,.9);}
+  .toast.show{opacity:1; transform:translate(-50%,0);}
+
+  @media (hover:hover){ .stat-player-card:hover{transform:translateY(-1px);} }
+  /* 絞り込みボタン（スマホ幅のみ表示） */
+  .m-filter-toggle{display:none;}
   @media (max-width:900px){
     #app{flex-direction:column;}
-    .sidebar{width:100%; flex:0 0 auto; height:auto; position:relative; flex-direction:row; align-items:center; flex-wrap:wrap; gap:12px;}
-    .side-nav{flex-direction:row; flex-wrap:wrap;}
-    .sidebar-date-filter{border-bottom:none; padding-bottom:0; margin-bottom:0; max-width:220px;}
-    .reload-btn{margin-top:0;}
-    .main{padding:20px;}
+    /* スマホ幅：上部にコンパクトなバー（アプリ名＋絞り込み／横スクロールのタブ）を固定し、フィルタ等は開閉式 */
+    .sidebar{width:100%; flex:0 0 auto; height:auto; max-height:100vh; position:sticky; top:0; z-index:30; display:block;
+      padding:10px 16px 0; border-right:none; border-bottom:1px solid var(--felt-line);
+      background:rgba(8,44,32,.9); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); box-shadow:0 6px 18px -8px rgba(0,0,0,.5);}
+    .sidebar.m-open{overflow-y:auto;}
+    .sidebar-summary{border-bottom:none; padding-bottom:0; margin-bottom:0;}
+    .app-title{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0;}
+    .app-title .eyebrow,.app-title .riichi{display:none;}
+    .app-title-main{font-size:18px; margin:0; letter-spacing:.08em;}
+    .m-filter-toggle{display:inline-flex; align-items:center; gap:6px; min-height:34px; padding:0 12px; border-radius:9px; cursor:pointer;
+      border:1px solid var(--felt-line); background:rgba(159,216,191,.06); color:var(--felt-text); font-size:12px; font-weight:700; letter-spacing:.04em;}
+    .m-filter-toggle.is-active{color:var(--ink); border-color:transparent; background:linear-gradient(180deg,var(--tile) 0%,var(--tile-face2) 100%); box-shadow:0 2px 0 var(--tile-back);}
+    .m-filter-toggle .chev-mini{font-size:8px; transition:transform .15s;}
+    .sidebar.m-open .m-filter-toggle .chev-mini{transform:rotate(180deg);}
+    .summary-line,.sidebar-date-filter,.reload-btn,.side-spacer{display:none;}
+    .sidebar.m-open .summary-line{display:flex;}
+    .sidebar.m-open .sidebar-summary{padding-top:6px;}
+    .sidebar.m-open .sidebar-date-filter{display:block; max-width:none; margin:10px 0 0; padding:12px 0 4px; border-top:1px solid var(--felt-line); border-bottom:none;}
+    .sidebar.m-open .reload-btn{display:flex; width:100%; margin:6px 0 12px;}
+    .side-nav{flex-direction:row; flex-wrap:nowrap; gap:6px; overflow-x:auto; margin:10px -16px 0; padding:2px 16px 10px;
+      scrollbar-width:none; -webkit-overflow-scrolling:touch; scroll-padding:0 16px;}
+    .side-nav::-webkit-scrollbar{display:none;}
+    .sidebar.m-open .side-nav{border-top:1px solid var(--felt-line); padding-top:10px;}
+    .side-nav button{flex:0 0 auto; min-height:38px; padding:5px 12px 5px 7px; gap:8px; white-space:nowrap; font-size:12.5px;}
+    .side-nav button .nav-num{width:19px; height:23px; font-size:11.5px;}
+    .main{padding:22px 20px 60px;}
+    .page-head{flex-wrap:wrap;}
   }
-  /* スマホ縦画面など幅が狭い場合は、余白と1タイルあたりの列数をさらに詰める */
+
   @media (max-width:480px){
-    .main{padding:14px;}
-    .card{padding:16px 14px;}
-    .loader-card{padding:32px 20px;}
+    .main{padding:16px 14px 48px;}
+    .card{padding:18px 16px;}
+    .loader-card{padding:32px 20px 24px;}
+    .file-select-btn{width:100%;}
     .stat-grid{grid-template-columns:repeat(2,1fr);}
     .sidebar-date-filter{max-width:none; width:100%;}
+    .page-title{font-size:23px;}
+    .page-head{padding-bottom:12px; margin-bottom:18px;}
+    .compare-toolbar{flex-direction:column; align-items:stretch;}
+    .seg{align-self:flex-start;}
+    .card #compare-table.is-by-player td:not(.col-name), .card #compare-table.is-by-player th:not(.col-name){min-width:50px; padding-left:5px; padding-right:7px;}
+    .card #compare-table.is-by-player .col-name{min-width:68px; padding-right:10px;}
+    .card #compare-table:not(.is-by-player) td:not(.col-name), .card #compare-table:not(.is-by-player) th:not(.col-name){min-width:56px; padding-left:6px; padding-right:8px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none !important; transition:none !important;}
   }
 </style>
 </head>
@@ -194,7 +703,10 @@
 <script>
 // ---------- 定数 ----------
 const K_RIICHI=0, K_FUURO=1, K_TSUMO=2, K_RON=3, K_HOUJUU=4, K_CHOMBO=5;
-const CHART_PALETTE = ["#1F6F54","#2E6DA4","#C98A2B","#B23A2E","#6B4FA0","#3B8C6E","#8B94A0","#A9673A"];
+// 雀卓グリーン×牌の配色：緑・金・赤を先頭に固定順。隣接色は通常視覚ΔE≥16／色覚多様性ΔE≥7.9（validate_palette.jsで検証済み、背景#f3ecdb）
+// 8人を超える場合は色を循環させ、②スコア推移では9人目以降を破線にして見分ける。
+const CHART_PALETTE = ["#12845a","#b8860f","#b52a22","#2a66b8","#d9692a","#9a4fb3","#0e97a6","#6b7a1e"];
+const CHART_GRID = "#e2d8bd", CHART_GRID_STRONG = "#cfc3a2", CHART_TEXT = "#7d7662", CHART_ZERO = "#a2977a";
 
 // ①比較表：折りたたみ可能なグループ定義
 const COMPARE_METRIC_GROUPS = [
@@ -213,66 +725,66 @@ const COMPARE_SUBGROUP_DESC = {
   "子番": "自分が子の局のみ",
 };
 const COMPARE_METRICS = [
-  {key:"kyokuCount", label:"総局数", fmt:fmtCount, group:"score"},
-  {key:"hanchanRankedCount", label:"半荘数", fmt:fmtCount, group:"rank"},
-  {key:"avgRank", label:"平均順位", fmt:fmtAvg, group:"rank"},
-  {key:"top", label:"トップ率", fmt:fmtPct, group:"rank"},
-  {key:"second", label:"2着率", fmt:fmtPct, group:"rank"},
-  {key:"third", label:"3着率", fmt:fmtPct, group:"rank"},
-  {key:"last", label:"ラス率", fmt:fmtPct, group:"rank"},
-  {key:"seatAvgRank0", label:"東家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位"},
-  {key:"seatAvgRank1", label:"南家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位"},
-  {key:"seatAvgRank2", label:"西家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位"},
-  {key:"seatAvgRank3", label:"北家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位"},
-  {key:"agari", label:"和了数", fmt:fmtCount, group:"score"},
-  {key:"agariRate", label:"和了率", fmt:fmtPct0, group:"score"},
-  {key:"houjuu", label:"放銃数", fmt:fmtCount, group:"score"},
-  {key:"houjuuRate", label:"放銃率", fmt:fmtPct0, group:"score"},
-  {key:"riichi", label:"リーチ数", fmt:fmtCount, group:"score"},
-  {key:"riichiRate", label:"リーチ率", fmt:fmtPct0, group:"score"},
-  {key:"fuuro", label:"副露数", fmt:fmtCount, group:"score"},
-  {key:"fuuroRate", label:"副露率", fmt:fmtPct0, group:"score"},
-  {key:"riichiAgariRate", label:"和了率", fmt:fmtPct0, group:"score", subgroup:"リーチ後"},
-  {key:"riichiHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"score", subgroup:"リーチ後"},
-  {key:"riichiRyuukyokuRate", label:"流局率", fmt:fmtPct0, group:"score", subgroup:"リーチ後"},
-  {key:"fuuroAgariRate", label:"和了率", fmt:fmtPct0, group:"score", subgroup:"副露後"},
-  {key:"fuuroHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"score", subgroup:"副露後"},
-  {key:"fuuroRyuukyokuRate", label:"流局率", fmt:fmtPct0, group:"score", subgroup:"副露後"},
-  {key:"agariRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳"},
-  {key:"agariRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳"},
-  {key:"agariFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳"},
-  {key:"agariFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳"},
-  {key:"agariOther", label:"ダマテン数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳"},
-  {key:"agariOtherRate", label:"ダマテン率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳"},
-  {key:"houjuuRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳"},
-  {key:"houjuuRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳"},
-  {key:"houjuuFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳"},
-  {key:"houjuuFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳"},
-  {key:"houjuuOther", label:"その他数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳"},
-  {key:"houjuuOtherRate", label:"その他率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳"},
-  {key:"houjuuOpponentRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳"},
-  {key:"houjuuOpponentRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳"},
-  {key:"houjuuOpponentFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳"},
-  {key:"houjuuOpponentFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳"},
-  {key:"houjuuOpponentOther", label:"ダマテン数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳"},
-  {key:"houjuuOpponentOtherRate", label:"ダマテン率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳"},
+  {key:"kyokuCount", label:"総局数", fmt:fmtCount, group:"score", better:"neutral", main:true, desc:"参加した局の数（チョンボ・結果のみ入力の局は除く）"},
+  {key:"hanchanRankedCount", label:"半荘数", fmt:fmtCount, group:"rank", better:"neutral", main:true, desc:"着順が確定した半荘の数"},
+  {key:"avgRank", label:"平均順位", fmt:fmtAvg, group:"rank", better:"low", main:true, desc:"着順の合計 ÷ 半荘数（小さいほど良い）"},
+  {key:"top", label:"トップ率", fmt:fmtPct, group:"rank", better:"high", main:true, desc:"1着だった回数 ÷ 半荘数"},
+  {key:"second", label:"2着率", fmt:fmtPct, group:"rank", better:"neutral", main:true, desc:"2着だった回数 ÷ 半荘数"},
+  {key:"third", label:"3着率", fmt:fmtPct, group:"rank", better:"neutral", main:true, desc:"3着だった回数 ÷ 半荘数"},
+  {key:"last", label:"ラス率", fmt:fmtPct, group:"rank", better:"low", main:true, desc:"4着だった回数 ÷ 半荘数"},
+  {key:"seatAvgRank0", label:"東家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位", better:"low", desc:"半荘開始時に東家だった半荘の平均順位（座席の記録がある半荘のみ）"},
+  {key:"seatAvgRank1", label:"南家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位", better:"low", desc:"半荘開始時に南家だった半荘の平均順位（座席の記録がある半荘のみ）"},
+  {key:"seatAvgRank2", label:"西家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位", better:"low", desc:"半荘開始時に西家だった半荘の平均順位（座席の記録がある半荘のみ）"},
+  {key:"seatAvgRank3", label:"北家", fmt:fmtAvgOrDash, group:"rank", subgroup:"座席別平均順位", better:"low", desc:"半荘開始時に北家だった半荘の平均順位（座席の記録がある半荘のみ）"},
+  {key:"agari", label:"和了数", fmt:fmtCount, group:"score", better:"neutral", desc:"ツモかロンでアガった回数"},
+  {key:"agariRate", label:"和了率", fmt:fmtPct0, group:"score", better:"high", main:true, desc:"和了数 ÷ 総局数"},
+  {key:"houjuu", label:"放銃数", fmt:fmtCount, group:"score", better:"neutral", desc:"ロンされた回数"},
+  {key:"houjuuRate", label:"放銃率", fmt:fmtPct0, group:"score", better:"low", main:true, desc:"放銃数 ÷ 総局数"},
+  {key:"riichi", label:"リーチ数", fmt:fmtCount, group:"score", better:"neutral", desc:"リーチした局の数"},
+  {key:"riichiRate", label:"リーチ率", fmt:fmtPct0, group:"score", better:"neutral", main:true, desc:"リーチ数 ÷ 総局数"},
+  {key:"fuuro", label:"副露数", fmt:fmtCount, group:"score", better:"neutral", desc:"ポン・チー・カンで鳴いた局の数"},
+  {key:"fuuroRate", label:"副露率", fmt:fmtPct0, group:"score", better:"neutral", main:true, desc:"副露数 ÷ 総局数"},
+  {key:"riichiAgariRate", label:"和了率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"high", main:true, desc:"リーチした局のうち、アガった割合（÷ リーチ数）"},
+  {key:"riichiHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"low", main:true, desc:"リーチした局のうち、放銃した割合（÷ リーチ数）"},
+  {key:"riichiRyuukyokuRate", label:"流局率", fmt:fmtPct0, group:"score", subgroup:"リーチ後", better:"neutral", desc:"リーチした局のうち、誰もアガらず流局した割合（÷ リーチ数）"},
+  {key:"fuuroAgariRate", label:"和了率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"high", main:true, desc:"鳴いた局のうち、アガった割合（÷ 副露数）"},
+  {key:"fuuroHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"low", main:true, desc:"鳴いた局のうち、放銃した割合（÷ 副露数）"},
+  {key:"fuuroRyuukyokuRate", label:"流局率", fmt:fmtPct0, group:"score", subgroup:"副露後", better:"neutral", desc:"鳴いた局のうち、誰もアガらず流局した割合（÷ 副露数）"},
+  {key:"agariRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、リーチしていた回数"},
+  {key:"agariRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、リーチしていた割合（÷ 和了数）"},
+  {key:"agariFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、鳴いていた回数"},
+  {key:"agariFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、鳴いていた割合（÷ 和了数）"},
+  {key:"agariOther", label:"ダマテン数", fmt:fmtCount, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、リーチも副露もしていなかった回数"},
+  {key:"agariOtherRate", label:"ダマテン率", fmt:fmtPct0, group:"breakdown", subgroup:"和了内訳", better:"neutral", main:true, desc:"アガったとき、リーチも副露もしていなかった割合（÷ 和了数）"},
+  {key:"houjuuRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分がリーチ中だった回数"},
+  {key:"houjuuRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分がリーチ中だった割合（÷ 放銃数）"},
+  {key:"houjuuFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分が鳴いていた回数"},
+  {key:"houjuuFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分が鳴いていた割合（÷ 放銃数）"},
+  {key:"houjuuOther", label:"その他数", fmt:fmtCount, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分がリーチも副露もしていなかった回数"},
+  {key:"houjuuOtherRate", label:"その他率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃内訳", better:"neutral", main:true, desc:"放銃したとき、自分がリーチも副露もしていなかった割合（÷ 放銃数）"},
+  {key:"houjuuOpponentRiichi", label:"リーチ数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手（ロンした人）がリーチだった回数"},
+  {key:"houjuuOpponentRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手がリーチだった割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
+  {key:"houjuuOpponentFuuro", label:"副露数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手（ロンした人）が鳴いていた回数"},
+  {key:"houjuuOpponentFuuroRate", label:"副露率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手が鳴いていた割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
+  {key:"houjuuOpponentOther", label:"ダマテン数", fmt:fmtCount, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手（ロンした人）がダマテンだった回数"},
+  {key:"houjuuOpponentOtherRate", label:"ダマテン率", fmt:fmtPct0, group:"breakdown", subgroup:"放銃相手内訳", better:"neutral", desc:"放銃した相手がダマテンだった割合（÷ 放銃した相手の延べ人数。ダブロンは2人と数える）"},
   // 親番／子番：座席（dealers）が記録されている半荘の局のみが対象
-  {key:"oyaKyoku", label:"局数", fmt:fmtCount, group:"oyako", subgroup:"親番"},
-  {key:"oyaAgariRate", label:"和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
-  {key:"oyaHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
-  {key:"oyaRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
-  {key:"oyaFuuroRate", label:"副露率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
-  {key:"oyaRiichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
-  {key:"oyaRenchan", label:"連荘数", fmt:fmtCount, group:"oyako", subgroup:"親番"},
-  {key:"oyaRenchanRate", label:"連荘率", fmt:fmtPct0, group:"oyako", subgroup:"親番"},
-  {key:"oyaKaburi", label:"親被り数", fmt:fmtCount, group:"oyako", subgroup:"親番"},
-  {key:"koKyoku", label:"局数", fmt:fmtCount, group:"oyako", subgroup:"子番"},
-  {key:"koAgariRate", label:"和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
-  {key:"koHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
-  {key:"koRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
-  {key:"koFuuroRate", label:"副露率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
-  {key:"koRiichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番"},
-  {key:"koHoujuuToOya", label:"親への放銃数", fmt:fmtCount, group:"oyako", subgroup:"子番"},
+  {key:"oyaKyoku", label:"局数", fmt:fmtCount, group:"oyako", subgroup:"親番", better:"neutral", desc:"自分が親だった局の数（座席の記録がある局のみ）"},
+  {key:"oyaAgariRate", label:"和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"high", main:true, desc:"親の局のうち、アガった割合"},
+  {key:"oyaHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"low", desc:"親の局のうち、放銃した割合"},
+  {key:"oyaRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"neutral", desc:"親の局のうち、リーチした割合"},
+  {key:"oyaFuuroRate", label:"副露率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"neutral", desc:"親の局のうち、鳴いた割合"},
+  {key:"oyaRiichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"high", desc:"親でリーチした局のうち、アガった割合"},
+  {key:"oyaRenchan", label:"連荘数", fmt:fmtCount, group:"oyako", subgroup:"親番", better:"neutral", desc:"親の局で連荘した回数（聴牌連荘を含む）"},
+  {key:"oyaRenchanRate", label:"連荘率", fmt:fmtPct0, group:"oyako", subgroup:"親番", better:"high", main:true, desc:"連荘数 ÷ 親の局数"},
+  {key:"oyaKaburi", label:"親被り数", fmt:fmtCount, group:"oyako", subgroup:"親番", better:"neutral", desc:"自分が親の局で、他家にツモアガりされた回数"},
+  {key:"koKyoku", label:"局数", fmt:fmtCount, group:"oyako", subgroup:"子番", better:"neutral", desc:"自分が子だった局の数（座席の記録がある局のみ）"},
+  {key:"koAgariRate", label:"和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"high", main:true, desc:"子の局のうち、アガった割合"},
+  {key:"koHoujuuRate", label:"放銃率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"low", main:true, desc:"子の局のうち、放銃した割合"},
+  {key:"koRiichiRate", label:"リーチ率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"neutral", desc:"子の局のうち、リーチした割合"},
+  {key:"koFuuroRate", label:"副露率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"neutral", desc:"子の局のうち、鳴いた割合"},
+  {key:"koRiichiAgariRate", label:"リーチ後和了率", fmt:fmtPct0, group:"oyako", subgroup:"子番", better:"high", desc:"子でリーチした局のうち、アガった割合"},
+  {key:"koHoujuuToOya", label:"親への放銃数", fmt:fmtCount, group:"oyako", subgroup:"子番", better:"neutral", desc:"子のとき、親にロンされた回数"},
 ];
 
 
@@ -353,7 +865,33 @@ const state = {
   rankGradeTargets: null, // ④成績5段階評価：しきい値の基準・カード表示の対象プレイヤー名（着順系・打ち筋系で共有、nullなら未初期化）
   rankGradeView: "rank", // ④内の切替タブ："rank"（着順系）| "style"（打ち筋系）
   houjuuMatrixTargets: null, // ⑤放銃マトリクスの対象プレイヤー名（nullなら未初期化）
+  houjuuMatrixMode: "count", // ⑤放銃マトリクスの表示："count"（回数）| "rate"（比率＝同卓した局あたりの割合）
+  compareOrient: null, // ①比較表の向き："metric"（行＝指標・列＝選手）| "player"（行＝選手・列＝指標）。nullなら画面幅で自動（900px以下は"player"）
+  compareTab: "rank",
+  compareScope: "main", // ①比較表："main"（主要指標のみ）| "all"（すべての指標）
+  mobileMenuOpen: false,
+  graphReplay: false, // ②スコア推移：リプレイ表示中か
+  tableDay: null, // ⑥卓を囲む：表示中の対局日（nullなら期間内の最新日）
+  meterName: null, // 統計：点棒メーターで表示中の選手
+  titleEditOpen: false, // 統計：二つ名の編集パネルを開いているか // スマホ幅：上部バーの絞り込み（期間・曜日フィルタ等）パネルの開閉 // ①比較表を"player"向きで表示するときのグループタブ（COMPARE_METRIC_GROUPSのkey）
 };
+// 指標の定義（ツールチップ用）。COMPARE_METRICSのdescを、統計タブのタイル・着順別表でも共通で使う
+function metricDesc(key){ const m = COMPARE_METRICS.find(x=>x.key===key); return m && m.desc ? m.desc : ""; }
+function tipLabel(label, desc){ return desc ? `<span class="has-tip" data-tip="${escapeAttr(desc)}" tabindex="0">${escapeHtml(label)}</span>` : escapeHtml(label); }
+function compareMetricsInScope(){ return state.compareScope==="all" ? COMPARE_METRICS : COMPARE_METRICS.filter(m=>m.main); }
+// 絞り込み条件のラベル（①比較表の見出しに表示。スクリーンショットで共有しても条件が分かるように）
+function filterCondLabel(){
+  const r = state.dateRange, f = r.from && r.from.replace(/-/g,"/"), t = r.to && r.to.replace(/-/g,"/");
+  const parts = [];
+  if(f || t) parts.push(`${f||"最初"}〜${t||"最新"}`);
+  if(state.dayFilter==="weekday") parts.push("平日のみ"); else if(state.dayFilter==="weekend") parts.push("週末のみ");
+  if(!(f||t)) parts.unshift("全期間");
+  return parts.join("・");
+}
+function compareOrientNow(){
+  if(state.compareOrient) return state.compareOrient;
+  return (typeof window!=="undefined" && window.innerWidth<=900) ? "player" : "metric";
+}
 
 // ---------- format helpers ----------
 function fmtPct(n){ return isFinite(n) ? (n*100).toFixed(1)+"%" : "0.0%"; }
@@ -410,12 +948,31 @@ function isAnyFilterActive(){ return isDateRangeActive() || isDayFilterActive();
 function passesFilters(date){ return inDateRange(date) && matchesDayFilter(date); }
 function escapeAttr(s){ return escapeHtml(s); }
 function hashStr(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))>>>0; } return h; }
-const NEUTRAL_COLOR = "#B9BEC5";
+const NEUTRAL_COLOR = "#c9bf9f";
 // 選択チップに入れた順にパレット色を固有割当（同時ハイライト数が多くない前提のため、名前ハッシュより衝突しにくい）
 function colorForChip(name){
   const idx = state.chips.indexOf(name);
   if(idx < 0) return NEUTRAL_COLOR;
   return CHART_PALETTE[idx % CHART_PALETTE.length];
+}
+// ③④・マイ牌の色：選手ごとに固定。期間・曜日フィルタに左右されないよう、読み込んだデータ全体の半荘数の多い順にパレットを割り当てる
+function globalPlayerOrder(){
+  if(globalPlayerOrder._raw === state.raw && globalPlayerOrder._order) return globalPlayerOrder._order;
+  const cnt = new Map();
+  Object.keys(state.raw.hanchanConfirmed||{}).forEach(key=>{
+    if(!state.raw.hanchanConfirmed[key]) return;
+    const i = key.lastIndexOf("_");
+    namesForHanchan(key.slice(0,i), Number(key.slice(i+1))).forEach(n=>cnt.set(n,(cnt.get(n)||0)+1));
+  });
+  (state.raw.playerRoster||[]).forEach(n=>{ if(n && !cnt.has(n)) cnt.set(n,0); });
+  globalPlayerOrder._raw = state.raw;
+  globalPlayerOrder._order = Array.from(cnt.entries()).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  return globalPlayerOrder._order;
+}
+function entityColor(name, statsList){
+  const order = globalPlayerOrder();
+  const idx = order.indexOf(name);
+  return CHART_PALETTE[(idx<0?0:idx) % CHART_PALETTE.length];
 }
 function hexToRgb(hex){ hex=hex.replace("#",""); return [parseInt(hex.slice(0,2),16), parseInt(hex.slice(2,4),16), parseInt(hex.slice(4,6),16)]; }
 function mixColor(hex1, hex2, t){
@@ -787,15 +1344,19 @@ function renderRankSplitTable(playerName){
 // 個別プレイヤー（computeRankSplitStats）・全プレイヤー平均（computeAverageRankSplitStats）のどちらからも同じ描画ロジックを共有するために分離してある。
 // 着順別打ち筋スタッツ表・①比較表：行（指標）ごとに、その行の中の最大値・最小値のセルを見分けやすいよう文字色を変える。
 // 値が2種類以上ある場合のみ着色し、全列が同値の場合は何も着色しない（比較の意味がないため）。
-function extremeCellStyle(v, maxVal, minVal, hasSpread){
+function extremeCellStyle(v, maxVal, minVal, hasSpread, better){
+  // 返り値はclass名。良し悪しのある指標（better:"high"/"low"）は最良＝is-best（緑◎）・最悪＝is-worst（赤△）、
+  // 回数・中立の指標（better:"neutral"／未指定）は最大＝is-max（青▲）・最小＝is-min（橙▼）。CSS側で色に加えて記号を付け、色だけに頼らない
   if(!hasSpread || typeof v !== "number" || !isFinite(v)) return "";
-  if(v === maxVal) return "color:var(--primary); font-weight:900;";
-  if(v === minVal) return "color:var(--houjuu); font-weight:900;";
+  if(better==="high"){ if(v===maxVal) return "is-best"; if(v===minVal) return "is-worst"; return ""; }
+  if(better==="low"){ if(v===minVal) return "is-best"; if(v===maxVal) return "is-worst"; return ""; }
+  if(v === maxVal) return "is-max";
+  if(v === minVal) return "is-min";
   return "";
 }
 function renderRankSplitTableFromData(data){
   const header = [1,2,3,4].map(rk=>
-    `<th>${rk}着<span style="display:block; font-weight:600; color:var(--muted); font-size:10px;">(${fmtCount(data[rk].hanchanCount)}半荘)</span></th>`
+    `<th>${rk}着<small>${fmtCount(data[rk].hanchanCount)}半荘</small></th>`
   ).join("");
   // ①比較表と同じグループ定義・同じ折りたたみ状態（state.compareGroupCollapsed）を共有するアコーディオン形式で表示する
   const groupBlocks = COMPARE_METRIC_GROUPS.filter(g=>g.key!=="rank" && g.key!=="oyako").map(grp=>{
@@ -823,11 +1384,11 @@ function renderRankSplitTableFromData(data){
       const hasSpread = maxVal !== null && maxVal !== minVal;
       const cells = [1,2,3,4].map(rk=>{
         const v = data[rk][m.key];
-        const style = extremeCellStyle(v, maxVal, minVal, hasSpread);
-        return `<td style="${style}">${m.fmt(v)}</td>`;
+        const cls = extremeCellStyle(v, maxVal, minVal, hasSpread, m.better);
+        return `<td class="${cls}">${m.fmt(v)}</td>`;
       }).join("");
       const labelClass = m.subgroup ? "col-name compare-metric-indent" : "col-name";
-      return subHeaderRow + `<tr><td class="${labelClass}">${escapeHtml(m.label)}</td>${cells}</tr>`;
+      return subHeaderRow + `<tr><td class="${labelClass}">${tipLabel(m.label, m.desc)}</td>${cells}</tr>`;
     }).join("");
     return groupHeaderRow + metricRows;
   }).join("");
@@ -835,8 +1396,8 @@ function renderRankSplitTableFromData(data){
     <tr><th class="col-name"></th>${header}</tr>
     ${groupBlocks}
   </table></div>
-  <div class="n-sub" style="display:block; margin-top:6px;">※各着順の半荘数は、その着順のうち打ち筋系スタッツ（局の詳細）が入力されている半荘のみをカウント（「結果のみ入力」の半荘は含まない）</div>
-  <div class="n-sub" style="display:block; margin-top:4px;">※行内の<span style="color:var(--primary); font-weight:900;">最大値</span>・<span style="color:var(--houjuu); font-weight:900;">最小値</span>を色分け表示</div>`;
+  <div class="note">※各着順の半荘数は、その着順のうち打ち筋系スタッツ（局の詳細）が入力されている半荘のみをカウント（「結果のみ入力」の半荘は含まない）</div>
+  <div class="note" style="margin-top:2px;"><span class="mark-legend"><span><span class="mark-best">最良</span>・<span class="mark-worst">最悪</span></span><span><span class="mark-max">最大</span>・<span class="mark-min">最小</span>（回数・良し悪しのない指標）</span></span></div>`;
 }
 // 統計タブ：全プレイヤー平均値カード用に、着順別打ち筋スタッツを「各プレイヤーの着順別集計を単純平均」して算出する。
 // 対象プレイヤーはcomputeAverageStatsと同じ集合（kyokuCount>0のプレイヤー全員）を渡す想定。
@@ -885,7 +1446,7 @@ function renderMetricTileSections(statsObj, metrics){
     }
     const rawVal = statsObj[m.key];
     const display = m.fmt(rawVal);
-    buffer.push(`<div class="stat-tile"><div class="v">${display}</div><div class="l">${escapeHtml(m.label)}</div></div>`);
+    buffer.push(`<div class="stat-tile"><div class="v">${display}</div><div class="l">${tipLabel(m.label, m.desc)}</div></div>`);
   });
   flush();
   return html;
@@ -903,25 +1464,25 @@ function renderAverageStatCard(avg, activeStats){
   const rankKey = key + "__rank";
   const rankCollapsed = isStatsCollapsed(rankKey, false); // デフォルトは折りたたみ
   return `
-    <div class="stat-player-card">
+    <div class="stat-player-card ${collapsed?'':'is-open'}">
       <div class="row-between" data-toggle-stats-collapse="${key}">
-        <div class="stat-name">📊 全プレイヤー平均値</div>
-        <span class="n-sub">${collapsed?'▶':'▼'}</span>
+        <div class="stat-name"><span class="avg-badge">AVG</span>全プレイヤー平均値</div>
+        <span class="chev" aria-hidden="true">${collapsed?'▶':'▼'}</span>
       </div>
       ${collapsed ? "" : `
       <div class="row-between" data-toggle-stats-collapse="${styleKey}" data-toggle-default="expanded">
         <div class="stat-section-label" style="margin:0;">打ち筋（平均）</div>
-        <span class="n-sub">${styleCollapsed?'▶':'▼'}</span>
+        <span class="chev" aria-hidden="true">${styleCollapsed?'▶':'▼'}</span>
       </div>
       ${styleCollapsed ? "" : `
       ${renderMetricTileSections(avg, STATS_TILE_SCORE_METRICS)}
       ${renderMetricTileSections(avg, RANKSPLIT_BREAKDOWN_METRICS)}`}
       <div class="row-between" data-toggle-stats-collapse="${rankKey}" style="margin-top:14px; cursor:pointer;">
         <div class="stat-section-label" style="margin:0;">着順別打ち筋スタッツ（1着〜4着ごと）</div>
-        <span class="n-sub">${rankCollapsed?'▶':'▼'}</span>
+        <span class="chev" aria-hidden="true">${rankCollapsed?'▶':'▼'}</span>
       </div>
       ${rankCollapsed ? "" : `
-      <div class="stat-name" style="font-size:13px; margin:6px 0 8px;">📊 全プレイヤー平均値</div>
+      <div class="rank-split-name">全プレイヤー平均値</div>
       ${renderRankSplitTableFromData(computeAverageRankSplitStats(activeStats))}`}
       `}
     </div>`;
@@ -936,38 +1497,38 @@ function renderPlayerStatCard(s){
   const rankKey = key + "__rank";
   const rankCollapsed = isStatsCollapsed(rankKey, false); // デフォルトは折りたたみ
   return `
-    <div class="stat-player-card">
+    <div class="stat-player-card ${collapsed?'':'is-open'}">
       <div class="row-between" data-toggle-stats-collapse="${escapeAttr(key)}">
-        <div class="stat-name">${escapeHtml(s.name||"（名前未設定）")}</div>
-        <span class="n-sub">${collapsed?'▶':'▼'}</span>
+        <div class="stat-name">${s.name ? myTile(s.name,"sm") : ""}${escapeHtml(s.name||"（名前未設定）")}</div>
+        <span class="chev" aria-hidden="true">${collapsed?'▶':'▼'}</span>
       </div>
       ${collapsed ? "" : `
       <div class="row-between" data-toggle-stats-collapse="${escapeAttr(slotsKey)}" data-toggle-default="expanded">
         <div class="stat-section-label" style="margin:0;">着順（半荘${s.hanchanRankedCount}回分）</div>
-        <span class="n-sub">${slotsCollapsed?'▶':'▼'}</span>
+        <span class="chev" aria-hidden="true">${slotsCollapsed?'▶':'▼'}</span>
       </div>
       ${slotsCollapsed ? "" : `
       <div class="stat-grid">
-        <div class="stat-tile"><div class="v">${fmtAvg(s.avgRank)}</div><div class="l">平均順位</div></div>
-        <div class="stat-tile"><div class="v">${fmtPct(s.top)}</div><div class="l">トップ率</div><div class="n">${s.topCount}回</div></div>
-        <div class="stat-tile"><div class="v">${fmtPct(s.second)}</div><div class="l">2着率</div><div class="n">${s.secondCount}回</div></div>
-        <div class="stat-tile"><div class="v">${fmtPct(s.third)}</div><div class="l">3着率</div><div class="n">${s.thirdCount}回</div></div>
-        <div class="stat-tile"><div class="v">${fmtPct(s.last)}</div><div class="l">ラス率</div><div class="n">${s.lastCount}回</div></div>
+        <div class="stat-tile"><div class="v">${fmtAvg(s.avgRank)}</div><div class="l">${tipLabel("平均順位", metricDesc("avgRank"))}</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.top)}</div><div class="l">${tipLabel("トップ率", metricDesc("top"))}</div><div class="n">${s.topCount}回</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.second)}</div><div class="l">${tipLabel("2着率", metricDesc("second"))}</div><div class="n">${s.secondCount}回</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.third)}</div><div class="l">${tipLabel("3着率", metricDesc("third"))}</div><div class="n">${s.thirdCount}回</div></div>
+        <div class="stat-tile"><div class="v">${fmtPct(s.last)}</div><div class="l">${tipLabel("ラス率", metricDesc("last"))}</div><div class="n">${s.lastCount}回</div></div>
         <div class="stat-tile"><div class="v">${fmtPct(s.hakoRate)}</div><div class="l">ハコ率</div><div class="n">${s.hakoCount}回</div></div>
       </div>`}
       <div class="row-between" data-toggle-stats-collapse="${escapeAttr(styleKey)}" data-toggle-default="expanded" style="margin-top:14px;">
         <div class="stat-section-label" style="margin:0;">打ち筋</div>
-        <span class="n-sub">${styleCollapsed?'▶':'▼'}</span>
+        <span class="chev" aria-hidden="true">${styleCollapsed?'▶':'▼'}</span>
       </div>
       ${styleCollapsed ? "" : `
       ${renderMetricTileSections(s, STATS_TILE_SCORE_METRICS)}
       ${renderMetricTileSections(s, RANKSPLIT_BREAKDOWN_METRICS)}`}
       <div class="row-between" data-toggle-stats-collapse="${escapeAttr(rankKey)}" style="margin-top:14px; cursor:pointer;">
         <div class="stat-section-label" style="margin:0;">着順別打ち筋スタッツ（1着〜4着ごと）</div>
-        <span class="n-sub">${rankCollapsed?'▶':'▼'}</span>
+        <span class="chev" aria-hidden="true">${rankCollapsed?'▶':'▼'}</span>
       </div>
       ${rankCollapsed ? "" : `
-      <div class="stat-name" style="font-size:13px; margin:6px 0 8px;">${escapeHtml(s.name||"（名前未設定）")}</div>
+      <div class="rank-split-name">${escapeHtml(s.name||"（名前未設定）")}</div>
       ${renderRankSplitTable(s.name)}`}
       `}
     </div>`;
@@ -981,16 +1542,14 @@ function renderStatsSection(){
   const avg = computeAverageStats(activeStats);
   const avgCard = avg ? renderAverageStatCard(avg, activeStats) : "";
   const cards = avgCard + allStats.map(s=>renderPlayerStatCard(s)).join("");
-  return `
-    <div class="card">
-      <div class="section-head">
-        <h2>統計<span class="n-sub">プレイヤー別スタッツ（クリックで折りたたみ／展開）</span></h2>
-      </div>
+  const heroStats = allStats.filter(s=>s.kyokuCount>0 || s.hanchanRankedCount>0);
+  const hero = heroStats.length ? renderTitlesBlock(heroStats) + renderMeterBlock(heroStats) : "";
+  return `${hero}
+      <div class="hero-head">プレイヤー別スタッツ<small>名前をクリックで開く</small></div>
       <div class="stats-grid">${cards}</div>
-      <div class="glossary" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
+      <div class="glossary">
         ・和了＝アガリ　・放銃＝ロンされること　・副露＝ポン／チー／カンなど鳴く行為　・チョンボ＝ゲームの進行を止めるルール違反行為（アガリ放棄は含まない）
-      </div>
-    </div>`;
+      </div>`;
 }
 
 function computeHeadToHead(nameA, nameB){
@@ -1026,18 +1585,31 @@ function computeHeadToHead(nameA, nameB){
 function renderLoader(){
   return `
   <div class="loader-screen">
+   <div class="loader-wrap">
+    <div class="eyebrow">MASU MAHJONG STATS</div>
     <div class="loader-card" id="dropzone">
-      <div class="loader-icon">🀄</div>
-      <h1>麻雀スタッツ PC分析ビューア</h1>
+      <div class="loader-icon">
+        <svg width="48" height="48" viewBox="3 2 30 32" fill="none" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="18,4 30.1,11 30.1,25 18,32 5.9,25 5.9,11" stroke="#d9cfb0" stroke-width="1.4"/>
+          <polygon points="18,11 24,14.5 24,21.5 18,25 12,21.5 12,14.5" stroke="#e6ddc3" stroke-width="1.2"/>
+          <polygon points="18,6.5 27.5,12.5 25,23 18,27.5 9.5,22 12.5,13" fill="rgba(20,107,76,0.16)" stroke="#146b4c" stroke-width="2.2"/>
+          <circle cx="18" cy="6.5" r="2" fill="#b8322a"/>
+        </svg>
+      </div>
+      <h1>分析ビューア</h1>
+      <div class="riichi" aria-hidden="true"></div>
       <p class="loader-desc">入力アプリの設定タブから書き出した<br>バックアップJSONファイルを読み込んでください。<br>閲覧・分析専用で、データの編集・保存は行いません。</p>
-      <label class="file-select-btn">ファイルを選択
-        <input type="file" accept="application/json,.json" id="file-input" style="display:none;">
-      </label>
-      <p class="loader-hint">またはこの枠内にファイルをドラッグ&ドロップ</p>
-      <button type="button" class="file-select-btn" id="load-from-server-btn" style="margin-top:10px;">🌐 サイト上のbackup.jsonを読み込む</button>
+      <div class="loader-actions">
+        <label class="file-select-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2.5h5l3 3v8H4z"/><path d="M9 2.5V5.5h3"/></svg>ファイルを選択
+          <input type="file" accept="application/json,.json" id="file-input" style="display:none;">
+        </label>
+        <p class="loader-hint">またはこの枠内にファイルをドラッグ&amp;ドロップ</p>
+        <button type="button" class="file-select-btn" id="load-from-server-btn" style="margin-top:10px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#146b4c" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c1.8 1.7 2.6 3.7 2.6 6S9.8 12.3 8 14M8 2C6.2 3.7 5.4 5.7 5.4 8S6.2 12.3 8 14"/></svg>サイト上のbackup.jsonを読み込む</button>
+      </div>
       <div class="loader-error" id="loader-error"></div>
       <p class="loader-note">読み込んだデータはこの画面を閉じる・再読み込みすると消去されます（保存されません）。</p>
     </div>
+   </div>
   </div>`;
 }
 function bindLoaderEvents(){
@@ -1074,7 +1646,7 @@ function processBackupText(rawText, errEl){
   }
   state.raw = parsed;
   state.loaded = true;
-  state.section = "stats";
+  state.section = "compare"; // データ読込後の初期セクションは①比較表
   state.chips = [];
   state.compareTargets = null;
   state.dateRange = {from:"", to:""};
@@ -1084,6 +1656,10 @@ function processBackupText(rawText, errEl){
   state.rankGradeTargets = null;
   state.rankGradeView = "rank";
   state.houjuuMatrixTargets = null;
+  state.graphReplay = false;
+  state.tableDay = null;
+  state.meterName = null;
+  state.titleEditOpen = false;
   render();
 }
 // サイト上（このアプリと同じ場所）に置かれているbackup.jsonをfetchで取得して読み込む。
@@ -1109,14 +1685,29 @@ function render(){
   if(!state.loaded){
     app.innerHTML = renderLoader();
     bindLoaderEvents();
+    render._lastSection = null;
     return;
   }
   const stats = computeActiveStats();
+  // 牌が配られる登場アニメは、初回表示・セクション切替のときだけ（折りたたみ等の再描画では動かさない）
+  const entering = render._lastSection !== state.section;
+  render._lastSection = state.section;
   app.innerHTML = `
-    <div class="sidebar">${renderSidebar(stats)}</div>
-    <div class="main">${renderSectionWrap(stats)}</div>
+    <div class="sidebar${state.mobileMenuOpen ? " m-open" : ""}">${renderSidebar(stats)}</div>
+    <div class="main${entering ? " is-entering" : ""}">${renderSectionWrap(stats)}</div>
   `;
   bindEvents(stats);
+  const mainEl = app.querySelector(".main");
+  if(state.section==="graph" && state.graphReplay) setupReplay(mainEl);
+  if(((state.section==="stats" || state.section==="table") && entering) || render._countupNext){ render._countupNext=false; runCountUp(mainEl); }
+  // ①比較表（行＝選手）：見出しが2段のとき、2段目を1段目の高さ分だけ下で固定する
+  const sub = app.querySelector("#compare-table .cmp-subhead");
+  if(sub) sub.closest("table").style.setProperty("--subhead-h", sub.offsetHeight+"px");
+  // スマホ幅：横スクロールのタブで、選択中の項目が見える位置までスクロールしておく
+  const nav = app.querySelector(".side-nav"), act = nav && nav.querySelector("button.active");
+  if(nav && act && nav.scrollWidth > nav.clientWidth){
+    nav.scrollLeft = Math.max(0, act.offsetLeft - (nav.clientWidth - act.offsetWidth)/2);
+  }
 }
 
 function renderSidebar(stats){
@@ -1133,13 +1724,18 @@ function renderSidebar(stats){
   const dayFilterBtn = (val,label)=>`<button class="day-filter-btn ${state.dayFilter===val?'on':''}" data-dayfilter="${val}">${label}</button>`;
   return `
     <div class="sidebar-summary">
-      <div class="app-title">🀄 麻雀スタッツ<br>PC分析ビューア</div>
-      <div class="summary-line">半荘：${confirmedCount}／${totalHanchan}件（確定済み／全体）</div>
-      ${anyFilterActive ? `<div class="summary-line">絞込後：${inRangeConfirmedCount}件（確定済み）</div>` : ""}
-      <div class="summary-line">分析対象プレイヤー：${stats.length}名<span style="font-weight:400;">（対局・半荘のいずれかの実績あり）</span></div>
+      <div class="app-title">
+        <div class="eyebrow">MASU MAHJONG STATS</div>
+        <span class="app-title-main">分析ビューア</span>
+        <button type="button" class="m-filter-toggle ${anyFilterActive?'is-active':''}" data-m-filter-toggle aria-expanded="${!!state.mobileMenuOpen}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3.5h12L9.5 9v4l-3 1.5V9z"/></svg>${anyFilterActive?'絞込中':'絞り込み'}<span class="chev-mini" aria-hidden="true">▼</span></button>
+        <div class="riichi" aria-hidden="true"></div>
+      </div>
+      <div class="summary-line"><span>半荘（確定済み／全体）</span><b>${confirmedCount}／${totalHanchan}件</b></div>
+      ${anyFilterActive ? `<div class="summary-line"><span>絞込後（確定済み）</span><b>${inRangeConfirmedCount}件</b></div>` : ""}
+      <div class="summary-line"><span>分析対象プレイヤー<small>対局・半荘のいずれかの実績あり</small></span><b>${stats.length}名</b></div>
     </div>
     <div class="sidebar-date-filter">
-      <div class="chip-bar-label">📅 期間・曜日フィルタ<span style="font-weight:400;">（全セクション共通）</span></div>
+      <div class="side-label">期間・曜日<small>全セクション共通</small></div>
       <label class="sidebar-date-label">開始<input type="date" data-daterange-from value="${escapeAttr(state.dateRange.from)}"></label>
       <label class="sidebar-date-label">終了<input type="date" data-daterange-to value="${escapeAttr(state.dateRange.to)}"></label>
       <div class="day-filter-row">
@@ -1148,21 +1744,54 @@ function renderSidebar(stats){
       ${anyFilterActive ? `<button class="tool-btn small" data-daterange-clear style="margin-top:8px; width:100%;">フィルタ解除</button>` : ""}
     </div>
     <nav class="side-nav">
-      ${navBtn("stats","📊","統計")}
-      ${navBtn("compare","①","比較表")}
-      ${navBtn("graph","②","スコア推移")}
-      ${navBtn("compatradar","③","相性レーダーチャート")}
-      ${navBtn("rankgrade","④","成績5段階評価（相対評価）")}
-      ${navBtn("houjuumatrix","⑤","放銃マトリクス")}
+      ${navBtn("stats","統","統計")}
+      ${navBtn("compare","1","比較表")}
+      ${navBtn("graph","2","スコア推移")}
+      ${navBtn("compatradar","3","相性レーダーチャート")}
+      ${navBtn("rankgrade","4","成績5段階評価（相対評価）")}
+      ${navBtn("houjuumatrix","5","放銃マトリクス")}
+      ${navBtn("table","6","卓を囲む")}
     </nav>
-    <button class="reload-btn" data-reload>📂 別のファイルを読み込む</button>
+    <div class="side-spacer"></div>
+    <button class="reload-btn" data-reload><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3.2l1.5 1.6H13c.7 0 1.2.5 1.2 1.2v6.5c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg>別のファイルを読み込む</button>
   `;
 }
 function navBtn(id, num, label){
-  return `<button data-section="${id}" class="${state.section===id?'active':''}"><span class="nav-num">${num}</span>${label}</button>`;
+  return `<button data-section="${id}" class="${state.section===id?'active':''}"${state.section===id?' aria-current="page"':''}><span class="nav-num" aria-hidden="true">${num}</span>${label}</button>`;
 }
 
+// メインエリア上部のページ見出し（ラシャ上に置く）。セクション名・説明はここで一元管理する
+const SECTION_META = {
+  stats:        {no:"統", en:"STATISTICS",     title:"統計",                 desc:"プレイヤー別スタッツ（クリックで折りたたみ／展開）"},
+  compare:      {no:"1",  en:"COMPARISON",     title:"比較表",               desc:"選手を選んで比較"},
+  graph:        {no:"2",  en:"SCORE TREND",    title:"スコア推移",           desc:"確定済み半荘・プレイヤー名単位で集計（サイドバーの期間・曜日フィルタ適用範囲のスコアのみで算出）"},
+  compatradar:  {no:"3",  en:"COMPATIBILITY",  title:"相性レーダーチャート", desc:"選手ごとに、同卓した相手との平均得点pt差を表示"},
+  rankgrade:    {no:"4",  en:"RELATIVE GRADE", title:"成績5段階評価（相対評価）", desc:"選手ごとに個別のレーダーチャートで表示"},
+  houjuumatrix: {no:"5",  en:"DEAL-IN MATRIX", title:"放銃マトリクス",       desc:"誰が誰に何回放銃したか（行＝放銃者、列＝和了者）"},
+  table:        {no:"6",  en:"TABLE OF THE DAY", title:"卓を囲む",          desc:"対局日ごとに、その日の4人を雀卓に座らせて表示"},
+};
+function renderPageHead(stats){
+  const m = SECTION_META[state.section] || SECTION_META.compatradar;
+  const tools = (state.section==="graph" && stats.length)
+    ? `<button class="tool-btn" data-graph-replay aria-pressed="${state.graphReplay}">${state.graphReplay
+        ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12l4-5 3 3 5-6"/></svg>通常のグラフに戻る'
+        : '<svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg>リプレイ再生'}</button>`
+    : (state.section==="compare" && stats.length>=2)
+    ? `<button class="tool-btn" data-copy-table="compare"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="8.5" height="9" rx="1.5"/><path d="M3 11V3.5C3 2.7 3.7 2 4.5 2H10"/></svg>表をコピー</button>` : "";
+  return `
+    <header class="page-head">
+      <div class="page-head-text">
+        <div class="eyebrow">${m.en}</div>
+        <h1 class="page-title"><span class="nav-num" aria-hidden="true">${m.no}</span>${escapeHtml(m.title)}${state.section==="compare" ? `<span class="cond-badge" title="絞り込み条件"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3.5h12L9.5 9v4l-3 1.5V9z"/></svg>${escapeHtml(filterCondLabel())}</span>` : ""}</h1>
+        <p class="page-desc">${escapeHtml(m.desc)}</p>
+      </div>
+      ${tools ? `<div class="page-tools">${tools}</div>` : ""}
+    </header>`;
+}
 function renderSectionWrap(stats){
+  return renderPageHead(stats) + renderSectionBody(stats);
+}
+function renderSectionBody(stats){
   if(state.section==="stats"){
     return renderStatsSection(); // 統計タブは対局実績0のプレイヤーも含めて表示するため、専用に分岐（他セクションの空判定より前）
   }
@@ -1176,6 +1805,8 @@ function renderSectionWrap(stats){
     body = renderGraphSection();
   }else if(state.section==="rankgrade"){
     body = stats.length>=2 ? renderRankGradeSection(stats) : renderNeedMorePlayers("④成績5段階評価（相対評価）");
+  }else if(state.section==="table"){
+    body = renderDayTableSection();
   }else if(state.section==="houjuumatrix"){
     body = stats.length>=2 ? renderHoujuuMatrixSection(stats) : renderNeedMorePlayers("⑤放銃マトリクス");
   }else{
@@ -1191,8 +1822,9 @@ function renderNeedMorePlayers(label){
 function renderChipBar(){
   const chips = state.chips.map(n=>{
     const color = colorForChip(n);
-    return `<span class="sel-chip" style="border-color:${color}; color:${color}; background:${color}18;">
-      ${escapeHtml(n)}<button data-chip-remove="${escapeAttr(n)}" aria-label="解除">×</button></span>`;
+    const dashed = state.chips.indexOf(n) >= CHART_PALETTE.length ? " border-style:dashed;" : ""; // 9人目以降は色が循環するため、グラフの破線と揃えて枠も破線にする
+    return `<span class="sel-chip" style="border-color:${color}; color:var(--ink); background:${color}14;${dashed}">
+      <span class="legend-dot" style="background:${color};"></span>${escapeHtml(n)}<button data-chip-remove="${escapeAttr(n)}" aria-label="解除">×</button></span>`;
   }).join("");
   const clearBtn = state.chips.length ? `<button class="chip-clear-btn" data-chip-clear>選択をクリア</button>` : "";
   return `<div class="chip-bar">
@@ -1224,8 +1856,9 @@ function resolveCompareStat(name, allStats){
 function renderCompareSection(allStats){
   const allNames = allStats.map(s=>s.name).concat([COMPARE_AVERAGE_NAME]);
   if(state.compareTargets === null){
-    state.compareTargets = allStats.length<=COMPARE_DEFAULT_TARGET_COUNT ? allStats.map(s=>s.name)
-      : allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).slice(0,COMPARE_DEFAULT_TARGET_COUNT).map(s=>s.name);
+    // 初期状態：平均列をオンにして先頭に置き、続けて半荘数の多い順に選手を選ぶ
+    state.compareTargets = [COMPARE_AVERAGE_NAME].concat(allStats.length<=COMPARE_DEFAULT_TARGET_COUNT ? allStats.map(s=>s.name)
+      : allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).slice(0,COMPARE_DEFAULT_TARGET_COUNT).map(s=>s.name));
   }else{
     state.compareTargets = state.compareTargets.filter(n=>allNames.includes(n));
   }
@@ -1233,28 +1866,33 @@ function renderCompareSection(allStats){
 
   const averageOn = targets.includes(COMPARE_AVERAGE_NAME);
   const averageChip = `<label class="chip roster-chip target-chip ${averageOn?'on':''}">
-      <input type="checkbox" data-compare-toggle="${escapeAttr(COMPARE_AVERAGE_NAME)}" ${averageOn?'checked':''}>📊 ${escapeHtml(COMPARE_AVERAGE_NAME)}（対象${allStats.length}名）</label>`;
+      <input type="checkbox" data-compare-toggle="${escapeAttr(COMPARE_AVERAGE_NAME)}" ${averageOn?'checked':''}><span class="avg-badge">AVG</span>${escapeHtml(COMPARE_AVERAGE_NAME)}<span class="chip-n">対象${allStats.length}名</span></label>`;
   const targetChips = averageChip + allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).map(s=>{
     const on = targets.includes(s.name);
     return `<label class="chip roster-chip target-chip ${on?'on':''}">
-      <input type="checkbox" data-compare-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}（${s.hanchanRankedCount}半荘）</label>`;
+      <input type="checkbox" data-compare-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}<span class="chip-n">${s.hanchanRankedCount}半荘</span></label>`;
   }).join("");
 
   let tableHtml;
   if(!targets.length){
     tableHtml = `<div class="empty">プレイヤーを1人以上選択してください。</div>`;
   }else{
-    const selStats = targets.map(n=>resolveCompareStat(n, allStats)).filter(Boolean);
+    // 平均列は常に先頭
+    const ordered = targets.filter(n=>n===COMPARE_AVERAGE_NAME).concat(targets.filter(n=>n!==COMPARE_AVERAGE_NAME));
+    const selStats = ordered.map(n=>resolveCompareStat(n, allStats)).filter(Boolean);
+    if(compareOrientNow()==="player") tableHtml = renderCompareByPlayer(selStats);
+    else{
     const colCount = 1 + selStats.length;
     const headerCells = selStats.map(s=>{
       const isAvg = s.name===COMPARE_AVERAGE_NAME;
       const selected = !isAvg && state.chips.includes(s.name);
       const color = colorForChip(s.name);
-      const style = selected ? `background:${color}22; color:${color}; border-bottom:3px solid ${color};`
-        : isAvg ? `background:var(--bg); font-style:italic;` : "";
-      return `<th style="${style}">${isAvg ? "📊 " : ""}${escapeHtml(s.name)}</th>`;
+      // ②で選択中の選手：色は下線と淡い地色で示し、文字は墨のまま
+      const style = selected ? `background:${color}1c; color:var(--ink); box-shadow:inset 0 -3px 0 ${color};` : "";
+      return `<th class="${isAvg?'avg-col':''}" style="${style}">${isAvg ? '<span class="avg-badge">AVG</span>' : ""}${escapeHtml(s.name)}</th>`;
     }).join("");
-    const groupBlocks = COMPARE_METRIC_GROUPS.map(grp=>{
+    const scoped = compareMetricsInScope();
+    const groupBlocks = COMPARE_METRIC_GROUPS.filter(grp=>scoped.some(m=>m.group===grp.key)).map(grp=>{
       const collapsed = state.compareGroupCollapsed[grp.key] === true; // デフォルトは展開
       const groupHeaderRow = `<tr class="compare-group-row" data-toggle-compare-group="${grp.key}">
         <td class="col-name compare-group-cell" colspan="${colCount}">
@@ -1263,7 +1901,7 @@ function renderCompareSection(allStats){
       </tr>`;
       if(collapsed) return groupHeaderRow;
       let lastSubgroup = null;
-      const metricRows = COMPARE_METRICS.filter(m=>m.group===grp.key).map(m=>{
+      const metricRows = scoped.filter(m=>m.group===grp.key).map(m=>{
         let subHeaderRow = "";
         if(m.subgroup !== lastSubgroup){
           lastSubgroup = m.subgroup;
@@ -1281,40 +1919,97 @@ function renderCompareSection(allStats){
           const isAvg = s.name===COMPARE_AVERAGE_NAME;
           const selected = !isAvg && state.chips.includes(s.name);
           const color = colorForChip(s.name);
-          const style = selected ? `background:${color}14;` : isAvg ? `background:var(--bg);` : "";
-          const extraStyle = isAvg ? "" : extremeCellStyle(s[m.key], maxVal, minVal, hasSpread);
+          const style = selected ? `background:${color}12;` : "";
+          const extCls = isAvg ? "avg-col" : extremeCellStyle(s[m.key], maxVal, minVal, hasSpread, m.better);
           const seatM = /^seatAvgRank(\d)$/.exec(m.key);
-          const seatN = (seatM && !isAvg) ? `<span style="display:block; font-size:10px; font-weight:600; color:var(--muted);">${fmtCount(s["seatCount"+seatM[1]])}半荘</span>` : "";
-          return `<td style="${style}${extraStyle}">${m.fmt(s[m.key])}${seatN}</td>`;
+          const seatN = (seatM && !isAvg) ? `<small>${fmtCount(s["seatCount"+seatM[1]])}半荘</small>` : "";
+          return `<td class="${extCls}" style="${style}">${m.fmt(s[m.key])}${seatN}</td>`;
         }).join("");
         const labelCellClass = m.subgroup ? "col-name compare-metric-indent" : "col-name";
-        return subHeaderRow + `<tr><td class="${labelCellClass}">${escapeHtml(m.label)}</td>${cells}</tr>`;
+        return subHeaderRow + `<tr><td class="${labelCellClass}">${tipLabel(m.label, m.desc)}</td>${cells}</tr>`;
       }).join("");
       return groupHeaderRow + metricRows;
     }).join("");
     tableHtml = `
-      <div class="table-scroll">
+      <div class="table-scroll compare-scroll">
         <table class="stat-mini-table" id="compare-table">
-          <tr><th class="col-name"></th>${headerCells}</tr>
-          ${groupBlocks}
+          <thead><tr><th class="col-name"></th>${headerCells}</tr></thead>
+          <tbody>${groupBlocks}</tbody>
         </table>
       </div>`;
+    }
   }
+  const orient = compareOrientNow();
+  const orientBtn = (val,label)=>`<button type="button" class="seg-btn ${orient===val?'on':''}" data-compare-orient="${val}" aria-pressed="${orient===val}">${label}</button>`;
+  const scopeBtn = (val,label)=>`<button type="button" class="seg-btn ${state.compareScope===val?'on':''}" data-compare-scope="${val}" aria-pressed="${state.compareScope===val}">${label}</button>`;
+  const orientSwitch = targets.length ? `<div class="compare-toolbar">
+      <div class="compare-switches">
+        <div class="seg" role="group" aria-label="表示する指標">${scopeBtn("main","主要指標のみ")}${scopeBtn("all","すべての指標")}</div>
+        <div class="seg" role="group" aria-label="表の向き">${orientBtn("metric","行＝指標")}${orientBtn("player","行＝選手")}</div>
+      </div>
+      <div class="note" style="margin:0;"><span class="mark-legend"><span><span class="mark-best">最良</span>・<span class="mark-worst">最悪</span></span><span><span class="mark-max">最大</span>・<span class="mark-min">最小</span>（回数・良し悪しのない指標）</span></span><span class="legend-sub">「${escapeHtml(COMPARE_AVERAGE_NAME)}」列は比較から除く</span></div>
+    </div>` : "";
 
   return `
     <div class="card">
-      <div class="section-head">
-        <h2>① 比較表<span class="n-sub">選手を選んで比較</span></h2>
-        <button class="tool-btn" data-copy-table="compare">📋 表をコピー</button>
-      </div>
       <div class="target-select">
-        <span class="chip-bar-label">対象プレイヤー（初期表示は目安${COMPARE_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます。「${escapeHtml(COMPARE_AVERAGE_NAME)}」は対象プレイヤー全員の単純平均です）</span>
+        <span class="chip-bar-label">対象選手<small>タップで追加・解除／AVG＝全員の平均</small></span>
         <div class="chip-row">${targetChips}</div>
       </div>
-      ${targets.length ? `<div class="n-sub" style="display:block; margin-bottom:8px;">※行内の<span style="color:var(--primary); font-weight:900;">最大値</span>・<span style="color:var(--houjuu); font-weight:900;">最小値</span>を色分け表示（「${escapeHtml(COMPARE_AVERAGE_NAME)}」列は比較対象から除く）</div>` : ""}
+      ${orientSwitch}
       ${tableHtml}
-      ${targets.length ? `<div class="n-sub" style="display:block; margin-top:8px;">※「親番／子番」は座席が記録されている半荘の局のみで集計（連荘数は聴牌連荘を含む／親被り数＝自分が親の局で他家がツモ和了した回数）</div>` : ""}
+      ${targets.length && (orient==="metric" || state.compareTab==="oyako") ? `<div class="note">※「親番／子番」は座席が記録されている半荘の局のみで集計（連荘数は聴牌連荘を含む／親被り数＝自分が親の局で他家がツモ和了した回数）</div>` : ""}
     </div>`;
+}
+
+// ①比較表（行＝選手・列＝指標）：スマホなど狭い画面向け。指標はグループタブで1グループずつ表示して列数を抑える。
+// 指標の定義・書式・最大最小の判定は「行＝指標」表示と同じものを使う（列＝指標ごとに、平均を除く選手の中で判定）。
+function renderCompareByPlayer(selStats){
+  const scoped = compareMetricsInScope();
+  const groups = COMPARE_METRIC_GROUPS.filter(g=>scoped.some(m=>m.group===g.key));
+  if(!groups.some(g=>g.key===state.compareTab)) state.compareTab = groups[0].key;
+  const tabs = groups.map(g=>{
+    const on = state.compareTab===g.key;
+    return `<button type="button" role="tab" aria-selected="${on}" class="rankgrade-tab ${on?'active':''}" data-compare-tab="${g.key}">${escapeHtml(g.label.replace(/\s+/g,""))}</button>`;
+  }).join("");
+  const metrics = scoped.filter(m=>m.group===state.compareTab);
+  // 見出し1段目：サブグループ（無い指標は空欄）、2段目：指標名
+  const spans = [];
+  metrics.forEach(m=>{
+    const last = spans[spans.length-1];
+    if(last && last.sub===(m.subgroup||"")) last.n++; else spans.push({sub:m.subgroup||"", n:1});
+  });
+  const hasSub = spans.some(x=>x.sub);
+  const head1 = hasSub ? `<tr class="cmp-subhead"><th class="col-name"></th>${spans.map(x=>`<th colspan="${x.n}" class="${x.sub?'has-sub':''}">${escapeHtml(x.sub)}</th>`).join("")}</tr>` : "";
+  const head2 = `<tr><th class="col-name">選手</th>${metrics.map(m=>`<th>${tipLabel(m.label, m.desc)}</th>`).join("")}</tr>`;
+  const ext = metrics.map(m=>{
+    const vals = selStats.filter(s=>s.name!==COMPARE_AVERAGE_NAME).map(s=>s[m.key]).filter(v=>typeof v==="number" && isFinite(v));
+    const maxVal = vals.length ? Math.max(...vals) : null, minVal = vals.length ? Math.min(...vals) : null;
+    return {maxVal, minVal, hasSpread: maxVal!==null && maxVal!==minVal};
+  });
+  const rows = selStats.map(s=>{
+    const isAvg = s.name===COMPARE_AVERAGE_NAME;
+    const selected = !isAvg && state.chips.includes(s.name);
+    const color = colorForChip(s.name);
+    const nameStyle = selected ? ` style="box-shadow:inset 3px 0 0 ${color};"` : "";
+    const cells = metrics.map((m,j)=>{
+      const cls = isAvg ? "avg-col" : extremeCellStyle(s[m.key], ext[j].maxVal, ext[j].minVal, ext[j].hasSpread, m.better);
+      const seatM = /^seatAvgRank(\d)$/.exec(m.key);
+      const seatN = (seatM && !isAvg) ? `<small>${fmtCount(s["seatCount"+seatM[1]])}半荘</small>` : "";
+      return `<td class="${cls}">${m.fmt(s[m.key])}${seatN}</td>`;
+    }).join("");
+    return `<tr><td class="col-name ${isAvg?'avg-col':''}"${nameStyle}>${isAvg?'<span class="avg-badge">AVG</span>':''}${escapeHtml(s.name)}</td>${cells}</tr>`;
+  }).join("");
+  const desc = [...new Set(metrics.map(m=>m.subgroup).filter(Boolean))].map(sg=>COMPARE_SUBGROUP_DESC[sg] ? `${sg}＝${COMPARE_SUBGROUP_DESC[sg]}` : "").filter(Boolean).join("／");
+  return `
+    <div class="rankgrade-tabs compare-tabs" role="tablist">${tabs}</div>
+    <div class="table-scroll compare-scroll">
+      <table class="stat-mini-table is-by-player" id="compare-table">
+        <thead>${head1}${head2}</thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${desc ? `<div class="note">${escapeHtml(desc)}</div>` : ""}`;
 }
 
 // ---------- render: ②スコア推移 ----------
@@ -1325,7 +2020,7 @@ function renderGraphSection(){
   const filtered = groups.filter(g=>passesFilters(g.date));
 
   if(!filtered.length){
-    return `<div class="card"><div class="section-head"><h2>② スコア推移</h2></div><div class="empty">対象期間に確定済みの半荘がありません。サイドバーの期間・曜日フィルタをご確認ください。</div></div>`;
+    return `<div class="card"><div class="empty">対象期間に確定済みの半荘がありません。サイドバーの期間・曜日フィルタをご確認ください。</div></div>`;
   }
 
   const allNames = [];
@@ -1350,7 +2045,7 @@ function renderGraphSection(){
     });
   });
 
-  const w=900, h=420, padL=54, padR=20, padT=20, padB=32;
+  const w=960, h=440, padL=58, padR=96, padT=22, padB=30; // padR：選択中の線の右端に名前を直接表示する余白
   const n = filtered.length;
   const allVals = allNames.flatMap(nm=>series[nm]).concat([0]);
   const maxV = Math.max(...allVals), minV = Math.min(...allVals);
@@ -1361,43 +2056,59 @@ function renderGraphSection(){
   const order = allNames.slice().sort((a,b)=> (selectedSet.has(a)?1:0) - (selectedSet.has(b)?1:0));
 
   // y軸の目安線（0とmax/min付近）
-  const gridLevels = [minV, (minV+maxV)/2, maxV];
+  // 目盛りは切りの良い値（1・2・5×10^n刻み、4〜6本程度）で引く
+  const niceStep = (()=>{ const raw=(maxV-minV||1)/6, mag=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/mag; return (f<1.5?1:f<3?2:f<7?5:10)*mag; })();
+  const gridLevels = [];
+  for(let v=Math.ceil(minV/niceStep)*niceStep; v<=maxV+1e-9; v+=niceStep){ if(Math.abs(v)>1e-9) gridLevels.push(v); }
   const gridLines = gridLevels.map(v=>{
     const y = yAt(v).toFixed(1);
-    return `<line x1="${padL}" y1="${y}" x2="${w-padR}" y2="${y}" stroke="#E4DFD3" stroke-width="1" stroke-dasharray="3,3"/>
-      <text x="${padL-8}" y="${(+y+4).toFixed(1)}" font-size="11" fill="#767b83" text-anchor="end">${fmtPt(v)}</text>`;
+    return `<line x1="${padL}" y1="${y}" x2="${w-padR}" y2="${y}" stroke="${CHART_GRID}" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="${padL-10}" y="${(+y+4).toFixed(1)}" font-size="11.5" fill="${CHART_TEXT}" text-anchor="end">${(v>0?"+":"")+Math.round(v)}</text>`;
   }).join("");
   const zeroY = yAt(0).toFixed(1);
-  const zeroLine = (minV<0 && maxV>0) ? `<line x1="${padL}" y1="${zeroY}" x2="${w-padR}" y2="${zeroY}" stroke="#767b83" stroke-width="1.2"/>` : "";
+  const zeroLine = (minV<0 && maxV>0) ? `<line x1="${padL}" y1="${zeroY}" x2="${w-padR}" y2="${zeroY}" stroke="${CHART_ZERO}" stroke-width="1.2"/>
+    <text x="${padL-10}" y="${(+zeroY+4).toFixed(1)}" font-size="11.5" fill="${CHART_TEXT}" text-anchor="end">0</text>` : "";
 
   const lines = order.map(nm=>{
     const isSel = selectedSet.has(nm);
     const color = isSel ? colorForChip(nm) : NEUTRAL_COLOR;
     const s = series[nm];
     const points = s.map((v,i)=>`${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`).join(" ");
-    const strokeW = isSel ? 3 : 1.4;
-    const strokeOp = isSel ? 1 : 0.4;
-    return `<polyline data-graph-name="${escapeAttr(nm)}" points="${points}" fill="none" stroke="${color}" stroke-opacity="${strokeOp}" stroke-width="${strokeW}"/>`;
+    const strokeW = isSel ? 2.6 : 1.3;
+    const strokeOp = isSel ? 1 : 0.75;
+    // パレット8色を超えた9人目以降は破線にして、色の循環後も見分けられるようにする
+    const dash = (isSel && state.chips.indexOf(nm) >= CHART_PALETTE.length) ? ` stroke-dasharray="7,4"` : "";
+    return `<polyline class="${isSel?'is-sel':'is-dim'}" data-graph-name="${escapeAttr(nm)}" points="${points}" fill="none" stroke="${color}" stroke-opacity="${strokeOp}" stroke-width="${strokeW}" stroke-linejoin="round" stroke-linecap="round"${dash}><title>${escapeHtml(nm)}：${fmtPt(series[nm][n-1])}</title></polyline>`;
+  }).join("");
+  // 選択中の線の右端に、名前と最終ptを直接表示（重なりは上下に押し広げて回避）
+  const endLabels = allNames.filter(nm=>selectedSet.has(nm)).map(nm=>({nm, v:series[nm][n-1], y:yAt(series[nm][n-1])}))
+    .sort((a,b)=>a.y-b.y);
+  for(let i=1;i<endLabels.length;i++){ if(endLabels[i].y - endLabels[i-1].y < 15) endLabels[i].y = endLabels[i-1].y + 15; }
+  const overflow = endLabels.length ? endLabels[endLabels.length-1].y - (h-padB) : 0;
+  if(overflow > 0) endLabels.forEach(l=>{ l.y -= overflow; });
+  const endLabelSvg = endLabels.map(l=>{
+    const x = xAt(n-1);
+    return `<circle cx="${x.toFixed(1)}" cy="${yAt(l.v).toFixed(1)}" r="3.5" fill="${colorForChip(l.nm)}" stroke="#f3ecdb" stroke-width="2"/>
+      <text x="${(x+10).toFixed(1)}" y="${(l.y+4).toFixed(1)}" font-size="12" font-weight="700" fill="#24231e">${escapeHtml(l.nm)}<tspan fill="${CHART_TEXT}" font-weight="500" dx="5">${fmtPt(l.v)}</tspan></text>`;
   }).join("");
 
   const legend = allNames.map(nm=>{
     const isSel = selectedSet.has(nm);
     const color = isSel ? colorForChip(nm) : NEUTRAL_COLOR;
-    const style = isSel ? `background:${color}22; border-color:${color}; color:${color};` : "";
+    const dashed = isSel && state.chips.indexOf(nm) >= CHART_PALETTE.length ? " border-style:dashed;" : "";
+    const style = isSel ? `background:${color}14; border-color:${color};${dashed}` : "";
     return `<button class="chip legend-chip" data-chip-toggle="${escapeAttr(nm)}" style="${style}"><span class="legend-dot" style="background:${color};"></span>${escapeHtml(nm)}</button>`;
   }).join("");
 
   return `
     <div class="card">
-      <div class="section-head">
-        <h2>② スコア推移<span class="n-sub">確定済み半荘・プレイヤー名単位で集計（サイドバーの期間・曜日フィルタ適用範囲のスコアのみで算出）</span></h2>
-      </div>
-      <svg viewBox="0 0 ${w} ${h}" id="graph-svg" style="width:100%; height:auto; margin-top:14px;">
-        <rect x="0" y="0" width="${w}" height="${h}" fill="#FFFFFF"/>
-        ${gridLines}${zeroLine}${lines}
-      </svg>
+      ${state.graphReplay ? renderReplay() : `<svg viewBox="0 0 ${w} ${h}" id="graph-svg" class="graph-svg" role="img" aria-label="スコア推移">
+        ${gridLines}${zeroLine}${lines}${endLabelSvg}
+        <text x="${padL}" y="${h-8}" font-size="11.5" fill="${CHART_TEXT}" text-anchor="start">${escapeHtml(filtered[0].date)}</text>
+        <text x="${w-padR}" y="${h-8}" font-size="11.5" fill="${CHART_TEXT}" text-anchor="end">${escapeHtml(filtered[n-1].date)}</text>
+      </svg>`}
       <div class="chip-row legend-row">${legend}</div>
-      <div class="n-sub" style="display:block; margin-top:8px;">対象：確定済み半荘 ${n}件／選手名クリックでハイライトON/OFF</div>
+      <div class="note">対象：確定済み半荘 ${n}件／選手名クリックでハイライトON/OFF</div>
     </div>`;
 }
 // ---------- render: ③相性レーダーチャート（プレイヤー毎に並べて表示） ----------
@@ -1419,23 +2130,23 @@ function renderCompatRadarCard(baseName, axes, color, svgId){
     </div>`;
   }
   const maxAbs = Math.max(1, ...axes.map(a=>Math.abs(a.diff)));
-  const w=280, h=280, cx=140, cy=140, r=70;
+  const w=280, h=280, cx=140, cy=140, r=80;
   const n = axes.length;
   const angleFor = i => -Math.PI/2 + i*(2*Math.PI/n);
   const axisLines = axes.map((ax,i)=>{
     const a=angleFor(i); const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
-    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E4DFD3" stroke-width="1"/>`;
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${CHART_GRID}" stroke-width="1"/>`;
   }).join("");
   const gridPolys = [0.25,0.5,0.75,1.0].map(level=>{
     const pts = axes.map((ax,i)=>{ const a=angleFor(i), rr=r*level; return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`; }).join(" ");
-    return `<polygon points="${pts}" fill="none" stroke="#E4DFD3" stroke-width="1" stroke-dasharray="${level===1?'0':'2,2'}"/>`;
+    return `<polygon points="${pts}" fill="${level===1?'rgba(125,118,98,0.05)':'none'}" stroke="${level===1?CHART_GRID_STRONG:CHART_GRID}" stroke-width="1" stroke-dasharray="${level===1?'0':'2,3'}"/>`;
   }).join("");
   const zeroPts = axes.map((ax,i)=>{ const a=angleFor(i), rr=r*0.5; return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`; }).join(" ");
-  const zeroPoly = `<polygon points="${zeroPts}" fill="none" stroke="#767b83" stroke-width="1.4" stroke-dasharray="4,2"/>`;
+  const zeroPoly = `<polygon points="${zeroPts}" fill="none" stroke="${CHART_ZERO}" stroke-width="1.3" stroke-dasharray="4,3"/>`;
   const labels = axes.map((ax,i)=>{
-    const a=angleFor(i); const x=cx+(r+12)*Math.cos(a), y=cy+(r+9)*Math.sin(a);
+    const a=angleFor(i), sinA=Math.sin(a); const x=cx+(r+12)*Math.cos(a), y=cy+(r+11)*sinA + (sinA>0.3?9:sinA<-0.3?-1:4); // 上下の軸はラベルを頂点から離し、左右は縦中央に揃える
     const cosA=Math.cos(a); const anchor = cosA>0.3?"start":cosA<-0.3?"end":"middle";
-    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="12" fill="#767b83" text-anchor="${anchor}">${escapeHtml(ax.name)}</text>`;
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="11.5" fill="${CHART_TEXT}" text-anchor="${anchor}">${escapeHtml(ax.name)}</text>`;
   }).join("");
   const dataPts = axes.map((ax,i)=>{
     const a=angleFor(i);
@@ -1443,22 +2154,23 @@ function renderCompatRadarCard(baseName, axes, color, svgId){
     const rr = r*frac;
     return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`;
   }).join(" ");
-  const dataPoly = `<polygon points="${dataPts}" fill="${color}" fill-opacity="0.18" stroke="${color}" stroke-width="2"/>`;
+  const dataPoly = `<polygon points="${dataPts}" fill="${color}" fill-opacity="0.16" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+  const dataDots = dataPts.split(" ").map(pt=>{ const [x,y]=pt.split(","); return `<circle cx="${x}" cy="${y}" r="2.6" fill="${color}" stroke="#fbf8ef" stroke-width="1.5"/>`; }).join("");
+  // pt差は符号（＋／－）と色の両方で示す
   const legendRows = axes.map(ax=>`
     <div class="compat-legend-row">
       <span>${escapeHtml(ax.name)}</span>
-      <span style="font-weight:800; color:${ax.diff>=0?'#1F6F54':'#B23A2E'};">${fmtPt(ax.diff)}（${ax.count}回同卓）</span>
+      <span><b style="font-weight:700; color:${ax.diff>=0?'var(--green)':'var(--red)'};">${fmtPt(ax.diff)}</b><small>${ax.count}回同卓</small></span>
     </div>`).join("");
   return `
     <div class="radar-grid-card">
       <div class="radar-grid-card-head">
-        <h3>${escapeHtml(baseName)}</h3>
+        <h3>${myTile(baseName,"sm")}${escapeHtml(baseName)}</h3>
       </div>
-      <svg viewBox="0 0 ${w} ${h}" id="${svgId}" style="width:100%; height:auto; display:block;">
-        <rect x="0" y="0" width="${w}" height="${h}" fill="#FFFFFF"/>
-        ${gridPolys}${zeroPoly}${axisLines}${dataPoly}${labels}
+      <svg viewBox="-2 36 ${w+4} ${h-72}" id="${svgId}" class="radar-svg" role="img" aria-label="${escapeAttr(baseName)}の相性レーダーチャート">
+        ${gridPolys}${zeroPoly}${axisLines}${dataPoly}${dataDots}${labels}
       </svg>
-      <div class="n-sub" style="display:block; margin:6px 0 8px;">点線の円＝スコア差0（互角）。外側ほど${escapeHtml(baseName)}さんの勝ち越し。</div>
+      <div class="note" style="margin:0 0 8px;">点線の円＝スコア差0（互角）。外側ほど${escapeHtml(baseName)}さんの勝ち越し。</div>
       ${legendRows}
     </div>`;
 }
@@ -1479,7 +2191,7 @@ function renderCompatRadarGridSection(allStats){
   const targetChips = allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).map(s=>{
     const on = targets.includes(s.name);
     return `<label class="chip roster-chip target-chip ${on?'on':''}">
-      <input type="checkbox" data-compatradar-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}（${s.hanchanRankedCount}半荘）</label>`;
+      <input type="checkbox" data-compatradar-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}<span class="chip-n">${s.hanchanRankedCount}半荘</span></label>`;
   }).join("");
 
   let body;
@@ -1488,7 +2200,7 @@ function renderCompatRadarGridSection(allStats){
   }else{
     const cards = targets.map((name,i)=>{
       const axes = computeCompatAxes(name, allStats, targets);
-      const color = CHART_PALETTE[i % CHART_PALETTE.length];
+      const color = entityColor(name, allStats);
       return renderCompatRadarCard(name, axes, color, `compat-radar-svg-${i}`);
     }).join("");
     body = `<div class="radar-grid">${cards}</div>`;
@@ -1496,15 +2208,13 @@ function renderCompatRadarGridSection(allStats){
 
   return `
     <div class="card">
-      <div class="section-head">
-        <h2>③ 相性レーダーチャート<span class="n-sub">選手ごとに、同卓した相手との平均得点pt差を表示</span></h2>
-      </div>
       <div class="target-select">
-        <span class="chip-bar-label">対象プレイヤー（初期表示は目安${COMPAT_RADAR_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます）</span>
+        <span class="chip-bar-label">対象プレイヤー<small>（初期表示は目安${COMPAT_RADAR_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます）</small></span>
         <div class="chip-row">${targetChips}</div>
       </div>
-      ${body}
-    </div>`;
+      ${targets.length ? "" : body}
+    </div>
+    ${targets.length ? body : ""}`;
 }
 
 // ---------- render: ④成績5段階評価（相対評価） ----------
@@ -1527,19 +2237,16 @@ function renderRankGradeSection(stats){
   const targetChips = stats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).map(s=>{
     const on = targets.includes(s.name);
     return `<label class="chip roster-chip target-chip ${on?'on':''}">
-      <input type="checkbox" data-rankgrade-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}（${s.hanchanRankedCount}半荘）</label>`;
+      <input type="checkbox" data-rankgrade-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}<span class="chip-n">${s.hanchanRankedCount}半荘</span></label>`;
   }).join("");
   const viewTabs = Object.keys(RANK_GRADE_AXES).map(key=>{
     const active = state.rankGradeView===key;
-    return `<button type="button" class="rankgrade-tab ${active?'active':''}" data-rankgrade-view="${key}">${RANK_GRADE_VIEW_LABELS[key]}</button>`;
+    return `<button type="button" role="tab" aria-selected="${active}" class="rankgrade-tab ${active?'active':''}" data-rankgrade-view="${key}">${RANK_GRADE_VIEW_LABELS[key]}</button>`;
   }).join("");
   const head = `
-    <div class="section-head">
-      <h2>④ 成績5段階評価（相対評価）<span class="n-sub">選手ごとに個別のレーダーチャートで表示</span></h2>
-    </div>
-    <div class="rankgrade-tabs">${viewTabs}</div>
+    <div class="rankgrade-tabs" role="tablist">${viewTabs}</div>
     <div class="target-select">
-      <span class="chip-bar-label">対象プレイヤー（しきい値の基準にも、カード表示にも使用。初期表示は目安${RANKGRADE_DEFAULT_TARGET_COUNT}名、チェックで自由に増減できます）</span>
+      <span class="chip-bar-label">対象プレイヤー<small>（しきい値の基準にも、カード表示にも使用。初期表示は目安${RANKGRADE_DEFAULT_TARGET_COUNT}名、チェックで自由に増減できます）</small></span>
       <div class="chip-row">${targetChips}</div>
     </div>`;
   if(!targets.length){
@@ -1599,7 +2306,7 @@ function renderRankGradeSection(stats){
     return `<tr><th class="col-name">${ax.label}</th>${cells}</tr>`;
   }).join("");
   const thresholdTable = `
-    <div class="n-sub" style="margin-top:18px; margin-bottom:6px; font-weight:800;">評価しきい値の判定基準（下で選択した対象プレイヤーの実績を5等分した相対基準）</div>
+    <div class="card-title">評価しきい値の判定基準<small>選択した対象プレイヤーの実績を5等分した相対基準</small></div>
     <div class="table-scroll">
       <table class="stat-mini-table">
         <thead><tr><th class="col-name">評価軸</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th></tr></thead>
@@ -1608,14 +2315,14 @@ function renderRankGradeSection(stats){
     </div>`;
   const playerRows = eligibleStats.slice().sort((a,b)=> totalByName[b.name]-totalByName[a.name]).map(s=>{
     const grades = gradesByName[s.name];
-    const cells = axes.map((ax,i)=>`<td>${ax.fmt(ax.value(s))}<br><span class="n-sub">評価${grades[i]}</span></td>`).join("");
-    return `<tr><th class="col-name">${escapeHtml(s.name)}</th>${cells}<td>${totalByName[s.name]}/${RANK_TOTAL_MAX}</td></tr>`;
+    const cells = axes.map((ax,i)=>`<td class="grade-cell">${ax.fmt(ax.value(s))}<small>評価${grades[i]}</small></td>`).join("");
+    return `<tr><th class="col-name">${escapeHtml(s.name)}</th>${cells}<td style="font-weight:700;">${totalByName[s.name]}<span class="n-sub" style="margin-left:1px;">/${RANK_TOTAL_MAX}</span></td></tr>`;
   }).join("");
   const playerTableNote = state.rankGradeView==="style" && excludedByNoKyoku.length
     ? `選手別の実測値と評価（対象プレイヤー選択に関わらず表示。局ごとの詳細記録がない${excludedByNoKyoku.length}名は除外：${excludedByNoKyoku.map(s=>escapeHtml(s.name)).join("、")}）`
     : "選手別の実測値と評価（対象プレイヤー選択に関わらず全員分を表示）";
   const playerTable = `
-    <div class="n-sub" style="margin-top:18px; margin-bottom:6px; font-weight:800;">${playerTableNote}</div>
+    <div class="card-title">選手別の実測値と評価<small>${playerTableNote.replace(/^選手別の実測値と評価/,"")}</small></div>
     <div class="table-scroll">
       <table class="stat-mini-table">
         <thead><tr><th class="col-name">選手</th>${axes.map(ax=>`<th>${ax.label}</th>`).join("")}<th>合計（着順系）</th></tr></thead>
@@ -1625,7 +2332,7 @@ function renderRankGradeSection(stats){
   const cardStats = basisStats.slice().sort((a,b)=> totalByName[b.name]-totalByName[a.name]);
   const cards = cardStats.map((s,i)=>{
     const grades = gradesByName[s.name];
-    const color = CHART_PALETTE[i % CHART_PALETTE.length];
+    const color = entityColor(s.name, stats);
     return renderRankGradeCard(s, grades, totalByName[s.name], RANK_TOTAL_MAX, rankByName[s.name], RANK_TARGET_COUNT, color, `rankgrade-svg-${i}`, axes);
   }).join("");
   const eligibilityNote = state.rankGradeView==="style" && excludedByNoKyoku.length
@@ -1634,8 +2341,10 @@ function renderRankGradeSection(stats){
   return `
     <div class="card">
       ${head}
-      <div class="radar-grid">${cards}</div>
-      <div class="n-sub axis-note">各軸は選択中の対象プレイヤーの実績範囲を5等分したしきい値で1〜5段階に変換した評価値（外周＝5、中心＝1）。${RANK_GRADE_VIEW_NOTES[state.rankGradeView]}合計値・順位はタブに関わらず常に「着順系」の評価を基準に表示しています。${eligibilityNote}</div>
+    </div>
+    <div class="radar-grid">${cards}</div>
+    <div class="felt-note">各軸は選択中の対象プレイヤーの実績範囲を5等分したしきい値で1〜5段階に変換した評価値（外周＝5、中心＝1）。${RANK_GRADE_VIEW_NOTES[state.rankGradeView]}合計値・順位はタブに関わらず常に「着順系」の評価を基準に表示しています。${eligibilityNote}</div>
+    <div class="card">
       ${thresholdTable}
       ${playerTable}
     </div>`;
@@ -1643,41 +2352,43 @@ function renderRankGradeSection(stats){
 
 // ④成績5段階評価：選手1人分の個別レーダーカード（③相性レーダーチャートと同じカードUIを流用）。
 function renderRankGradeCard(s, grades, total, totalMax, rank, targetCount, color, svgId, axes){
-  const w=280, h=280, cx=140, cy=140, r=70;
+  const w=280, h=280, cx=140, cy=140, r=80;
   const n = axes.length;
   const angleFor = i => -Math.PI/2 + i*(2*Math.PI/n);
   const axisLines = axes.map((ax,i)=>{
     const a=angleFor(i); const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
-    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#E4DFD3" stroke-width="1"/>`;
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${CHART_GRID}" stroke-width="1"/>`;
   }).join("");
   const gridPolys = [1,2,3,4,5].map(level=>{
     const pts = axes.map((ax,i)=>{ const a=angleFor(i), rr=r*(level/5); return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`; }).join(" ");
-    return `<polygon points="${pts}" fill="none" stroke="#E4DFD3" stroke-width="1" stroke-dasharray="${level===5?'0':'2,2'}"/>`;
+    return `<polygon points="${pts}" fill="${level===5?'rgba(125,118,98,0.05)':'none'}" stroke="${level===5?CHART_GRID_STRONG:CHART_GRID}" stroke-width="1" stroke-dasharray="${level===5?'0':'2,3'}"/>`;
   }).join("");
   const labels = axes.map((ax,i)=>{
-    const a=angleFor(i); const x=cx+(r+12)*Math.cos(a), y=cy+(r+9)*Math.sin(a);
+    const a=angleFor(i), sinA=Math.sin(a); const x=cx+(r+12)*Math.cos(a), y=cy+(r+11)*sinA + (sinA>0.3?9:sinA<-0.3?-1:4); // 上下の軸はラベルを頂点から離し、左右は縦中央に揃える
     const cosA=Math.cos(a); const anchor = cosA>0.3?"start":cosA<-0.3?"end":"middle";
-    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="12" fill="#767b83" text-anchor="${anchor}">${ax.label}</text>`;
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="11.5" fill="${CHART_TEXT}" text-anchor="${anchor}">${ax.label}</text>`;
   }).join("");
   const dataPts = axes.map((ax,i)=>{
     const a=angleFor(i); const rr = r*(grades[i]/5);
     return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`;
   }).join(" ");
-  const dataPoly = `<polygon points="${dataPts}" fill="${color}" fill-opacity="0.2" stroke="${color}" stroke-width="2.2"/>`;
+  const dataPoly = `<polygon points="${dataPts}" fill="${color}" fill-opacity="0.16" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+  const dataDots = dataPts.split(" ").map(pt=>{ const [x,y]=pt.split(","); return `<circle cx="${x}" cy="${y}" r="2.6" fill="${color}" stroke="#fbf8ef" stroke-width="1.5"/>`; }).join("");
+  // 評価は数値＋5段の目盛り（塗りの数）で示す
+  const pips = g => `<span class="grade-pips" aria-hidden="true">${[1,2,3,4,5].map(k=>`<i class="${k<=g?'on':''}"></i>`).join("")}</span>`;
   const legendRows = axes.map((ax,i)=>`
-    <div class="compat-legend-row">
+    <div class="compat-legend-row" title="評価${grades[i]}">
       <span>${ax.label}</span>
-      <span style="font-weight:800;">${ax.fmt(ax.value(s))}（評価${grades[i]}）</span>
+      <span>${ax.fmt(ax.value(s))}<small>評価${grades[i]}</small>${pips(grades[i])}</span>
     </div>`).join("");
   return `
     <div class="radar-grid-card">
       <div class="radar-grid-card-head">
-        <h3 style="font-size:19px;">${escapeHtml(s.name)}</h3>
-        <span style="font-size:17px; font-weight:800; color:${color}; white-space:nowrap;">合計${total}/${totalMax}<span class="n-sub" style="font-size:15px; font-weight:800; margin-left:5px;">（着順系・${targetCount}人中${rank}位）</span></span>
+        <h3 style="font-size:18px;">${myTile(s.name,"sm")}${escapeHtml(s.name)}</h3>
+        <div class="grade-total"><span style="margin:0 2px 0 0;">合計</span><b>${total}</b><span>/${totalMax}</span><em>着順系・${targetCount}人中${rank}位</em></div>
       </div>
-      <svg viewBox="0 0 ${w} ${h}" id="${svgId}" style="width:100%; height:auto; display:block;">
-        <rect x="0" y="0" width="${w}" height="${h}" fill="#FFFFFF"/>
-        ${gridPolys}${axisLines}${dataPoly}${labels}
+      <svg viewBox="-2 36 ${w+4} ${h-72}" id="${svgId}" class="radar-svg" role="img" aria-label="${escapeAttr(s.name)}の成績レーダーチャート">
+        ${gridPolys}${axisLines}${dataPoly}${dataDots}${labels}
       </svg>
       ${legendRows}
     </div>`;
@@ -1688,6 +2399,23 @@ function renderRankGradeCard(s, grades, total, totalMax, rank, targetCount, colo
 // 対象はサイドバー共通の期間・曜日フィルタ内の局（チョンボ・結果のみ入力の局は除く）。複数ロンの場合は和了者それぞれに1回ずつ数える。
 const HOUJUU_MATRIX_DEFAULT_TARGET_COUNT = 6;
 const HOUJUU_MATRIX_OTHER = "その他";
+// ⑤放銃マトリクス（比率表示）の分母：2人が同卓した局数・本人の総局数・対象外の誰かと同卓した局数。
+// 対象は放銃の集計と同じ局（期間・曜日フィルタ内、チョンボ・結果のみ入力の局を除く）。
+function computeHoujuuCoKyoku(targetSet){
+  const pair = new Map(), kyoku = new Map(), otherKyoku = new Map();
+  (state.raw.records||[]).forEach(r=>{
+    if(!passesFilters(r.date)) return;
+    if(r.resultType==="chombo" || r.resultType==="resultonly") return;
+    const names = namesForHanchan(r.date, r.hanchanNo).map((n,i)=>n || `P${i+1}`);
+    const hasOther = names.some(n=>!targetSet.has(n));
+    names.forEach(a=>{
+      kyoku.set(a,(kyoku.get(a)||0)+1);
+      if(names.some(n=>n!==a && !targetSet.has(n))) otherKyoku.set(a,(otherKyoku.get(a)||0)+1);
+      names.forEach(b=>{ if(a!==b) pair.set(a+"\t"+b,(pair.get(a+"\t"+b)||0)+1); });
+    });
+  });
+  return {pair, kyoku, otherKyoku};
+}
 function computeHoujuuMatrix(){
   const m = new Map(); // "放銃者\t和了者" -> 回数
   (state.raw.records||[]).forEach(r=>{
@@ -1722,14 +2450,11 @@ function renderHoujuuMatrixSection(allStats){
   const targetChips = allStats.slice().sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount).map(s=>{
     const on = targets.includes(s.name);
     return `<label class="chip roster-chip target-chip ${on?'on':''}">
-      <input type="checkbox" data-houjuumatrix-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}（${s.hanchanRankedCount}半荘）</label>`;
+      <input type="checkbox" data-houjuumatrix-toggle="${escapeAttr(s.name)}" ${on?'checked':''}>${escapeHtml(s.name)}<span class="chip-n">${s.hanchanRankedCount}半荘</span></label>`;
   }).join("");
   const head = `
-    <div class="section-head">
-      <h2>⑤ 放銃マトリクス<span class="n-sub">誰が誰に何回放銃したか（行＝放銃者、列＝和了者）</span></h2>
-    </div>
     <div class="target-select">
-      <span class="chip-bar-label">対象プレイヤー（初期表示は目安${HOUJUU_MATRIX_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます。対象外の相手への放銃・からの和了は「${HOUJUU_MATRIX_OTHER}」列・行にまとめます）</span>
+      <span class="chip-bar-label">対象プレイヤー<small>（初期表示は目安${HOUJUU_MATRIX_DEFAULT_TARGET_COUNT}名、チップで自由に増減できます。対象外の相手への放銃・からの和了は「${HOUJUU_MATRIX_OTHER}」列・行にまとめます）</small></span>
       <div class="chip-row">${targetChips}</div>
     </div>`;
   if(targets.length < 2){
@@ -1738,41 +2463,365 @@ function renderHoujuuMatrixSection(allStats){
   const m = computeHoujuuMatrix();
   const get = (a,b)=> m.get(a+"\t"+b)||0;
   const targetSet = new Set(targets);
+  const rateMode = state.houjuuMatrixMode === "rate";
+  const co = rateMode ? computeHoujuuCoKyoku(targetSet) : null;
   // 対象外プレイヤーとの放銃・和了は「その他」に合算する（行・列の合計が実際の回数と一致するようにする）
   const otherCol = name => { let n=0; m.forEach((v,k)=>{ const [a,b]=k.split("\t"); if(a===name && !targetSet.has(b)) n+=v; }); return n; };
   const otherRow = name => { let n=0; m.forEach((v,k)=>{ const [a,b]=k.split("\t"); if(b===name && !targetSet.has(a)) n+=v; }); return n; };
   const otherCols = targets.map(otherCol), otherRows = targets.map(otherRow);
   const showOther = otherCols.some(v=>v>0) || otherRows.some(v=>v>0);
+  // 比率：放銃者・和了者が同卓した局数を分母にする（対局数が違う相手同士でも比べられるように）
+  const pairRate = (a,b)=>{ const n = co.pair.get(a+"\t"+b)||0; return n ? get(a,b)/n : null; };
+  const fmtR = v => v===null ? "－" : (v*100).toFixed(1)+"%";
   const inner = [];
-  targets.forEach(a=>targets.forEach(b=>{ if(a!==b) inner.push(get(a,b)); }));
-  const maxCell = Math.max(1, ...inner);
-  const heat = v => v>0 ? `background:rgba(178,58,46,${(0.08 + 0.42*v/maxCell).toFixed(3)});` : "";
+  targets.forEach(a=>targets.forEach(b=>{ if(a!==b){ const v = rateMode ? pairRate(a,b) : get(a,b); if(v!==null) inner.push(v); } }));
+  const maxCell = Math.max(rateMode ? 1e-9 : 1, ...inner);
+  const heat = v => v>0 ? `background:rgba(184,50,42,${(0.07 + 0.38*v/maxCell).toFixed(3)}); box-shadow:inset 0 0 0 1.5px #f1eadb;` : ""; // 濃淡セル同士の間に細い地色の隙間
   const colTotals = targets.map((b,j)=> targets.reduce((a,x)=>a+(x===b?0:get(x,b)),0) + otherRows[j]);
   const headerCells = targets.map(n=>`<th>${escapeHtml(n)}</th>`).join("")
     + (showOther ? `<th>${HOUJUU_MATRIX_OTHER}</th>` : "") + `<th>放銃計</th>`;
   const bodyRows = targets.map((a,i)=>{
     const cells = targets.map(b=>{
       if(a===b) return `<td style="color:var(--muted);">－</td>`;
+      if(rateMode){
+        const v = pairRate(a,b), n = co.pair.get(a+"\t"+b)||0;
+        return `<td style="${v?heat(v):""}" title="${get(a,b)}回 ÷ 同卓${n}局">${fmtR(v)}</td>`;
+      }
       const v = get(a,b);
       return `<td style="${heat(v)}">${v}</td>`;
     }).join("");
     const rowTotal = targets.reduce((t,b)=>t+(a===b?0:get(a,b)),0) + otherCols[i];
-    return `<tr><td class="col-name">${escapeHtml(a)}</td>${cells}${showOther?`<td style="color:var(--muted);">${otherCols[i]}</td>`:""}<td style="font-weight:900;">${rowTotal}</td></tr>`;
+    const otherCell = rateMode ? fmtR(co.otherKyoku.get(a) ? otherCols[i]/co.otherKyoku.get(a) : null) : otherCols[i];
+    const totalCell = rateMode ? fmtR(co.kyoku.get(a) ? rowTotal/co.kyoku.get(a) : null) : rowTotal;
+    return `<tr><td class="col-name"><span style="display:inline-flex; align-items:center; gap:8px;">${myTile(a,"xs")}${escapeHtml(a)}</span></td>${cells}${showOther?`<td style="color:var(--muted);">${otherCell}</td>`:""}<td style="font-weight:700; border-left:1px solid var(--rule);">${totalCell}</td></tr>`;
   }).join("");
   const otherBodyRow = showOther
-    ? `<tr><td class="col-name" style="color:var(--muted);">${HOUJUU_MATRIX_OTHER}</td>${otherRows.map(v=>`<td style="color:var(--muted);">${v}</td>`).join("")}<td></td><td></td></tr>` : "";
-  const totalRow = `<tr><td class="col-name">ロン和了計</td>${colTotals.map(v=>`<td style="font-weight:900;">${v}</td>`).join("")}${showOther?"<td></td>":""}<td></td></tr>`;
+    ? `<tr><td class="col-name" style="color:var(--muted);">${HOUJUU_MATRIX_OTHER}</td>${otherRows.map((v,j)=>`<td style="color:var(--muted);">${rateMode ? fmtR(co.otherKyoku.get(targets[j]) ? v/co.otherKyoku.get(targets[j]) : null) : v}</td>`).join("")}<td></td><td></td></tr>` : "";
+  const totalRow = `<tr><td class="col-name" style="border-top:1.5px solid var(--rule-strong);">ロン和了計</td>${colTotals.map((v,j)=>`<td style="font-weight:700; border-top:1.5px solid var(--rule-strong);">${rateMode ? fmtR(co.kyoku.get(targets[j]) ? v/co.kyoku.get(targets[j]) : null) : v}</td>`).join("")}${showOther?'<td style="border-top:1.5px solid var(--rule-strong);"></td>':""}<td style="border-top:1.5px solid var(--rule-strong);"></td></tr>`;
   return `
     <div class="card">
       ${head}
+      <div class="compare-toolbar">
+        <div class="seg" role="group" aria-label="表示">
+          <button type="button" class="seg-btn ${rateMode?'':'on'}" data-houjuumatrix-mode="count" aria-pressed="${!rateMode}">回数</button>
+          <button type="button" class="seg-btn ${rateMode?'on':''}" data-houjuumatrix-mode="rate" aria-pressed="${rateMode}">比率</button>
+        </div>
+        <div class="note" style="margin:0;">${rateMode ? "比率＝放銃回数 ÷ その2人が同卓した局数。放銃計・ロン和了計は ÷ 本人の総局数" : "単日など、同じメンバーで打った期間の比較に向いています"}</div>
+      </div>
       <div class="table-scroll">
         <table class="stat-mini-table" id="houjuu-matrix-table">
           <tr><th class="col-name">放銃者＼和了者</th>${headerCells}</tr>
           ${bodyRows}${otherBodyRow}${totalRow}
         </table>
       </div>
-      <div class="n-sub" style="display:block; margin-top:8px;">※セルの色が濃いほど回数が多い（対象プレイヤー同士のセルの最大値を基準）。サイドバーの期間・曜日フィルタ内の局が対象（チョンボ・結果のみ入力の局は除く）。ダブロンの場合は和了者それぞれに1回ずつ数える。</div>
+      <div class="note">※セルの色が濃いほど${rateMode?"比率が高い":"回数が多い"}（対象プレイヤー同士のセルの最大値を基準）。サイドバーの期間・曜日フィルタ内の局が対象（チョンボ・結果のみ入力の局は除く）。ダブロンの場合は和了者それぞれに1回ずつ数える。</div>
     </div>`;
+}
+
+
+// ===================== 見て楽しい分析：マイ牌・称号・卓を囲む・点棒メーター・リプレイ =====================
+// マイ牌：名前の1文字目を字牌のように刻んだアイコン。1文字目が他の選手と重なる場合は2文字を小さく刻む。
+// 文字はCSSの::before（data-ch）で描くため、表のテキスト（コピー・読み上げ用）には混ざらない。
+function myTile(name, size){
+  const all = globalPlayerOrder();
+  const c = (name||"?").charAt(0);
+  const ch = all.filter(n=>n && n.charAt(0)===c).length > 1 ? (name||"").slice(0,2) : c;
+  return `<span class="mytile ${size||''} ${ch.length>1?'two':''}" style="--pc:${entityColor(name)};" data-ch="${escapeAttr(ch)}" aria-hidden="true"></span>`;
+}
+
+// 称号カード：期間（サイドバーの期間・曜日フィルタ）内の成績で付ける。
+// 対象条件は「その期間で最も多く打った人の3割以上」（最低ライン：半荘2回・16局など）。同率は全員に称号。
+// 二つ名は画面上で編集でき、この端末のブラウザに保存する（TITLE_NAMES_KEY）。未設定なら既定の名前。
+const TITLE_DEFS = [
+  {id:"top",    name:"天下人", cat:"着順",   metric:"トップ率", desc:"卓の頂を、最も多く手中に収めた", key:"top", better:"high", fmt:fmtPct, base:"rank"},
+  {id:"last",   name:"不沈艦",     cat:"着順",   metric:"ラス率",   desc:"どんな荒波にも沈まず、嵐が過ぎるのをじっと待つ", key:"last", better:"low", fmt:fmtPct, base:"rank"},
+  {id:"agari",  name:"卓上のソリスト",   cat:"打ち筋", metric:"和了率",   desc:"「ロン！」「ツモ！」今日はこの人のワンマンライブ", key:"agariRate", better:"high", fmt:fmtPct, base:"kyoku"},
+  {id:"houjuu", name:"点棒の金庫番",       cat:"打ち筋", metric:"放銃率",   desc:"固い意志で、点棒は一本も外に出さない", key:"houjuuRate", better:"low", fmt:fmtPct, base:"kyoku"},
+  {id:"riichi", name:"勝利の予言者", cat:"打ち筋", metric:"リーチ後和了率", desc:"「リーチ」とは、すなわち勝利予告である", key:"riichiAgariRate", better:"high", fmt:fmtPct, base:"riichi"},
+  {id:"fuuro",  name:"鳴きのスピードスター", cat:"打ち筋", metric:"副露後和了率", desc:"鳴いて、走って、ぶっちぎる。誰も背中に追いつけない", key:"fuuroAgariRate", better:"high", fmt:fmtPct, base:"fuuro"},
+  {id:"renchan",name:"おかわり親方",     cat:"打ち筋", metric:"連荘率",   desc:"「もう一局」が止まらない。誰かこの人を止めてくれ", key:"oyaRenchanRate", better:"high", fmt:fmtPct, base:"oya"},
+  {id:"dama",   name:"無音の刺客", cat:"打ち筋", metric:"ダマテン和了率", desc:"気配ゼロ。気づいた時には、もう手牌が倒れている", key:"agariOtherRate", better:"high", fmt:fmtPct, base:"kyoku"},
+  // ここから下は「珍」称号：良い成績ではないが、ユーモアで讃える（バッジは「ワースト」）
+  {id:"chaos",  name:"混沌の使者", cat:"珍",     metric:"副露後和了率", badge:"ワースト", desc:"鳴く度に卓がざわつく。……で、どうするの？", key:"fuuroAgariRate", better:"low", fmt:fmtPct, base:"fuuro"},
+  {id:"unlucky",name:"リーチの殉教者", cat:"珍",   metric:"リーチ後放銃率", badge:"ワースト", desc:"果敢に名乗りを上げ、勇ましく散った", key:"riichiHoujuuRate", better:"high", fmt:fmtPct, base:"riichi"},
+];
+const TITLE_SHARE = 0.3; // 対象条件：期間内の最多の人の何割以上か
+const TITLE_NAMES_KEY = "mj-viewer-title-names";
+function loadTitleNames(){ try{ return JSON.parse(localStorage.getItem(TITLE_NAMES_KEY)||"{}")||{}; }catch(e){ return {}; } }
+function saveTitleNames(obj){ try{ localStorage.setItem(TITLE_NAMES_KEY, JSON.stringify(obj)); return true; }catch(e){ return false; } }
+function titleName(def){ const custom = loadTitleNames()[def.id]; return (custom && String(custom).trim()) || def.name; }
+function titleThresholds(stats){
+  const mx = k => Math.max(0, ...stats.map(s=>s[k]||0));
+  const th = (k, floor) => Math.max(floor, Math.ceil(mx(k)*TITLE_SHARE));
+  return {rank:th("hanchanRankedCount",2), kyoku:th("kyokuCount",16), riichi:th("riichi",5), fuuro:th("fuuro",5), oya:th("oyaKyoku",4)};
+}
+const TITLE_BASE_FIELD = {rank:"hanchanRankedCount", kyoku:"kyokuCount", riichi:"riichi", fuuro:"fuuro", oya:"oyaKyoku"};
+const TITLE_BASE_UNIT = {rank:"半荘", kyoku:"局", riichi:"リーチ", fuuro:"副露", oya:"親番の局"};
+function computeTitles(stats){
+  const T = titleThresholds(stats);
+  return TITLE_DEFS.map(t=>{
+    const pool = stats.filter(s=>(s[TITLE_BASE_FIELD[t.base]]||0) >= T[t.base] && (t.base==="rank" || s.kyokuCount>=T.kyoku));
+    if(!pool.length) return {...t, empty:true, need:T[t.base]};
+    const sorted = pool.slice().sort((a,b)=> t.better==="high" ? b[t.key]-a[t.key] : a[t.key]-b[t.key]);
+    const best = t.fmt(sorted[0][t.key]);
+    const winners = sorted.filter(s=>t.fmt(s[t.key])===best);
+    const next = sorted.find(s=>t.fmt(s[t.key])!==best) || null;
+    return {...t, winners, next, poolSize:pool.length, need:T[t.base]};
+  });
+}
+// 二つ名が長いとき（編集した名前を含む）は、1行に収まるよう字間と文字サイズを段階的に詰める
+function ttlNameSize(name){ const n = Array.from(String(name||"")).length; return n>=9 ? "is-long" : n>=7 ? "is-mid" : ""; }
+function renderTitleCard(t){
+  const cls = t.cat==="着順" ? "rank" : t.cat==="珍" ? "fun" : "style";
+  // 何の実績かが伝わることを優先：「指標名 1位（珍称号はワースト）」と一行の説明を大きめに出す（区分バッジ・次点・対象人数は出さない）
+  const head = `<div class="ttl-metric">${escapeHtml(t.metric)}<b>${escapeHtml(t.badge||"1位")}</b></div>
+    <div class="ttl-name ${ttlNameSize(titleName(t))}">${escapeHtml(titleName(t))}</div><div class="ttl-desc">${escapeHtml(t.desc)}</div>`;
+  if(t.empty) return `<div class="ttl-card is-empty">${head}<div class="ttl-none">この期間は該当者なし（${TITLE_BASE_UNIT[t.base]}${t.need}以上の人がいない）</div></div>`;
+  const v = t.winners[0][t.key];
+  const holders = t.winners.map(w=>`<div class="ttl-holder">${myTile(w.name,"md")}<div class="ttl-who">${escapeHtml(w.name)}</div></div>`).join("");
+  return `<div class="ttl-card ${cls}">${head}
+    <div class="ttl-body"><div class="ttl-holders">${holders}</div>
+      <div class="ttl-val"><span data-countup="${t.key==='avgRank'?v:v*100}" data-dec="${t.key==='avgRank'?2:1}" data-suffix="${t.key==='avgRank'?'':'%'}">${t.fmt(v)}</span>${t.key==='avgRank'?'<small>位</small>':''}</div></div>
+    ${t.winners.length>1 ? `<div class="ttl-foot">同率${t.winners.length}人</div>` : ""}
+  </div>`;
+}
+// 期間プリセット：サイドバーの期間フィルタをワンタップで設定する。基準日はデータ上の最新対局日。
+function latestDataDate(){ const g = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`]); return g.length ? g[g.length-1].date : ""; }
+function shiftDate(dateStr, months){ const [y,m,d]=dateStr.split("-").map(Number); const dt=new Date(y, m-1+months, d+1); const p=n=>String(n).padStart(2,"0"); return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}`; }
+function periodPresets(){
+  const last = latestDataDate();
+  if(!last) return [{id:"all", label:"全期間", from:"", to:""}];
+  return [
+    {id:"all", label:"全期間", from:"", to:""},
+    {id:"day", label:"直近の対局日", from:last, to:last},
+    {id:"m1", label:"直近1ヶ月", from:shiftDate(last,-1), to:last},
+    {id:"m2", label:"直近2ヶ月", from:shiftDate(last,-2), to:last},
+  ];
+}
+function periodLabel(){
+  const r = state.dateRange, f = r.from && r.from.replace(/-/g,"/"), t = r.to && r.to.replace(/-/g,"/");
+  const base = !f && !t ? "全期間" : (f && t && f===t) ? `${f}（単日）` : `${f||"最初"}〜${t||"最新"}`;
+  return base + (state.dayFilter==="weekday" ? "・平日のみ" : state.dayFilter==="weekend" ? "・週末のみ" : "");
+}
+function renderTitlesBlock(stats){
+  const T = titleThresholds(stats);
+  const presets = periodPresets().map(pr=>`<button type="button" class="seg-btn ${state.dateRange.from===pr.from && state.dateRange.to===pr.to?'on':''}" data-period-preset="${pr.id}">${pr.label}</button>`).join("");
+  const names = loadTitleNames();
+  const edit = state.titleEditOpen ? `<div class="card ttl-edit">
+      <div class="card-title" style="margin-top:0;">二つ名の編集<small>この端末のブラウザに保存されます（空欄は既定の名前）</small></div>
+      <div class="ttl-edit-grid">${TITLE_DEFS.map(d=>`<label>${escapeHtml(d.metric)} ${escapeHtml(d.badge||"1位")}<input type="text" maxlength="12" data-title-input="${d.id}" value="${escapeAttr(names[d.id]||"")}" placeholder="${escapeAttr(d.name)}"></label>`).join("")}</div>
+      <div class="ttl-edit-actions"><button type="button" class="tool-btn" data-title-save>保存する</button><button type="button" class="tool-btn" data-title-reset>既定の名前に戻す</button><button type="button" class="chip-clear-btn" data-title-edit style="margin-left:0;">閉じる</button></div>
+    </div>` : "";
+  const titles = computeTitles(stats).map(renderTitleCard).join("");
+  return `<div class="stats-hero">
+    <div class="hero-head">称号<small>期間内の成績から自動で付く二つ名</small><button type="button" class="tool-btn small" data-title-edit>${state.titleEditOpen?"編集を閉じる":"二つ名を編集"}</button></div>
+    <div class="card ttl-period">
+      <div class="ttl-period-row">
+        <div><div class="ttl-period-label">対象期間</div><div class="ttl-period-v">${escapeHtml(periodLabel())}</div></div>
+        <div class="seg" role="group" aria-label="期間">${presets}</div>
+      </div>
+      <div class="note" style="margin-top:8px;">対象条件：半荘${T.rank}回以上・${T.kyoku}局以上（その期間でいちばん多く打った人の3割以上）。期間はサイドバーの絞り込みと連動します。</div>
+    </div>
+    ${edit}
+    <div class="ttl-grid">${titles}</div>
+  </div>`;
+}
+
+// 点棒メーター：率を点棒の長さでも示す。縦の緑線＝対象選手の平均。対象は称号と同じ条件（期間に合わせた3割基準）。
+const METER_ROWS = [
+  {key:"top", label:"トップ率", fmt:fmtPct, better:"high"},
+  {key:"last", label:"ラス率", fmt:fmtPct, better:"low"},
+  {key:"agariRate", label:"和了率", fmt:fmtPct0, better:"high"},
+  {key:"houjuuRate", label:"放銃率", fmt:fmtPct0, better:"low"},
+  {key:"riichiRate", label:"リーチ率", fmt:fmtPct0, better:null},
+  {key:"fuuroRate", label:"副露率", fmt:fmtPct0, better:null},
+];
+function renderMeterBlock(stats){
+  const T = titleThresholds(stats);
+  const pool = stats.filter(x=>x.hanchanRankedCount>=T.rank && x.kyokuCount>=T.kyoku).sort((a,b)=>b.hanchanRankedCount-a.hanchanRankedCount);
+  if(!pool.length) return "";
+  if(!state.meterName || !pool.some(s=>s.name===state.meterName)) state.meterName = pool[0].name;
+  const s = pool.find(x=>x.name===state.meterName);
+  const picks = pool.map(x=>`<button type="button" class="pick ${x.name===s.name?'on':''}" data-meter-pick="${escapeAttr(x.name)}">${myTile(x.name,"xs")}${escapeHtml(x.name)}</button>`).join("");
+  const rows = METER_ROWS.map(m=>{
+    const vals = pool.map(x=>x[m.key]); const max = Math.max(...vals, 0.0001)*1.12;
+    const avg = vals.reduce((a,b)=>a+b,0)/(vals.length||1);
+    const w = Math.min(100, s[m.key]/max*100), aw = Math.min(100, avg/max*100);
+    const diff = s[m.key]-avg, near = Math.abs(diff) < 0.005;
+    const tag = near ? `<em>平均並み</em>` : m.better ? ((m.better==="high") === (diff>=0) ? `<em class="good">平均より良い</em>` : `<em class="bad">平均より悪い</em>`) : `<em>平均${diff>=0?"より多い":"より少ない"}</em>`;
+    return `<div class="meter-row">
+      <div class="meter-head"><span>${m.label}</span><b data-countup="${s[m.key]*100}" data-dec="${m.fmt===fmtPct?1:0}" data-suffix="%">${m.fmt(s[m.key])}</b></div>
+      <div class="tenbou" style="--w:${w.toFixed(1)}%; --avg:${aw.toFixed(1)}%;"><span class="tenbou-bar"><i></i><i></i><i></i></span><span class="tenbou-avg" title="平均 ${m.fmt(avg)}"></span></div>
+      <div class="meter-foot">平均 ${m.fmt(avg)}・${tag}</div>
+    </div>`;
+  }).join("");
+  return `<div class="stats-hero">
+    <div class="hero-head">点棒メーター<small>率を点棒の長さで。縦の線は対象${pool.length}人の平均</small></div>
+    <div class="card">
+      <div class="pick-row">${picks}</div>
+      <div class="meter-card">
+        <div class="meter-card-head">${myTile(s.name,"lg")}<div><div class="meter-name">${escapeHtml(s.name)}</div><div class="meter-sub">${s.hanchanRankedCount}半荘・平均順位 <b data-countup="${s.avgRank}" data-dec="2">${fmtAvg(s.avgRank)}</b></div></div></div>
+        ${rows}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ⑥卓を囲む：選んだ対局日の確定済み半荘から、その日のメンバー（半荘数の多い順に4人）を東南西北に座らせる。
+// 座る位置はその日の合計ptの順（東＝1位、南＝2位、西＝3位、北＝4位）。実際の座席ではない。
+function tableDays(){
+  const set = new Set();
+  hanchanGroups().forEach(g=>{ if(state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`] && passesFilters(g.date)) set.add(g.date); });
+  return Array.from(set).sort().reverse();
+}
+function computeDayTable(date){
+  const per = new Map(); let hc = 0;
+  hanchanGroups().forEach(g=>{
+    if(g.date!==date) return;
+    const key = `${g.date}_${g.hanchanNo}`;
+    if(!state.raw.hanchanConfirmed[key]) return;
+    hc++;
+    const names = namesForHanchan(g.date, g.hanchanNo), ranks = state.raw.ranks[key]||[], pts = state.raw.finalPoints[key]||[];
+    names.forEach((n,i)=>{
+      if(!per.has(n)) per.set(n,{name:n, n:0, pt:0, ranks:[0,0,0,0], hist:[]});
+      const p = per.get(n); p.n++; p.pt += (pts[i]||0); if(ranks[i]) p.ranks[ranks[i]-1]++; p.hist.push(ranks[i]||0);
+    });
+  });
+  const all = Array.from(per.values()).sort((a,b)=>b.n-a.n || b.pt-a.pt);
+  return {hc, four: all.slice(0,4).sort((a,b)=>b.pt-a.pt), others: all.slice(4)};
+}
+function renderDayTableSection(){
+  const days = tableDays();
+  if(!days.length) return `<div class="card"><div class="empty">対象期間に確定済みの半荘がありません。サイドバーの期間・曜日フィルタをご確認ください。</div></div>`;
+  if(!state.tableDay || !days.includes(state.tableDay)) state.tableDay = days[0];
+  const d = computeDayTable(state.tableDay);
+  const seats = d.four.map((p,i)=>{
+    const avg = p.n ? (p.ranks[0]+p.ranks[1]*2+p.ranks[2]*3+p.ranks[3]*4)/p.n : 0;
+    const hist = p.hist.map(r=>`<i class="r${r}">${r||"-"}</i>`).join("");
+    return `<div class="seat seat-${i}">
+      <div class="seat-rank r${i+1}">${i+1}<small>位</small></div>
+      <div class="seat-who">${myTile(p.name,"md")}<span>${escapeHtml(p.name)}</span></div>
+      <div class="seat-pt ${p.pt>=0?'plus':'minus'}"><span data-countup="${p.pt}" data-dec="1" data-sign="1">${fmtPt(p.pt)}</span><small>pt</small></div>
+      <div class="seat-hist" aria-label="着順の推移">${hist}</div>
+      <div class="seat-sub">平均${avg.toFixed(2)}位・${p.n}半荘</div>
+    </div>`;
+  }).join("");
+  const opts = days.map(x=>`<option value="${x}" ${x===state.tableDay?'selected':''}>${x.replace(/-/g,"/")}</option>`).join("");
+  const top = d.four[0];
+  return `<div class="card">
+    <div class="table-toolbar">
+      <label class="day-select">対局日<select data-table-day>${opts}</select></label>
+      <span class="note" style="margin:0;">その日の確定済み${d.hc}半荘。並びはその日の合計ptの順</span>
+    </div>
+    <div class="mj-table"><div class="mj-felt">
+      <div class="mj-center"><div class="mj-center-in">
+        <div class="mj-date">${escapeHtml(state.tableDay.replace(/-/g,"."))}</div>
+        <div class="mj-hc">${d.hc}<small>半荘</small></div>
+        ${top ? `<div class="mj-mvp">本日のトップ<b>${escapeHtml(top.name)}</b></div>` : ""}
+      </div></div>
+      ${seats}
+    </div></div>
+    ${d.others.length ? `<div class="note">この日はほかに ${d.others.map(o=>escapeHtml(o.name)+"（"+o.n+"半荘）").join("、")} も参加（半荘数の多い4人を表示）</div>` : ""}
+  </div>`;
+}
+
+// ②スコア推移のリプレイ：半荘ごとに折れ線が伸び、順位表が入れ替わる。描画済みのDOMをその場で更新して動かす（render()は呼ばない）。
+// 対象：②で選択中のプレイヤーがいればその人たち（最大8人・チップの色）、いなければ期間内で半荘数の多い8人（選手固定色）。
+const REPLAY_MAX_PLAYERS = 8;
+function replayRowH(){ return (typeof window!=="undefined" && window.innerWidth<=760) ? 31 : 40; }
+function buildReplayData(){
+  const groups = hanchanGroups().filter(g=>state.raw.hanchanConfirmed[`${g.date}_${g.hanchanNo}`] && passesFilters(g.date));
+  const count = new Map();
+  groups.forEach(g=>namesForHanchan(g.date,g.hanchanNo).forEach(n=>count.set(n,(count.get(n)||0)+1)));
+  const chosen = state.chips.filter(n=>count.has(n)).slice(0,REPLAY_MAX_PLAYERS);
+  const useChips = chosen.length > 0;
+  const players = useChips ? chosen : Array.from(count.entries()).sort((a,b)=>b[1]-a[1]).slice(0,REPLAY_MAX_PLAYERS).map(x=>x[0]);
+  const color = n => useChips ? colorForChip(n) : entityColor(n);
+  const cum = {}, series = {}; players.forEach(n=>{ cum[n]=0; series[n]=[0]; });
+  const dates = [groups.length ? groups[0].date : ""];
+  groups.forEach(g=>{
+    const key=`${g.date}_${g.hanchanNo}`, names=namesForHanchan(g.date,g.hanchanNo), pts=state.raw.finalPoints[key]||[];
+    players.forEach(n=>{ const i=names.indexOf(n); if(i!==-1) cum[n]+= (pts[i]||0); series[n].push(cum[n]); });
+    dates.push(g.date);
+  });
+  return {players, series, dates, n:groups.length, color, useChips};
+}
+function renderReplay(){
+  const d = buildReplayData();
+  if(d.n < 2) return `<div class="empty">リプレイには確定済みの半荘が2件以上必要です。</div>`;
+  const rh = replayRowH();
+  const rows = d.players.map(n=>`<div class="rp-row" data-rp-row="${escapeAttr(n)}"><span class="rp-rank">-</span>${myTile(n,"sm")}<span class="rp-name">${escapeHtml(n)}</span><span class="rp-pt">0.0</span><span class="rp-bar"><i style="background:${d.color(n)}"></i></span></div>`).join("");
+  return `
+    <div class="rp-wrap" data-replay>
+      <div class="rp-chart">
+        <div class="rp-date"><span class="rp-date-v">${escapeHtml(d.dates[0])}</span><small class="rp-count">0 / ${d.n}半荘</small></div>
+        <svg viewBox="0 0 640 340" class="rp-svg" role="img" aria-label="スコア推移のリプレイ"></svg>
+      </div>
+      <div class="rp-board" style="height:${d.players.length*rh}px;">${rows}</div>
+    </div>
+    <div class="rp-controls">
+      <button type="button" class="rp-play" data-rp-play aria-label="再生"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path class="rp-ico-play" d="M3 1.5v11l9-5.5z" fill="currentColor"/><g class="rp-ico-pause" fill="currentColor"><rect x="2.5" y="1.5" width="3.2" height="11" rx="1"/><rect x="8.3" y="1.5" width="3.2" height="11" rx="1"/></g></svg><span>再生</span></button>
+      <input type="range" class="rp-seek" data-rp-seek min="0" max="${d.n}" value="0" aria-label="位置">
+      <div class="seg rp-speed" role="group" aria-label="速度"><button type="button" class="seg-btn on" data-rp-speed="1">1×</button><button type="button" class="seg-btn" data-rp-speed="3">3×</button><button type="button" class="seg-btn" data-rp-speed="8">8×</button></div>
+    </div>
+    <div class="note">${d.useChips ? `選択中の${d.players.length}人が対象` : `期間内で半荘数の多い${d.players.length}人が対象（下の凡例で選手を選ぶと、その人たちで再生できます）`}。順位表は、その時点の累計ptの順に入れ替わります。</div>`;
+}
+function setupReplay(root){
+  const wrap = root.querySelector("[data-replay]"); if(!wrap) return;
+  const d = buildReplayData();
+  const svg = wrap.querySelector(".rp-svg"), W=640, H=340, padL=44, padR=14, padT=14, padB=24;
+  const all = d.players.flatMap(n=>d.series[n]).concat([0]);
+  const maxV=Math.max(...all), minV=Math.min(...all);
+  const xAt=i=>padL + i*(W-padL-padR)/d.n, yAt=v=>(H-padB)-((v-minV)/((maxV-minV)||1))*(H-padT-padB);
+  const step=(()=>{ const raw=(maxV-minV||1)/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/mag; return (f<1.5?1:f<3?2:f<7?5:10)*mag; })();
+  let grid="";
+  for(let v=Math.ceil(minV/step)*step; v<=maxV+1e-9; v+=step){ const z=Math.abs(v)<1e-9, y=yAt(v).toFixed(1); grid+=`<line x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="${z?CHART_ZERO:CHART_GRID}" stroke-width="${z?1.2:1}" ${z?"":'stroke-dasharray="3,4"'}/><text x="${padL-8}" y="${(+y+4).toFixed(1)}" font-size="11" fill="${CHART_TEXT}" text-anchor="end">${(v>0?"+":"")+Math.round(v)}</text>`; }
+  svg.innerHTML = grid + d.players.map((n,k)=>`<polyline data-l="${k}" fill="none" stroke="${d.color(n)}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><circle data-c="${k}" r="4" fill="${d.color(n)}" stroke="#f3ecdb" stroke-width="2"/>`).join("");
+  const rows = Array.from(wrap.querySelectorAll("[data-rp-row]"));
+  const lines = d.players.map((n,k)=>svg.querySelector(`[data-l="${k}"]`)), dots = d.players.map((n,k)=>svg.querySelector(`[data-c="${k}"]`));
+  const absMax = Math.max(1, ...all.map(Math.abs)), rowH = replayRowH();
+  const dateEl=wrap.querySelector(".rp-date-v"), countEl=wrap.querySelector(".rp-count");
+  const ctl = root.querySelector(".rp-controls"), playBtn=ctl.querySelector("[data-rp-play]"), seek=ctl.querySelector("[data-rp-seek]");
+  let pos=0, playing=false, speed=1, last=0, raf=0;
+  function draw(p){
+    const k=Math.floor(p), t=p-k;
+    const val = n => { const s=d.series[n]; return k>=d.n ? s[d.n] : s[k]+(s[k+1]-s[k])*t; };
+    d.players.forEach((n,j)=>{
+      const s=d.series[n], pts=[]; for(let i=0;i<=Math.min(k,d.n);i++) pts.push(`${xAt(i).toFixed(1)},${yAt(s[i]).toFixed(1)}`);
+      const v=val(n); if(k<d.n) pts.push(`${xAt(p).toFixed(1)},${yAt(v).toFixed(1)}`);
+      lines[j].setAttribute("points", pts.join(" ")); dots[j].setAttribute("cx", xAt(Math.min(p,d.n)).toFixed(1)); dots[j].setAttribute("cy", yAt(v).toFixed(1));
+    });
+    d.players.map((n,j)=>({j, v:val(n)})).sort((a,b)=>b.v-a.v).forEach((o,i)=>{
+      const r=rows[o.j]; r.style.transform=`translateY(${i*rowH}px)`; r.querySelector(".rp-rank").textContent=i+1;
+      const pt=r.querySelector(".rp-pt"); pt.textContent=fmtPt(o.v); pt.className="rp-pt "+(o.v>=0?"plus":"minus");
+      const bar=r.querySelector(".rp-bar i"); bar.style.width=(Math.abs(o.v)/absMax*100).toFixed(1)+"%"; bar.style.opacity=o.v>=0?1:.45;
+    });
+    dateEl.textContent = d.dates[Math.min(Math.ceil(p), d.n)] || ""; countEl.textContent = `${Math.min(Math.round(p),d.n)} / ${d.n}半荘`;
+    seek.value = Math.round(p);
+  }
+  function setPlaying(v){ playing=v; playBtn.classList.toggle("is-playing", v); playBtn.querySelector("span").textContent = v?"一時停止":(pos>=d.n?"もう一度":"再生"); playBtn.setAttribute("aria-label", v?"一時停止":"再生"); }
+  function tick(now){
+    if(!document.body.contains(wrap)){ cancelAnimationFrame(raf); return; }
+    if(playing){ const dt=Math.min(0.1,(now-last)/1000); pos=Math.min(d.n, pos + dt*speed*Math.max(6, d.n/14)); draw(pos); if(pos>=d.n) setPlaying(false); }
+    last=now; raf=requestAnimationFrame(tick);
+  }
+  playBtn.addEventListener("click", ()=>{ if(!playing && pos>=d.n) pos=0; setPlaying(!playing); });
+  seek.addEventListener("input", ()=>{ pos=+seek.value; draw(pos); if(playing) setPlaying(false); });
+  ctl.querySelectorAll("[data-rp-speed]").forEach(b=>b.addEventListener("click", ()=>{ speed=+b.dataset.rpSpeed; ctl.querySelectorAll("[data-rp-speed]").forEach(x=>x.classList.toggle("on", x===b)); }));
+  draw(0); setPlaying(false); last=performance.now(); raf=requestAnimationFrame(tick);
+}
+// 数字の演出：data-countup を持つ数値を0から最終値までカウントアップする（動きを減らす設定では行わない）
+function runCountUp(root){
+  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const items = Array.from(root.querySelectorAll("[data-countup]")).map(el=>({el, to:parseFloat(el.dataset.countup)||0, dec:+(el.dataset.dec||0), suf:el.dataset.suffix||"", sign:el.dataset.sign==="1", final:el.textContent}));
+  if(!items.length) return;
+  const t0 = performance.now(), dur = 900;
+  const fmt = (it,v)=> (it.sign && v>0 ? "+" : "") + v.toFixed(it.dec) + it.suf;
+  (function step(now){
+    const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,3);
+    items.forEach(it=>{ it.el.textContent = k<1 ? fmt(it, it.to*e) : it.final; });
+    if(k<1) requestAnimationFrame(step);
+  })(t0);
 }
 
 // ---------- 選択チップの共通操作 ----------
@@ -1785,10 +2834,11 @@ function toggleChip(name){
 // ---------- 表のコピー（①比較表） ----------
 function copyCompareTsv(allStats){
   const targets = state.compareTargets || [];
-  const stats = targets.map(n=>resolveCompareStat(n, allStats)).filter(Boolean);
-  const header = [""].concat(stats.map(s=>s.name));
+  const ordered = targets.filter(n=>n===COMPARE_AVERAGE_NAME).concat(targets.filter(n=>n!==COMPARE_AVERAGE_NAME));
+  const stats = ordered.map(n=>resolveCompareStat(n, allStats)).filter(Boolean);
+  const header = [filterCondLabel()].concat(stats.map(s=>s.name)); // 左上セルに絞り込み条件を入れる
   const lines = [header.join("\t")];
-  COMPARE_METRICS.forEach(m=>{
+  compareMetricsInScope().forEach(m=>{
     lines.push([m.label].concat(stats.map(s=>String(m.fmt(s[m.key])))).join("\t"));
   });
   copyText(lines.join("\n"));
@@ -1809,13 +2859,54 @@ function fallbackCopy(text){
   document.body.removeChild(ta);
 }
 
+// ---------- 指標の定義ツールチップ（document全体で1つ。再描画しても使い回す） ----------
+(function setupTips(){
+  const pop = document.createElement("div"); pop.className = "tip-pop"; pop.setAttribute("role","tooltip"); document.body.appendChild(pop);
+  let cur = null, shownAt = 0;
+  function show(el){
+    if(cur !== el) shownAt = Date.now();
+    cur = el; pop.innerHTML = `<b>${escapeHtml(el.textContent)}</b>${escapeHtml(el.dataset.tip)}`;
+    pop.classList.add("show");
+    const r = el.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.min(Math.max(8, r.left), window.innerWidth - pw - 8), y = r.bottom + 8;
+    if(y + ph > window.innerHeight - 8) y = r.top - ph - 8;
+    pop.style.left = x+"px"; pop.style.top = y+"px";
+  }
+  function hide(){ cur = null; pop.classList.remove("show"); }
+  document.addEventListener("mouseover", e=>{ const el = e.target.closest && e.target.closest("[data-tip]"); if(el) show(el); else if(cur) hide(); });
+  document.addEventListener("focusin", e=>{ const el = e.target.closest && e.target.closest("[data-tip]"); if(el) show(el); });
+  document.addEventListener("focusout", hide);
+  document.addEventListener("click", e=>{ const el = e.target.closest && e.target.closest("[data-tip]"); if(el){ if(cur===el && Date.now()-shownAt > 450) hide(); else show(el); } else hide(); }); // タップ直前のmouseoverで表示した直後は閉じない
+  window.addEventListener("scroll", hide, true);
+})();
+
 // ---------- イベント束縛 ----------
 function bindEvents(stats){
   const app = document.getElementById("app");
 
   app.querySelectorAll("[data-section]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{ state.section = btn.dataset.section; render(); });
+    btn.addEventListener("click", ()=>{ state.section = btn.dataset.section; state.mobileMenuOpen = false; render(); window.scrollTo(0,0); });
   });
+  app.querySelectorAll("[data-period-preset]").forEach(b=>b.addEventListener("click", ()=>{
+    const pr = periodPresets().find(x=>x.id===b.dataset.periodPreset); if(!pr) return;
+    state.dateRange = {from:pr.from, to:pr.to}; render._countupNext = true; render();
+  }));
+  app.querySelectorAll("[data-title-edit]").forEach(b=>b.addEventListener("click", ()=>{ state.titleEditOpen = !state.titleEditOpen; render(); }));
+  const tSave = app.querySelector("[data-title-save]");
+  if(tSave) tSave.addEventListener("click", ()=>{
+    const obj = {}; app.querySelectorAll("[data-title-input]").forEach(inp=>{ const v = inp.value.trim(); if(v) obj[inp.dataset.titleInput] = v; });
+    toast(saveTitleNames(obj) ? "二つ名を保存しました" : "このブラウザでは保存できませんでした");
+    state.titleEditOpen = false; render();
+  });
+  const tReset = app.querySelector("[data-title-reset]");
+  if(tReset) tReset.addEventListener("click", ()=>{ saveTitleNames({}); toast("既定の名前に戻しました"); render(); });
+  app.querySelectorAll("[data-meter-pick]").forEach(b=>b.addEventListener("click", ()=>{ state.meterName = b.dataset.meterPick; render._countupNext = true; render(); }));
+  const tDay = app.querySelector("[data-table-day]");
+  if(tDay) tDay.addEventListener("change", ()=>{ state.tableDay = tDay.value; render._countupNext = true; render(); });
+  const gReplay = app.querySelector("[data-graph-replay]");
+  if(gReplay) gReplay.addEventListener("click", ()=>{ state.graphReplay = !state.graphReplay; render(); });
+  const mToggle = app.querySelector("[data-m-filter-toggle]");
+  if(mToggle) mToggle.addEventListener("click", ()=>{ state.mobileMenuOpen = !state.mobileMenuOpen; render(); });
 
   app.querySelectorAll("[data-toggle-stats-collapse]").forEach(el=>{
     el.addEventListener("click", ()=>{
@@ -1868,7 +2959,9 @@ function bindEvents(stats){
     cb.addEventListener("change", ()=>{
       const name = cb.dataset.compareToggle;
       const idx = state.compareTargets.indexOf(name);
-      if(idx>=0) state.compareTargets.splice(idx,1); else state.compareTargets.push(name);
+      if(idx>=0) state.compareTargets.splice(idx,1);
+      else if(name===COMPARE_AVERAGE_NAME) state.compareTargets.unshift(name); // 平均列は先頭
+      else state.compareTargets.push(name);
       render();
     });
   });
@@ -1888,6 +2981,9 @@ function bindEvents(stats){
       render();
     });
   });
+  app.querySelectorAll("[data-houjuumatrix-mode]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ state.houjuuMatrixMode = btn.dataset.houjuumatrixMode; render(); });
+  });
   app.querySelectorAll("[data-houjuumatrix-toggle]").forEach(cb=>{
     cb.addEventListener("change", ()=>{
       const name = cb.dataset.houjuumatrixToggle;
@@ -1903,6 +2999,15 @@ function bindEvents(stats){
     });
   });
 
+  app.querySelectorAll("[data-compare-scope]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ state.compareScope = btn.dataset.compareScope; render(); });
+  });
+  app.querySelectorAll("[data-compare-orient]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ state.compareOrient = btn.dataset.compareOrient; render(); });
+  });
+  app.querySelectorAll("[data-compare-tab]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ state.compareTab = btn.dataset.compareTab; render(); });
+  });
   app.querySelectorAll("[data-copy-table]").forEach(btn=>{
     btn.addEventListener("click", ()=> copyCompareTsv(stats));
   });
