@@ -1,0 +1,16 @@
+{
+  "name": "Masu 麻雀スタッツ",
+  "short_name": "麻雀スタッツ",
+  "description": "麻雀スタッツのアプリ・ドキュメント一覧",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f4a36",
+  "theme_color": "#0d3f2e",
+  "icons": [
+    { "src": "./icon-index-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-index-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-index-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
