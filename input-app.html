@@ -562,6 +562,11 @@
   }
   .btn-ghost:active{transform:translateY(2px); box-shadow:var(--pai-shadow-down); transition-duration:.05s;}
   .btn-ghost svg{flex:none; color:var(--green);}
+  /* バックアップのダウンロード直後：共有ボタンを次の操作として緑の牌で強調する */
+  .btn-ghost.share-next{color:#fff; background:linear-gradient(180deg,#1d805c,#146b4c); animation:shareNext 1.4s ease-in-out 2;}
+  .btn-ghost.share-next svg{color:#fff;}
+  @keyframes shareNext{0%,100%{filter:none;} 50%{filter:brightness(1.18);}}
+  @media (prefers-reduced-motion:reduce){ .btn-ghost.share-next{animation:none;} }
   #resetAllDataBtn{color:var(--red) !important; box-shadow:inset 0 0 0 1.5px rgba(184,50,42,.55), 0 2px 0 var(--tile-edge), 0 3px 0 var(--tile-back), 0 4px 0 var(--tile-back-lo), 0 7px 10px rgba(0,0,0,.18);}
   #resetAllDataBtn svg{color:var(--red);}
 
@@ -1548,6 +1553,7 @@ let state = {
   scrollToHanchanKey: null,
   loaded: false,
   showWelcomeBackupPrompt: false, // 起動のたびに「サイト上のbackup.jsonを読み込むか」を尋ねるモーダルの表示状態（画面上のUI状態のみ、保存はしない）
+  backupShareHint: false, // バックアップをダウンロードした直後、共有ボタンを強調する（画面上のUI状態のみ、保存はしない）
   storageOk: true,
   hanchanMonthOpen: {}, // "YYYY-MM" -> true で展開。未設定（デフォルト）は折りたたみ表示（画面上のUI状態のみ、保存はしない）
   hanchanCollapsed: {}, // `${date}_${hanchanNo}` -> false で明示的に展開。未設定（デフォルト）は最小化表示（画面上のUI状態のみ、保存はしない）
@@ -1685,14 +1691,52 @@ function buildBackupPayload(){
     recordPlayers: state.recordPlayers,
   };
 }
-function exportBackup(){
+function downloadBackupJson(){
   const backup = buildBackupPayload();
   const blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = "backup.json"; a.click();
-  URL.revokeObjectURL(url);
-  toast("バックアップを保存しました");
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function exportBackup(){
+  downloadBackupJson();
+  // ダウンロードの直後は「共有」を押す流れが多いため、共有ボタンを次の操作として強調する（タブを移るか共有すると解除）
+  setBackupShareHint(true);
+  toast("保存しました。続けて「共有」でLINE・メールに送れます");
+}
+// 共有ボタンの強調（再描画なしでclassだけ切り替える。スクロール位置を動かさないため）
+function setBackupShareHint(on){
+  state.backupShareHint = on;
+  const btn = document.getElementById("shareBackupBtn");
+  if(btn) btn.classList.toggle("share-next", on);
+}
+// 共有用のバックアップファイル。Android版Chromeは.jsonの共有を受け付けないため、中身は同じJSONのまま.txt（text/plain）にする。
+function buildBackupShareFile(){
+  try{
+    return new File([JSON.stringify(buildBackupPayload(), null, 2)], "backup.txt", {type:"text/plain"});
+  }catch(e){ return null; }
+}
+function canShareBackupFile(file){
+  if(!file || !navigator.share || !navigator.canShare) return false;
+  try{ return navigator.canShare({files:[file]}); }catch(e){ return false; }
+}
+// OSの共有シート（LINE・メールなど）でバックアップを送る。共有できない環境ではJSONのダウンロードに切り替える。
+async function shareBackup(){
+  setBackupShareHint(false);
+  const file = buildBackupShareFile();
+  if(!canShareBackupFile(file)){
+    downloadBackupJson();
+    toast("この環境では共有できないため、ダウンロードしました");
+    return;
+  }
+  try{
+    await navigator.share({files:[file], title:"麻雀スタッツ バックアップ"});
+  }catch(e){
+    if(e && e.name === "AbortError") return; // 共有シートを閉じた（キャンセル）
+    downloadBackupJson();
+    toast("共有できなかったため、ダウンロードしました");
+  }
 }
 // ---------- GitHub連携（Contents APIでbackup.jsonへ直接コミットする） ----------
 // トークン・owner・repo・pathが揃っている場合のみ動作する。未設定なら何もしない
@@ -1965,7 +2009,7 @@ function importBackupFile(file){
 // バックアップJSONのテキストをパースして検証する（形式不正ならnull）。
 function parseBackupJson(rawText){
   let data;
-  try{ data = JSON.parse(rawText); }catch(e){ return null; }
+  try{ data = JSON.parse(String(rawText||"").replace(/^\uFEFF/, "")); }catch(e){ return null; } // 共有用の.txtも中身は同じJSON
   if(!data || !Array.isArray(data.records)) return null;
   return data;
 }
@@ -3471,9 +3515,10 @@ function renderSettings(){
       <h2>バックアップ管理</h2>
       <div class="empty" style="text-align:left; padding:0 0 10px;">記録はこの端末のブラウザ内（ローカル）に保存されています。ブラウザのキャッシュ削除や機種変更でデータが消えないよう、バックアップファイルの保存をおすすめします。</div>
       <button class="btn-ghost" id="exportBackupBtn">バックアップをダウンロード（JSON）</button>
+      <button class="btn-ghost share-btn${state.backupShareHint ? " share-next" : ""}" id="shareBackupBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5"/><path d="M7.5 8 12 3.5 16.5 8"/><path d="M5 12.5v6.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-6.5"/></svg>バックアップを共有（LINE・メールなど）</button>
       <label class="btn-ghost">
         バックアップから復元
-        <input type="file" id="importBackupInput" accept="application/json" style="display:none;">
+        <input type="file" id="importBackupInput" accept="application/json,.json,text/plain,.txt" style="display:none;">
       </label>
       <button class="btn-ghost" id="importBackupUrlBtn">サイト上のbackup.jsonから復元</button>
     </div>
@@ -3507,7 +3552,7 @@ function escapeAttr(s){ return escapeHtml(s); }
 
 // ---------- events ----------
 function bindEvents(){
-  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.overlay=null; render(); });
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.overlay=null; state.backupShareHint=false; render(); });
 
   const welcomeLoadBtn = document.getElementById("welcomeLoadBtn");
   if(welcomeLoadBtn) welcomeLoadBtn.onclick = loadWelcomeBackup;
@@ -3815,6 +3860,8 @@ function bindEvents(){
     });
     const exportBackupBtn = document.getElementById("exportBackupBtn");
     if(exportBackupBtn) exportBackupBtn.onclick = exportBackup;
+    const shareBackupBtn = document.getElementById("shareBackupBtn");
+    if(shareBackupBtn) shareBackupBtn.onclick = shareBackup;
     const importBackupInput = document.getElementById("importBackupInput");
     if(importBackupInput) importBackupInput.onchange = ()=>{
       if(importBackupInput.files && importBackupInput.files[0]) importBackupFile(importBackupInput.files[0]);
