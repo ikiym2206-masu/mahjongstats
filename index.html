@@ -377,8 +377,32 @@
     <a href="./spec-viewer.md" download aria-label="分析ビューアの仕様書をダウンロード"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7.5 8 11l3.5-3.5M3 13.5h10"/></svg>分析ビューア<small>.md</small></a>
   </div>
 
-  <div class="updated">最終更新 2026.11.08</div>
+  <div class="updated">最終更新 2026.11.11</div>
 
 </div>
+<script>
+// ---- 起動ログ：アプリを開いたとき、Googleスプレッドシート（GAS）に「日時・アプリ・端末ID・起動方法・端末情報」を1行送る ----
+// ・名前は送らない。端末IDはこの端末で最初に開いたときに作る無作為な文字列（localStorage「mj-launch-device」）
+// ・GitHub Pages（*.github.io）で開いたときだけ送る（Claudeのプレビューや手元のファイルでは送らない）
+// ・同じタブでの再読み込みは数えない（sessionStorage）。オフライン・送信失敗は何もしない（アプリの動作に影響しない）
+(function(){
+  var LOG_URL = "https://script.google.com/macros/s/AKfycby1UvpQVz10dTPEQZI1KlxXc8_lSSYKqDXMbFLSN-GqKjJrXC3b7w8-9lABrRO09t1x/exec";            // ← GASのウェブアプリURL（https://script.google.com/macros/s/…/exec）を入れる。空なら送らない
+  var LOG_TOKEN = "masu-2026"; // GAS側のTOKENと同じ文字列にする
+  var APP = "index";
+  try{
+    if(!LOG_URL || !/\.github\.io$/.test(location.hostname) || navigator.onLine === false) return;
+    var SKEY = "mj-launch-logged-" + APP;
+    if(sessionStorage.getItem(SKEY)) return;
+    sessionStorage.setItem(SKEY, "1");
+    var DKEY = "mj-launch-device", dev = localStorage.getItem(DKEY);
+    if(!dev){ dev = Math.random().toString(36).slice(2, 10); localStorage.setItem(DKEY, dev); }
+    var pwa = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    fetch(LOG_URL, {
+      method: "POST", mode: "no-cors", keepalive: true,
+      body: JSON.stringify({ token: LOG_TOKEN, app: APP, device: dev, mode: pwa ? "ホーム画面" : "ブラウザ", ua: navigator.userAgent })
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

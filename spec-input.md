@@ -410,7 +410,7 @@
 
 - 単一HTMLファイル、Vanilla JS（フレームワーク不使用）。
 - 画面はすべて`innerHTML`の再描画＋イベント再バインド方式（`render()`を呼ぶたびに`#app`の中身を作り直す）。
-- データ永続化は`localStorage`（キー接頭辞`mj-stats:`）。外部への送信は、設定タブのボタン操作によるGitHub Contents APIへの送受信と、ユーザーが共有シートで選んだ送り先へのバックアップ共有（7.5）のみ。
+- データ永続化は`localStorage`（キー接頭辞`mj-stats:`）。外部への送信は、設定タブのボタン操作によるGitHub Contents APIへの送受信、ユーザーが共有シートで選んだ送り先へのバックアップ共有（7.5）、起動ログ（9章末）のみ。
 - 外部ライブラリ・CDN依存なし。GitHub同期以外はオフラインでも動作する。
 - **ホーム画面に追加（2026-11）**：`index.html`の牌の横の「＋」ボタンは、`input-app.html?install=1`を開く。`?install=1`で開いたときだけ、画面上部に「スマホ入力をホーム画面に追加」の案内を出す（通常の起動では出さない）。
   - Android・PCのChrome／Edge：ブラウザのインストール確認（`beforeinstallprompt`）を預かり、案内の「インストール」ボタンで表示する。
@@ -419,6 +419,18 @@
   - すでにインストール済みのアプリとして開いている（`display-mode: standalone`）ときは何も出さない。
   - `?install=1`は開いた直後にURLから消す（iPhoneでパラメータ付きのURLがホーム画面に保存されないように）。
 - マニフェスト（`manifest-input.json`）は`id`＝`./input-app.html`、`scope`＝`./input-app`。3つのマニフェスト（ポータル／入力／ビューア）の範囲を分け、別々のアプリとして扱われるようにしている（`id`は従来の既定値＝`start_url`と同じなので、インストール済みの端末にも影響しない）。
+
+### 起動ログ（2026-11-11）
+
+- アプリを開いたとき、Googleスプレッドシート（Google Apps Scriptのウェブアプリ）に起動の記録を1行送る（`index.html`・`input-app.html`・`viewer-app.html`の3つ共通。`</body>`直前の独立した`<script>`で、アプリ本体の処理とは関係しない）。
+- 送る内容：`{token, app, device, mode, ua}`。`app`はこのファイルでは`"input"`（シートには「スマホ入力」と記録）、`device`は端末ID、`mode`は起動方法（「ホーム画面」＝インストールしたアプリとして起動／「ブラウザ」）、`ua`はブラウザの情報。シート側で受信日時を付ける。**名前・記録データは送らない**。
+- 端末ID：この端末で最初に送るときに作る無作為な8文字（`localStorage`の`mj-launch-device`）。同じ端末からの起動か、別の端末かを見分けるためだけに使う。
+- 送らない場合：送信先URL（`LOG_URL`）が空のとき／GitHub Pages（ホスト名が`*.github.io`）以外で開いたとき（Claude.aiのプレビュー・手元のファイル）／オフラインのとき。同じタブでの再読み込みは数えない（`sessionStorage`の`mj-launch-logged-input`）。
+- 送信先（`LOG_URL`）：`https://script.google.com/macros/s/AKfycby1UvpQVz10dTPEQZI1KlxXc8_lSSYKqDXMbFLSN-GqKjJrXC3b7w8-9lABrRO09t1x/exec`（2026-11-11設定。3ファイル共通）。トークン（`LOG_TOKEN`）は`masu-2026`。
+- GAS側のデプロイ設定：種類「ウェブアプリ」、実行ユーザー「自分」、アクセスできるユーザー「全員」。記録先はマスモトのGoogleスプレッドシートのシート「log」（無ければ初回に自動作成）。GASのコードを直したときは「デプロイを管理 → 編集 → 新バージョン」で更新する（URLが変わらないため、HTMLの修正は不要）。新しいデプロイを作るとURLが変わるので、その場合は3ファイルの`LOG_URL`も差し替える。
+- 送信は`fetch`の`mode:"no-cors"`（返事は読まない）。失敗しても何もせず、アプリの動作に影響しない。
+- 受け側のGASは`launch-log-gas.js`。`token`が一致し、`app`が`input`／`viewer`／`index`のどれかのときだけ、シート「log」に「日時・アプリ・端末ID・起動方法・端末情報」を追記する。
+- 制約：送信先URLとトークンはページのソースから見えるため、なりすましの記録は防げない（利用状況のおおまかな把握が目的）。
 
 ---
 
