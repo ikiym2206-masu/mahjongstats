@@ -742,6 +742,11 @@
   .overlay-title svg{flex:none;}
   .overlay-sub{font-size:13.5px; color:var(--ink-sub); font-weight:600; line-height:1.6; margin-bottom:16px;}
   .overlay-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px 10px;}
+  /* 流局：親の名前を大きく表示 */
+  .ryu-oya{display:flex; align-items:center; justify-content:center; gap:8px; margin:-6px 0 14px; padding:10px 12px; border-radius:10px; background:rgba(212,166,74,.12); box-shadow:inset 0 0 0 1.5px rgba(212,166,74,.45);}
+  .ryu-oya .pk-tag{font-size:13px; padding:4px 7px;}
+  .ryu-oya-nm{font-size:20px; font-weight:800; color:var(--ink); letter-spacing:.04em;}
+  .ryu-oya-pos{font-size:13px; font-weight:700; color:var(--ink-sub);}
   .overlay-btn{
     --lift:5px;
     position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
@@ -2828,10 +2833,14 @@ function renderOverlay(){
        <button type="button" class="overlay-confirm" id="confirmChomboBtn" ${any?'':'disabled'}>この内容でチョンボを記録</button>`);
   }
   if(ov.type === "ryuukyoku"){
+    // 誰が親かすぐ分かるよう、親の名前と卓上の位置を出す
+    const cur = state.current;
+    const dealer = getSeatOrder(cur.date, cur.hanchanNo)[cur.kyoku % 4];
+    const oyaHead = `<div class="ryu-oya"><span class="pk-tag oya">親</span><span class="ryu-oya-nm">${nm(dealer)}</span><span class="ryu-oya-pos">${POS_LABELS[dealer]}</span></div>`;
     const btns = `
-      <button type="button" class="overlay-btn" data-pick-ryuukyoku="oya">聴牌<span class="pos">親は連荘</span></button>
+      <button type="button" class="overlay-btn" data-pick-ryuukyoku="oya">聴牌<span class="pos">${nm(dealer)}の連荘</span></button>
       <button type="button" class="overlay-btn" data-pick-ryuukyoku="noten">ノーテン<span class="pos">次の局へ</span></button>`;
-    return overlaySheet("流局", "親のテンパイ有無を選んでください", `<div class="overlay-grid">${btns}</div>`);
+    return overlaySheet("流局", "親のテンパイ有無を選んでください", `${oyaHead}<div class="overlay-grid">${btns}</div>`);
   }
   if(ov.type === "hanchanSetup") return renderHanchanSetupOverlay(ov);
   if(ov.type === "seatFix") return renderSeatFixOverlay(ov);
